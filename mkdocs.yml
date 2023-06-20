@@ -1,13 +1,13 @@
 # Project Information
-site_name: baseline
+site_name: chrom-seek
 site_author: Skyler Kuhn
 site_description: >-
-  An awesome OpenOmics baseline pipeline
+  An awesome OpenOmics chrom-seek pipeline
 
 # Repository
-repo_name: OpenOmics/baseline
-repo_url: https://github.com/OpenOmics/baseline
-edit_uri: https://github.com/OpenOmics/baseline/edit/main/docs/
+repo_name: OpenOmics/chrom-seek
+repo_url: https://github.com/OpenOmics/chrom-seek
+edit_uri: https://github.com/OpenOmics/chrom-seek/edit/main/docs/
 
 # Extra
 extra_css:
@@ -98,10 +98,10 @@ markdown_extensions:
 nav:
   - About: index.md
   - Commands: 
-    - baseline run: usage/run.md
-    - baseline unlock: usage/unlock.md
-    - baseline install: usage/install.md
-    - baseline cache: usage/cache.md
+    - chrom-seek run: usage/run.md
+    - chrom-seek unlock: usage/unlock.md
+    - chrom-seek install: usage/install.md
+    - chrom-seek cache: usage/cache.md
   - FAQ:
     - General Questions: faq/questions.md
   - License: license.md

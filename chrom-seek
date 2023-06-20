@@ -25,9 +25,9 @@ merchantability or fitness for any particular purpose.
 Please cite the author and NIH resources like the "Biowulf Cluster" 
 in any work or product based on this material.
 USAGE:
-  $ baseline <command> [OPTIONS]
+  $ chrom-seek <command> [OPTIONS]
 EXAMPLE:
-  $ baseline run --input *.R?.fastq.gz --output output/
+  $ chrom-seek run --input *.R?.fastq.gz --output output/
 """
 
 # Python standard library
@@ -49,16 +49,17 @@ from src.utils import (
     hashed,
     permissions,
     check_cache,
-    require)
+    require
+)
 
 
 # Pipeline Metadata
 __version__ = version
-__authors__ = 'Skyler Kuhn'
-__email__ = 'skyler.kuhn@nih.gov'
+__authors__ = 'Skyler Kuhn, Tovah Markowitz'
+__email__ = 'skyler.kuhn@nih.gov, tovah.markowitz@nih.gov'
 __home__  =  os.path.dirname(os.path.abspath(__file__))
 _name = os.path.basename(sys.argv[0])
-_description = 'An awesome baseline pipeline'
+_description = 'An awesome set of epigenetic pipelines'
 
 
 def unlock(sub_args):
@@ -217,7 +218,7 @@ def parsed_arguments(name, description):
     """
     # Add styled name and description
     c = Colors
-    styled_name = "{0}{1}{2}baseline{3}".format(c.bold, c.bg_black, c.cyan, c.end)
+    styled_name = "{0}{1}{2}chrom-seek{3}".format(c.bold, c.bg_black, c.cyan, c.end)
     description = "{0}{1}{2}".format(c.bold, description, c.end)
 
     # Create a top-level parser
@@ -243,17 +244,39 @@ def parsed_arguments(name, description):
                 [--dry-run] [--job-name JOB_NAME] [--mode {{slurm,local}}] \\
                 [--sif-cache SIF_CACHE] [--singularity-cache SINGULARITY_CACHE] \\
                 [--silent] [--threads THREADS] [--tmp-dir TMP_DIR] \\
+                --assay {{cfChIP,ChIP,ATAC}} \\
+                --genome GENOME \\
                 --input INPUT [INPUT ...] \\
-                --output OUTPUT
+                --output OUTPUT 
 
         Optional arguments are shown in square brackets above.
 
         {3}{4}Description:{5}
-          To run the ...long pipeline name with your data raw data, please
-        provide a space seperated list of FastQ (globbing is supported) and an output 
-        directory to store results.
+          To run an available pipeline with your data raw data, please provide a space 
+        seperated list of FastQ (globbing is supported), an output directory to store 
+        results, a reference genome for alignment and annotation, and an assay type to 
+        call a specific data-processing pipeline.
 
         {3}{4}Required arguments:{5}
+          --assay {{cfChIP,ChIP,ATAC}}
+                                Assay type or data-processing pipeline. This option
+                                defines which pipeline will be run. chrom-seek supports
+                                the processing of bulk ChIP-seq (ChIP), cell-free DNA 
+                                ChIP-seq (cfChIP), and ATAC-seq (ATAC) samples. Select 
+                                from one of the following data-processing pipelines:
+                                    • ChIP
+                                    • cfChIP
+                                    • ATAC
+                                  Example: --assay ChIP
+          --genome GENOME       
+                                Reference genome. This option defines the reference
+                                genome of the samples. modr does comes bundled with
+                                prebuilt reference files from GENCODE for human and 
+                                mouse samples. Select one of the following options:
+                                    • hg19
+                                    • hg38
+                                    • mm10
+                                  Example: --genome hg19
           --input INPUT [INPUT ...]
                                 Input FastQ file(s) to process. The pipeline does NOT
                                 support single-end data. FastQ files for one or more  
@@ -356,7 +379,9 @@ def parsed_arguments(name, description):
           module load singularity snakemake
 
           # Step 2A.) Dry-run the pipeline
-          ./{0} run --input .tests/*.R?.fastq.gz \\
+          ./{0} run --assay ChIP \\
+                         --genome hg19 \\
+                         --input .tests/*.R?.fastq.gz \\
                          --output /data/$USER/output \\
                          --mode slurm \\
                          --dry-run
@@ -365,9 +390,11 @@ def parsed_arguments(name, description):
           # The slurm mode will submit jobs to 
           # the cluster. It is recommended running 
           # the pipeline in this mode.
-          ./{0} run --input .tests/*.R?.fastq.gz \\
+          ./{0} run --assay ChIP \\
+                         --genome hg19 \\
+                         --input .tests/*.R?.fastq.gz \\
                          --output /data/$USER/output \\
-                         --mode slurm
+                         --mode slurm 
 
         {2}{3}Version:{4}
           {1}
