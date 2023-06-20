@@ -411,6 +411,24 @@ def parsed_arguments(name, description):
     )
 
     # Required Arguments
+    # Data-procssing pipeline
+    subparser_run.add_argument(
+        '--assay',
+        type = lambda option: str.lower(option),
+        required = True,
+        choices = ['chip', 'cfchip', 'atac'],
+        help = argparse.SUPPRESS
+    )
+
+    # Reference genome
+    subparser_run.add_argument(
+        '--genome',
+        required = True,
+        type = str,
+        choices = ['hg19', 'hg38', 'mm10'],
+        help = argparse.SUPPRESS
+    )
+
     # Input FastQ files
     subparser_run.add_argument(
         '--input',
