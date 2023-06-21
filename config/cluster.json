@@ -1,8 +1,71 @@
 {
     "__default__": {
-        "threads": "4",
-        "mem": "8g",
+        "gres": "lscratch:256",
+        "mem": "48g",
         "partition": "norm",
-        "time": "0-04:00:00"
+        "threads": "4",
+        "time": "1-18:00:00"
+    },
+    "trim_pe": {
+        "mem": "64g",
+        "threads": "32"
+    },
+    "kraken_pe": {
+        "cpus-per-task": "24",
+        "gres": "lscratch:256",
+        "mem": "110g"
+    },
+    "BWA_PE": {
+        "threads": "32",
+        "mem": "220g",
+        "gres": "lscratch:64"
+    },
+    "picard_dedup": {
+        "gres": "lscratch:256",
+        "mem": "96g",
+        "threads": "2"
+    },
+    "ppqt": {
+        "mem": "24g"
+    },
+    "bam2bw": {
+        "threads": "32"
+    },
+    "deeptools_prep": {
+        "mem": "4g",
+        "threads": "2"
+    },
+    "deeptools_fingerprint": {
+        "threads": "8"
+    },
+    "deeptools_fingerprint_Q5DD": {
+        "threads": "8"
+    },
+    "deeptools_genes": {
+        "mem": "100g"
+    },
+    "preseq": {
+        "mem": "24g"
+    },
+    "rawfastqc": {
+        "threads": "8"
+    },
+    "fastqc": {
+        "mem": "24g",
+        "threads": "32",
+        "time": "18:00:00"
+    },
+    "fastq_screen": {
+        "mem": "24g",
+        "threads": "24",
+        "time": "18:00:00"
+    },
+    "ngsqc": {
+        "threads": "1",
+        "mem": "120g"
+    },
+    "multiqc": {
+        "mem": "24g",
+        "threads": "2"
     }
 }

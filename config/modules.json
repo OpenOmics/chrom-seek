@@ -1,4 +1,29 @@
 {
+    "bin": {
+        "FASTQ_SCREEN": "/data/OpenOmics/references/cfChIP-seek/bin/fastq_screen_v0.9.3/fastq_screen"
+    },
+    "conda": {},
     "tools": {
+        "BEDTOOLSVER": "bedtools/2.27.1",
+        "BOWTIE2VER": "bowtie/2-2.3.4",
+        "BWAVER": "bwa/0.7.17",
+        "CUTADAPTVER": "cutadapt/1.18",
+        "DEEPTOOLSVER": "deeptools/3.5.1",
+        "FASTQCVER": "fastqc/0.11.5",
+        "GEMVER": "gem/3.0",
+        "HOMERVER": "homer/4.10.1",
+        "IDRVER": "idr/2.0.3",
+        "KRAKENVER": "kraken/2.0.8-beta",
+        "KRONATOOLSVER": "kronatools/2.7",
+        "MACSVER": "macs/2.1.1.20160309",
+        "MULTIQCVER": "multiqc/1.7",
+        "PERLVER": "perl/5.24.3",
+        "PICARDVER": "picard/2.17.11",
+        "PRESEQVER": "preseq/2.0.3",
+        "RVER": "R/3.5",
+        "SAMTOOLSVER": "samtools/1.6",
+        "SICERVER": "sicer/1.1",
+        "UCSCVER": "ucsc/384",
+        "UROPAVER": "uropa/4.0.2"
     }
 }
