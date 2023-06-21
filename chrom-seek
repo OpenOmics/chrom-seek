@@ -270,8 +270,8 @@ def parsed_arguments(name, description):
                                   Example: --assay ChIP
           --genome GENOME       
                                 Reference genome. This option defines the reference
-                                genome of the samples. modr does comes bundled with
-                                prebuilt reference files from GENCODE for human and 
+                                genome of the samples for alignment and annotation.
+                                Their are prebuilt reference files for human and 
                                 mouse samples. Select one of the following options:
                                     • hg19
                                     • hg38

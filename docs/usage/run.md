@@ -3,9 +3,9 @@
 ## 1. About 
 The `chrom-seek` executable is composed of several inter-related sub commands. Please see `chrom-seek -h` for all available options.
 
-This part of the documentation describes options and concepts for <code>chrom-seek <b>run</b></code> sub command in more detail. With minimal configuration, the **`run`** sub command enables you to start running chrom-seek pipeline. 
+This part of the documentation describes options and concepts for <code>chrom-seek <b>run</b></code> sub command in more detail. With minimal configuration, the **`run`** sub command enables you to start running chrom-seek with one of its available data-processing pipelines. 
 
-Setting up the chrom-seek pipeline is fast and easy! In its most basic form, <code>chrom-seek <b>run</b></code> only has *two required inputs*.
+Setting up the chrom-seek pipeline is fast and easy! In its most basic form, <code>chrom-seek <b>run</b></code> only has *four required inputs*. To run an available pipeline with your data raw data, please provide a space seperated list of FastQ (globbing is supported), an output directory to store results, a reference genome for alignment and annotation, and an assay type to invoke a specific data-processing pipeline.
 
 ## 2. Synopsis
 ```text
@@ -14,13 +14,15 @@ $ chrom-seek run [--help] \
       [--tmp-dir TMP_DIR] [--silent] [--sif-cache SIF_CACHE] \ 
       [--singularity-cache SINGULARITY_CACHE] \
       [--dry-run] [--threads THREADS] \
+      --assay {cfChIP,ChIP,ATAC} \
+      --genome GENOME \
       --input INPUT [INPUT ...] \
       --output OUTPUT
 ```
 
 The synopsis for each command shows its arguments and their usage. Optional arguments are shown in square brackets.
 
-A user **must** provide a list of FastQ (globbing is supported) to analyze via `--input` argument and an output directory to store results via `--output` argument.
+A user **must** provide a list of FastQ (globbing is supported) to analyze via `--input` argument and an output directory to store results via `--output` argument, define an assay type to select an appropriate data-processing pipeline via `--assay` argument, and select a reference genome to be used for alignment and annotation via `--genome` argument. 
 
 Use you can always use the `-h` option for information on a specific command. 
 
@@ -28,6 +30,24 @@ Use you can always use the `-h` option for information on a specific command.
 
 Each of the following arguments are required. Failure to provide a required argument will result in a non-zero exit-code.
 
+  `--assay {cfChIP,ChIP,ATAC}`  
+> **Assay type or data-processing pipeline.**  
+> *type: string*  
+> 
+> This option defines which pipeline will be run. chrom-seek supports the processing of bulk ChIP-seq (ChIP), cell-free DNA ChIP-seq (cfChIP), and ATAC-seq (ATAC) samples. Please select from one of the following data-processing pipelines: `cfChIP`, `ChIP`, `ATAC`.
+> 
+> ***Example:*** `--assay ChIP`
+
+---
+  `--genome {hg19,hg38,mm10}`  
+> **Reference genome.**  
+> *type: string*  
+> 
+> This option defines the reference genome of the samples for alignment and annotation. There are prebuilt reference files for human and mouse data. Please select one of the following options: `hg19`, `hg38`, `mm10`.
+> 
+> ***Example:*** `--genome hg19`
+
+---
   `--input INPUT [INPUT ...]`  
 > **Input FastQ or BAM file(s).**  
 > *type: file(s)*  
@@ -158,7 +178,9 @@ module purge
 module load singularity snakemake
 
 # Step 2A.) Dry-run the pipeline
-./chrom-seek run --input .tests/*.R?.fastq.gz \
+./chrom-seek run --assay ChIP \
+                  --genome hg19 \
+                  --input .tests/*.R?.fastq.gz \
                   --output /data/$USER/output \
                   --mode slurm \
                   --dry-run
@@ -167,7 +189,9 @@ module load singularity snakemake
 # The slurm mode will submit jobs to 
 # the cluster. It is recommended running 
 # the pipeline in this mode.
-./chrom-seek run --input .tests/*.R?.fastq.gz \
+./chrom-seek run --assay ChIP \
+                  --genome hg19 \
+                  --input .tests/*.R?.fastq.gz \
                   --output /data/$USER/output \
                   --mode slurm
 ```
