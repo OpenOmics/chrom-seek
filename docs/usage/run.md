@@ -5,7 +5,7 @@ The `chrom-seek` executable is composed of several inter-related sub commands. P
 
 This part of the documentation describes options and concepts for <code>chrom-seek <b>run</b></code> sub command in more detail. With minimal configuration, the **`run`** sub command enables you to start running chrom-seek with one of its available data-processing pipelines. 
 
-Setting up the chrom-seek pipeline is fast and easy! In its most basic form, <code>chrom-seek <b>run</b></code> only has *four required inputs*. To run an available pipeline with your data raw data, please provide a space seperated list of FastQ (globbing is supported), an output directory to store results, a reference genome for alignment and annotation, and an assay type to invoke a specific data-processing pipeline.
+Setting up the chrom-seek pipeline is fast and easy! In its most basic form, <code>chrom-seek <b>run</b></code> only has *five required inputs*. To run an available pipeline with your data raw data, please provide a space seperated list of FastQ (globbing is supported), an output directory to store results, a reference genome for alignment and annotation, an assay type to invoke a specific data-processing pipeline, and a peak call file to set sample metadata. 
 
 ## 2. Synopsis
 ```text
@@ -17,12 +17,13 @@ $ chrom-seek run [--help] \
       --assay {cfChIP,ChIP,ATAC} \
       --genome GENOME \
       --input INPUT [INPUT ...] \
-      --output OUTPUT
+      --output OUTPUT \
+      --peakcall PEAKCALL
 ```
 
 The synopsis for each command shows its arguments and their usage. Optional arguments are shown in square brackets.
 
-A user **must** provide a list of FastQ (globbing is supported) to analyze via `--input` argument and an output directory to store results via `--output` argument, define an assay type to select an appropriate data-processing pipeline via `--assay` argument, and select a reference genome to be used for alignment and annotation via `--genome` argument. 
+A user **must** provide a list of FastQ (globbing is supported) to analyze via `--input` argument and an output directory to store results via `--output` argument, define an assay type to select an appropriate data-processing pipeline via `--assay` argument, select a reference genome to be used for alignment and annotation via `--genome` argument, and a peakcall file to define groups/inputs/blocking factors for each sample.
 
 Use you can always use the `-h` option for information on a specific command. 
 
@@ -65,11 +66,46 @@ Each of the following arguments are required. Failure to provide a required argu
 > 
 > ***Example:*** `--output /data/$USER/chrom-seek_out`
 
+---  
+  `--peakcall PEAKCALL`
+> **Peakcall file.**   
+> *type: file*
+>   
+> This tab delimited (TSV) file is used to pair each ChIP sample to its corresponding input sample and to assign any groups that are associated with said sample. Please note that multiple groups can be assigned to a given sample using a comma. Group information is used to setup comparsions within groups of samples. This file consists of three columns containing the name of each ChIP sample, the name of each Input sample, and the name of any of its groups. The header of this file needs to be `ChIP` for the chips column, `Input` for the inputs column, and `Group` for the groups column. The base name of each sample should be listed in the `ChIP` and `Input` columns. The base name of a given sample can be determined by removing its file extension from the sample's R1 FastQ file, example: `WT_S4.R1.fastq.gz` becomes `WT_S4` in the peakcall file.   
+> 
+> **Contents of example peakcalls file:** 
+> ```
+> ChIP	Input	Group
+> WT_S1	IN_S1	G1,G3
+> WT_S2	IN_S2	G1,G3
+> WT_S3	IN_S3	G1
+> WT_S4	IN_S4	G2,G4
+> WT_S5	IN_S5	G2,G4
+> WT_S6	IN_S6	G2
+> ```
+> ***Example:*** `--peakcall /data/$USER/peakcall.tsv`
+
 ### 2.2 Analysis options
 
 Each of the following arguments are optional, and do not need to be provided. 
 
-...add non-required analysis options 
+#### 2.2.1 Differential Binding/Accessibility
+
+  `--contrasts CONTRASTS`
+> **Contrasts file.**   
+> *type: file*
+>   
+> This tab delimited (TSV) file is used to setup comparisons within different groups of samples. Please see the `--peakcall` option above for more information about how to define groups within a set of samples. This file consists of two columns containing the names of two groups to compare. The names defined in this file must also exist in the peakcall file.  
+> 
+> *Please note:* the ordering of groups is preserved when creating contrasts. This is important because it dicates how to interpret the direction of the fold-change for your comparison. In the example below, the first comparison can be interpreted as *G2 vs. G1*. This would result in the following contrast: `G2-G1`. Within the context of differential binding analysis, a positive fold-change would indicate that the G2 group has higher levels of binding (cfChIP/ChIP) or accessibility (ATAC) at X region.  
+> 
+> **Contents of example contrasts file:**  
+> ```
+> G2 	G1
+> G4 	G1
+> G4 	G3
+> ```
+> ***Example:*** `--contrasts /data/$USER/contrasts.tsv` 
 
 ### 2.3 Orchestration options
 
@@ -182,6 +218,7 @@ module load singularity snakemake
                   --genome hg19 \
                   --input .tests/*.R?.fastq.gz \
                   --output /data/$USER/output \
+                  --peakcall .tests/peakcall.tsv \
                   --mode slurm \
                   --dry-run
 
@@ -193,5 +230,6 @@ module load singularity snakemake
                   --genome hg19 \
                   --input .tests/*.R?.fastq.gz \
                   --output /data/$USER/output \
+                  --peakcall .tests/peakcall.tsv \
                   --mode slurm
 ```
