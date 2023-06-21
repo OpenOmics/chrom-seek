@@ -1,0 +1,98 @@
+# Order that modules should appear in report. Try to list in order of analysis,
+# eg. FastQC is usually the first step, so should be last in this list.
+
+
+fastqscreen_simpleplot: true
+fn_clean_sample_names: false
+log_filesize_limit: 100000000
+
+fn_ignore_files:
+    - '*.preseq.dat'
+
+top_modules: 
+    - 'QC_Table'
+
+module_order:
+    - 'spearman_heatmap'
+    - 'fastq_screen'
+    - 'fastqc'
+    - 'preseq'
+    - 'deepTools'
+    - 'NGSQC_data'
+    - 'samtools'
+
+custom_data:
+    spearman_heatmap:
+        id: 'spearman_heatmap'
+        section_name: "Spearman correlation heatmap"
+    QC_Table:
+        id: "QC_Table"
+        section_name: "ChIP-specific QC metrics"
+        section_href: https://www.encodeproject.org/chip-seq/
+        description: "Encode3 standards: <br>  Usable fragments (A fragment corresponds to a read mapping to one location in the genome.) If single-end, one read is considered a fragment. If paired-end, one pair is considered a fragment. <br>  Usable fragments for TF/narrow histones: concerning <10M, acceptable 10-20M, ideal >20M. <br>  Useable fragments for broad histones: concerning <20M, acceptable 20-40M, ideal >40M. <br>  NRF: Number of distinct mapping reads after removing duplicates/total number of reads. <br> PBC1: Number of genomic locations where exactly one read maps uniquely/number of distinct genomic locations to which one read maps uniquely. <br> PBC2: Number of genomic locations where only one read maps uniquely/number of genomic locations where two reads map uniquely <br>  Concerning(severe bottlenecking): NRF < 0.5, Acceptable: 0.5 < NRF < 0.8, Ideal (no bottlenecking): NRF > 0.9 <br><br> PPQT standards: https://github.com/crazyhottommy/phantompeakqualtools <br> NSC: cross-correlation value/minimum cross-correlation <br> RSC: (cross-correlation value - minimum cross-correlation) / (correlation at phantom peak - minimum cross-correlation) <br> Optimal NSC: > 1.1, Okay NSC: 1.05 - 1.1. Low NSC means low signal to noise or very few peaks (biological or technical). <br> Optimal RSC: > 1, Okay RSC: 0.8-1. Low RSC means low signal to noise caused by: poor quality ChIP, low read sequence quality, shallow sequencing depth, or few peaks. <br> QualityTag: -2: very low, 2: very high"
+        plot_type: "table"
+        pconfig:
+            id: "QC_Table"
+            namespace: "QC Table"
+        headers:
+            NReads:
+                description: "The number of reads sequenced"
+                format: '{:,.0f}'
+                hidden: True
+            NMappedReads:
+                description: "The number of reads mapped"
+                format: '{:,.0f}'
+                hidden: True
+            NUniqMappedReads:
+                description: "The number of reads remaining after deduplication"
+                format: '{:,.0f}'
+            NRF:
+                description: "Non-Redundant fraction"
+                min: 0
+                max: 0.9
+                scale: 'RdYlGn'
+            PBC1:
+                description: "PCR Bottlenecking Coefficient 1"
+                min: 0
+                max: 0.9
+                scale: 'RdYlGn'
+            PBC2:
+                description: "PCR Bottlenecking Coefficient 2"
+                min: 0.5
+                max: 5
+                scale: 'RdYlGn'
+            FragmentLength:
+                description: "Predicted fragment length by cross-correlation"
+            NSC:
+                description: "Normalized strand cross-correlation coefficient"
+                min: 1
+                max: 1.1
+                scale: 'RdYlGn'
+                format: '{:,.2f}'
+            RSC:
+                description: "Relative strand cross-correlation coefficient"
+                min: 0.5
+                max: 1
+                scale: 'RdYlGn'
+            Qtag:
+                description: "Quality tag based on thresholded RSC"
+                min: 0
+                max: 2
+                scale: 'RdYlGn'
+    NGSQC_data:
+        section_name: "NGSQC plot"
+        plot_type: "linegraph"
+        description: "Total originally mapped reads are randomly subsampled at 50% and 90% density. The similarity QC indicator (simQCi) refers to the fraction of chromatin regions which reveal a proportional decrease of read count intensities (RCIs) in the subset sampled at 90% relative to that sampled at 50% and is plotted for 3 dRCI thresholds, namely, 2.5%, 5% and 10%. simQCi should decrease with increase in dRCI and lower simQCi is an indicator of good overall quality. In other words, the flatter the line the higher the quality. The minimal theoretical value for simQCi is 1."
+        pconfig:
+            xlab: "percent RCI difference"
+            ylab: "Similarity QCi (s90/s50)"
+            ymax: 100
+            ymin: 1
+
+sp:
+    QC_Table:
+        fn: "QCTable.txt"
+    NGSQC_data:
+        fn: "*NGSQC.txt"
+    spearman_heatmap:
+        fn: "spearman_heatmap.sorted.Q5DD.RPGC.png"
