@@ -7,12 +7,14 @@ from shutil import copytree
 import os, re, json, sys, subprocess
 
 # Local imports
-from utils import (git_commit_hash,
+from utils import (
+    git_commit_hash,
     join_jsons,
     fatal,
     which,
     exists,
-    err)
+    err
+)
 
 from . import version as __version__
 
@@ -549,7 +551,12 @@ def get_nends(ifiles):
         # Check if samples contain both read mates
         missing_mates = [sample for sample, count in nends.items() if count == 1]
         if missing_mates:
-            # Missing an R1 or R2 for a provided input sample
+            # Missing an R1 or R2 for a provided input sample,
+            # pipeline is setup to process a set of SE samples
+            # or a set of PE samples, i.e. not a mixture. This
+            # functionality could be added later but it may not
+            # be the best idea due to batch effects/potentially
+            # adding unwanted sources of technical variation.
             raise NameError("""\n\tFatal: Detected pair-end data but user failed to provide
                 both mates (R1 and R2) for the following samples:\n\t\t{}\n
                 Please check that the basename for each sample is consistent across mates.
@@ -565,15 +572,6 @@ def get_nends(ifiles):
                 open an issue on Github.
                 """.format(missing_mates, sys.argv[0])
             )
-    elif not bam_files:
-        # Provided only single-end data
-        # not supported or recommended
-        raise TypeError("""\n\tFatal: Single-end data detected.
-            {} does not support single-end data. Calling variants from single-end
-            data is not recommended either. If you feel like this functionality should 
-            exist, feel free to open an issue on Github.
-            """.format(sys.argv[0])
-        )
 
     return nends_status
 
