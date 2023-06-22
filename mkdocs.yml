@@ -2,7 +2,7 @@
 site_name: chrom-seek
 site_author: Skyler Kuhn
 site_description: >-
-  An awesome OpenOmics chrom-seek pipeline
+  An awesome OpenOmics chrom-seek pipeline for cfChIP-seq, ChIP-seq, and ATAC-seq data
 
 # Repository
 repo_name: OpenOmics/chrom-seek
