@@ -131,7 +131,7 @@ rule BWA_PE:
     params:
         d=join(workpath,bam_dir),
         rname='bwa',
-        reference=config['references']['BWA'],
+        reference=config['references'][genome]['BWA'],
         bwaver=config['tools']['BWAVER'],
         samtoolsver=config['tools']['SAMTOOLSVER'],
         script=join(workpath,"workflow","scripts","bam_filter_by_mapq.py"),
