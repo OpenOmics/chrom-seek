@@ -23,6 +23,7 @@ configfile: "config.json"
 samples  = config['samples']
 workpath = config['project']['workpath']
 tmpdir = config['options']['tmp_dir']
+genome   = config['options']['genome']         # Reference genome of a set of samples
 
 # Analysis options
 # Run differential binding pipeline

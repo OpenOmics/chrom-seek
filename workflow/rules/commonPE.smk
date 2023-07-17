@@ -17,7 +17,7 @@ rule trim_pe:
         cutadaptver=config['tools']['CUTADAPTVER'],
         workpath=config['project']['workpath'],
         fastawithadaptersetd=join(workpath, config['shared_resources']['ADAPTERS_FASTA']),
-        blacklistbwaindex=config['references']['BLACKLISTBWAINDEX'],
+        blacklistbwaindex=config['references'][genome]['BLACKLISTBWAINDEX'],
         picardver=config['tools']['PICARDVER'],
         bwaver=config['tools']['BWAVER'],
         samtoolsver=config['tools']['SAMTOOLSVER'],
