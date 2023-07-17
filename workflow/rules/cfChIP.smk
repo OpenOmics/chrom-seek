@@ -56,7 +56,7 @@ rule cfChIPtool:
     params:
         rname='cfChiP',
         rver="R/4.1.0",
-        toolkit = config['references']['cfChIP_TOOLS_SRC'],
+        toolkit = config['references'][genome]['cfChIP_TOOLS_SRC'],
         tmpfile = lambda w: join(workpath,cfTool_subdir2, w.name + ".Q5DD.tagAlign"),
     container:
         config['images']['cfchip']
