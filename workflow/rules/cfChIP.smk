@@ -19,7 +19,7 @@ rule picard_dedup:
         rver=config['tools']['RVER'],
         javaram='16g',
         tmpBam="{name}.Q5DD.withXY.bam",
-        rscript=join(config['references']['cfChIP_TOOLS_SRC'], "bam2fragment.R")
+        rscript=join(config['references'][genome]['cfChIP_TOOLS_SRC'], "bam2fragment.R")
     shell: """
     module load {params.samtoolsver};
     module load {params.picardver};
