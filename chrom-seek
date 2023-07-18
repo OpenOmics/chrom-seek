@@ -122,6 +122,8 @@ def run(sub_args):
         output_path = sub_args.output
     )
 
+
+
     # Step 3. Resolve docker/singularity bind
     # paths from the config file.
     bindpaths = bind(
@@ -206,6 +208,10 @@ def run(sub_args):
     # Step 4. Save config to output directory
     with open(os.path.join(sub_args.output, 'config.json'), 'w') as fh:
         json.dump(config, fh, indent = 4, sort_keys = True)
+    
+    if sub_args.assay not in config['references'][sub_args.genome]['SUPPORTED_PIPELINES']:
+        print("\nWarning: {} assay is not supported for {} genome".format(sub_args.assay, sub_args.genome))
+        sys.exit(1)
 
     # Optional Step: Dry-run pipeline
     if sub_args.dry_run:

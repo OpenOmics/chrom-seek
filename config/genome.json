@@ -2,6 +2,7 @@
     "references": {
         "hg19": {
             "ALIAS": "hg19",
+            "SUPPORTED_PIPELINES": ["cfchip", "chip", "atac"],
             "BLACKLISTBWAINDEX": "/data/OpenOmics/references/cfChIP-seek/hg19_basic/indexes/hg19.blacklist.chrM",
             "BWA": "/data/OpenOmics/references/cfChIP-seek/hg19_basic/indexes/hg19",
             "cfChIP_TOOLS_SRC": "/data/OpenOmics/references/cfChIP-seek/hg19_basic/cfChIP_tools",
@@ -41,8 +42,9 @@
         },
         "hg38": {
             "ALIAS": "hg38",
+            "SUPPORTED_PIPELINES": ["chip", "atac"],
             "BLACKLISTBWAINDEX": "/data/OpenOmics/references/chrom-seek/hg38_basic/indexes/hg38.blacklist.chrM",
-            "BWA": "/data/OpenOmics/references/cfChIP-seek/hg19_basic/indexes/hg38",
+            "BWA": "/data/OpenOmics/references/chrom-seek/hg38_basic/indexes/hg38",
             "cfChIP_TOOLS_SRC": "",
             "CHROMS": [
                 "chr1",
@@ -80,8 +82,9 @@
         },
         "mm10": {
             "ALIAS": "mm10",
+            "SUPPORTED_PIPELINES": ["chip", "atac"],
             "BLACKLISTBWAINDEX": "/data/OpenOmics/references/chrom-seek/mm10_basic/indexes/mm10.blacklist.chrM",
-            "BWA": "/data/OpenOmics/references/cfChIP-seek/mm10_basic/indexes/mm10",
+            "BWA": "/data/OpenOmics/references/chrom-seek/mm10_basic/indexes/mm10",
             "cfChIP_TOOLS_SRC": "",
             "CHROMS": [
                 "chr1",

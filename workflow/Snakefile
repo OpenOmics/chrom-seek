@@ -24,6 +24,7 @@ samples  = config['samples']
 workpath = config['project']['workpath']
 tmpdir = config['options']['tmp_dir']
 genome   = config['options']['genome']         # Reference genome of a set of samples
+assay   = config['options']['assay']
 
 # Analysis options
 # Run differential binding pipeline
@@ -141,8 +142,7 @@ qc_dir="QC"
 ppqt_dir="ppqt"
 
 
-# cfChIP-specific flags
-cfChIP=True
+
 # Setup to run with ChIP samples, 
 # which could include IgG samples
 H3K4me3samples = list(config['project']['peaks']['chips'])
@@ -185,5 +185,5 @@ include: "rules/commonPE.smk"
 # include: "rules/commonSE.smk"
 
 # cfChIP-specific QC rules
-if cfChIP:
+if assay == "cfchip":
     include: "rules/cfChIP.smk"
