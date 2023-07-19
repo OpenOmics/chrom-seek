@@ -173,7 +173,7 @@ rule picard_dedup:
         out6=join(workpath,bam_dir,"{name}.bwa.Q5.duplic"),
         out7=temp(join(workpath,bam_dir,"{name}.Q5DD.tagAlign"))
     params:
-        rname='dedup_cfchip',
+        rname='dedup',
         picardver=config['tools']['PICARDVER'],
         samtoolsver=config['tools']['SAMTOOLSVER'],
         rver=config['tools']['RVER'],
