@@ -239,27 +239,39 @@ rule insert_size:
 rule bam2bw:
     input:
         bam=join(workpath,bam_dir,"{name}.{ext}.bam"),
-#        ppqt=join(workpath,bam_dir,"{ext}.ppqt.txt"),
+        # ppqt=join(workpath,bam_dir,"{ext}.ppqt.txt"),
     output:
         outbw=join(workpath,bw_dir,"{name}.{ext}.RPGC.bw"),
     params:
-        rname="pl:bam2bw",
-        deeptoolsver=config['bin'][pfamily]['tool_versions']['DEEPTOOLSVER'],
-        effectivegenomesize=config['references'][pfamily]['EFFECTIVEGENOMESIZE'],
-        nProcessors=32
+        rname="bam2bw",
+        effectivegenomesize=config['references'][genome]['EFFECTIVEGENOMESIZE'],
+    threads: int(allocated("threads", "bam2bw", cluster)),
+    envmodules: config['tools']['DEEPTOOLSVER'],
     shell: """
-module load {params.deeptoolsver};
-if [ '{pe}' == 'pe' ]; then
-    bamCoverage --bam {input.bam} -o {output.outbw} --binSize 25 --smoothLength 75 \
-            --numberOfProcessors {params.nProcessors} --normalizeUsing RPGC \
-            --effectiveGenomeSize {params.effectivegenomesize} --centerReads
-else
-    extender=`grep {wildcards.name} {input.ppqt} | cut -f 2`
-    bamCoverage --bam {input.bam} -o {output.outbw} --binSize 25 --smoothLength 75 \
-            --numberOfProcessors {params.nProcessors} --normalizeUsing RPGC \
-            --effectiveGenomeSize {params.effectivegenomesize} -e $extender
-fi
-"""    
+    if [ '{pe}' == 'pe' ]; then
+        bamCoverage \\
+            --bam {input.bam} \\
+            -o {output.outbw} \\
+            --binSize 25 \\
+            --smoothLength 75 \\
+            --numberOfProcessors {threads} \\
+            --normalizeUsing RPGC \\
+            --effectiveGenomeSize {params.effectivegenomesize} \\
+            --centerReads
+    else
+        extender=$(grep {wildcards.name} {input.ppqt} | cut -f 2)
+        echo "Extending reads: ${{extender}}"
+        bamCoverage \\
+            --bam {input.bam} \\
+            -o {output.outbw} \\
+            --binSize 25 \\
+            --smoothLength 75 \\
+            --numberOfProcessors {threads} \\
+            --normalizeUsing RPGC \\
+            --effectiveGenomeSize {params.effectivegenomesize} \\
+            -e ${{extender}}
+    fi
+    """    
 
 rule inputnorm:
     input:
@@ -268,12 +280,17 @@ rule inputnorm:
     output:
         join(workpath,bw_dir,"{name}.Q5DD.RPGC.inputnorm.bw")
     params:
-        rname="pl:inputnorm",
-        deeptoolsver=config['bin'][pfamily]['tool_versions']['DEEPTOOLSVER'],
-         nProcessors=32
+        rname="inputnorm",
+    threads: int(allocated("threads", "inputnorm", cluster)),
+    envmodules: config['tools']['DEEPTOOLSVER'],
     shell: """
-module load {params.deeptoolsver};
-bigwigCompare --binSize 25 --outFileName {output} --outFileFormat 'bigwig' \
-              --bigwig1 {input.chip} --bigwig2 {input.ctrl} --operation 'subtract' \
-              --skipNonCoveredRegions -p {params.nProcessors};
-"""
+    bigwigCompare \\
+        --binSize 25 \\
+        --outFileName {output} \\
+        --outFileFormat 'bigwig' \\
+        --bigwig1 {input.chip} \\
+        --bigwig2 {input.ctrl} \\
+        --operation 'subtract' \\
+        --skipNonCoveredRegions \\
+        -p {threads}
+    """
