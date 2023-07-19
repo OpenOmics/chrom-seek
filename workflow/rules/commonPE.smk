@@ -178,8 +178,7 @@ rule picard_dedup:
         javaram='16g'
     shell: """
     module load {params.samtoolsver};
-    module load {params.picardver};
-    module load {params.rver}; 
+    module load {params.picardver}; 
     if [ ! -e /lscratch/$SLURM_JOBID ]; then mkdir /lscratch/$SLURM_JOBID ;fi
     cd /lscratch/$SLURM_JOBID
     
