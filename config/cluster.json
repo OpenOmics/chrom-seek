@@ -31,6 +31,9 @@
     "bam2bw": {
         "threads": "32"
     },
+    "inputnorm": {
+        "threads": "32"
+    },
     "deeptools_prep": {
         "mem": "4g",
         "threads": "2"
