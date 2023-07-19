@@ -150,26 +150,33 @@ cfTool_dir="cfChIPtool"
 cfTool_subdir2="cfChIPtool/BED/H3K4me3"
 
 # Final targets of the pipeline 
-rule all:
-    input: 
-        # MultiQC, only PE-specific ones listed here
-        join(workpath,"multiqc_report.html"),
-        expand(join(workpath,qc_dir,"{name}.{ext}.insert_size_metrics.txt"),name=samples,ext=extensions2),
-        # Filtered bam
-        expand(join(workpath,bam_dir,"{name}.{ext}"),name=samples,ext=extensions4[1]),
-        # BWA --> BigWig
-        # expand(join(workpath,bw_dir,"{name}.{ext}.bw",),name=samples,ext=extensions[1]),
-        # expand(join(workpath,bw_dir,"{name}.Q5DD.RPGC.inputnorm.bw",),name=sampleswinput),
-        # PhantomPeakQualTools
-        # expand(join(workpath,ppqt_dir,"{name}.{ext}.ppqt"),name=samples,ext=extensions2),
-        # deeptools
-        # expand(join(workpath,deeptools_dir,"spearman_heatmap.{ext}.pdf"),ext=extensions),
-        # expand(join(workpath,deeptools_dir,"{group}.fingerprint.{ext}.pdf"),group=groups,ext=extensions2),
-        # expand(join(workpath,deeptools_dir,"{group}.metagene_heatmap.{ext}.pdf"), zip, group=deepgroups,ext=deepexts),
-        # cfChIP-specific
-        expand(join(workpath,cfTool_dir,"Output","H3K4me3","Signatures","{name}.Q5DD.csv"),name=H3K4me3samples),
-        join(workpath,qc_dir,"H3K4me3_cfChIP_signature.txt"),
-
+ 
+if assay == "cfchip":
+    rule all:
+        input: 
+            # MultiQC, only PE-specific ones listed here
+            join(workpath,"multiqc_report.html"),
+            expand(join(workpath,qc_dir,"{name}.{ext}.insert_size_metrics.txt"),name=samples,ext=extensions2),
+            expand(join(workpath,bam_dir,"{name}.{ext}"),name=samples,ext=extensions4[1]),
+            expand(join(workpath,cfTool_dir,"Output","H3K4me3","Signatures","{name}.Q5DD.csv"),name=H3K4me3samples),
+            join(workpath,qc_dir,"H3K4me3_cfChIP_signature.txt")
+else:
+    rule all:
+        input: 
+            # MultiQC, only PE-specific ones listed here
+            join(workpath,"multiqc_report.html"),
+            expand(join(workpath,qc_dir,"{name}.{ext}.insert_size_metrics.txt"),name=samples,ext=extensions2),
+            # Filtered bam
+            expand(join(workpath,bam_dir,"{name}.{ext}"),name=samples,ext=extensions4[1]),
+            # BWA --> BigWig
+            # expand(join(workpath,bw_dir,"{name}.{ext}.bw",),name=samples,ext=extensions[1]),
+            # expand(join(workpath,bw_dir,"{name}.Q5DD.RPGC.inputnorm.bw",),name=sampleswinput),
+            # PhantomPeakQualTools
+            # expand(join(workpath,ppqt_dir,"{name}.{ext}.ppqt"),name=samples,ext=extensions2),
+            # deeptools
+            # expand(join(workpath,deeptools_dir,"spearman_heatmap.{ext}.pdf"),ext=extensions),
+            # expand(join(workpath,deeptools_dir,"{group}.fingerprint.{ext}.pdf"),group=groups,ext=extensions2),
+            # expand(join(workpath,deeptools_dir,"{group}.metagene_heatmap.{ext}.pdf"), zip, group=deepgroups,ext=deepexts)
 
 
 #############################
