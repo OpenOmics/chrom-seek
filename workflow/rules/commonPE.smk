@@ -183,7 +183,7 @@ rule picard_dedup:
         samtoolsver=config['tools']['SAMTOOLSVER'],
         rver=config['tools']['RVER'],
         javaram='16g',
-        tmpdir=tmpdir
+        tmpdir=tmpdir,
         tmpBam="{name}.Q5DD.withXY.bam",
         rscript=join(config['references'][genome]['cfChIP_TOOLS_SRC'], "bam2fragment.R")
     shell: """
