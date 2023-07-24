@@ -25,12 +25,18 @@ rule trim_pe:
         leadingquality=10,
         trailingquality=10,
         javaram="64g",
-        sample="{name}"
+        sample="{name}",
+        tmpdir=tmpdir
     threads: 16
     shell: """
     module load {params.cutadaptver};
-    if [ ! -e /lscratch/$SLURM_JOBID ]; then mkdir /lscratch/$SLURM_JOBID ;fi
-    cd /lscratch/$SLURM_JOBID
+    # Setups temporary directory for
+    # intermediate files with built-in 
+    # mechanism for deletion on exit
+    if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
+    tmp=$(mktemp -d -p "{params.tmpdir}")
+    trap 'rm -rf "${{tmp}}"' EXIT
+    cd "${{tmp}}"
     cutadapt \\
         --pair-filter=any \\
         --nextseq-trim=2 \\
@@ -68,8 +74,8 @@ rule trim_pe:
     pigz -p {threads} {params.sample}.R1.cutadapt.noBL.fastq;
     pigz -p {threads} {params.sample}.R2.cutadapt.noBL.fastq;
     
-    mv /lscratch/$SLURM_JOBID/{params.sample}.R1.cutadapt.noBL.fastq.gz {output.outfq1};
-    mv /lscratch/$SLURM_JOBID/{params.sample}.R2.cutadapt.noBL.fastq.gz {output.outfq2};
+    mv ${{tmp}}/{params.sample}.R1.cutadapt.noBL.fastq.gz {output.outfq1};
+    mv ${{tmp}}/{params.sample}.R2.cutadapt.noBL.fastq.gz {output.outfq2};
     """
 
 
@@ -95,7 +101,7 @@ rule kraken_pe:
         rname='kraken',
         outdir=join(workpath,kraken_dir),
         bacdb=config['shared_resources']['KRAKENBACDB'],
-        tmpdir='/lscratch/$SLURM_JOBID',
+        tmpdir=tmpdir,
     threads: int(allocated("threads", "kraken_pe", cluster)),
     envmodules:
         config['tools']['KRAKENVER'],
@@ -148,7 +154,6 @@ rule BWA_PE:
     module load {params.bwaver};
     module load {params.samtoolsver};
     module load {params.pythonver};
-    cd /lscratch/$SLURM_JOBID;
     bwa mem -t {threads} {params.reference} {input.infq1} {input.infq2} \\
         | samtools sort -@{threads} -o {output.outbam1}
     
@@ -178,21 +183,23 @@ rule picard_dedup:
         samtoolsver=config['tools']['SAMTOOLSVER'],
         rver=config['tools']['RVER'],
         javaram='16g',
+        tmpdir=tmpdir
         tmpBam="{name}.Q5DD.withXY.bam",
         rscript=join(config['references'][genome]['cfChIP_TOOLS_SRC'], "bam2fragment.R")
     shell: """
     module load {params.samtoolsver};
     module load {params.picardver};
     module load {params.rver}; 
-    if [ ! -e /lscratch/$SLURM_JOBID ]; then mkdir /lscratch/$SLURM_JOBID ;fi
-    cd /lscratch/$SLURM_JOBID
+    if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
+    tmp=$(mktemp -d -p "{params.tmpdir}")
+    trap 'rm -rf "${{tmp}}"' EXIT
     
     if [ "{assay}" == "cfchip" ];then
       java -Xmx{params.javaram} \\
         -jar $PICARDJARPATH/picard.jar MarkDuplicates \\
         INPUT={input.bam2} \\
         OUTPUT={params.tmpBam} \\
-        TMP_DIR=/lscratch/$SLURM_JOBID \\
+        TMP_DIR=${{tmp}} \\
         VALIDATION_STRINGENCY=SILENT \\
         REMOVE_DUPLICATES=true \\
         METRICS_FILE={output.out6};
@@ -207,7 +214,7 @@ rule picard_dedup:
         -jar $PICARDJARPATH/picard.jar MarkDuplicates \\
         INPUT={input.bam2} \\
         OUTPUT={output.out5} \\
-        TMP_DIR=/lscratch/$SLURM_JOBID \\
+        TMP_DIR=${{tmp}} \\
         VALIDATION_STRINGENCY=SILENT \\
         REMOVE_DUPLICATES=true \\
         METRICS_FILE={output.out6};
