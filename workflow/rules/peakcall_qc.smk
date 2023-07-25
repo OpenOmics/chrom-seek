@@ -28,22 +28,22 @@ rule FRiP:
         -o "{params.outroot}"
     """
 
-    rule FRiP_plot:
-     input:
+rule FRiP_plot:
+    input:
         expand(join(workpath,qc_dir,"{PeakTool}.{Sample}.Q5DD.FRiP_table.txt"), PeakTool=PeakTools, Sample=samples),
-     output:
+    output:
         expand(join(workpath, qc_dir, "{Group}.FRiP_barplot.pdf"),Group=groups),
-     params:
+    params:
         rname="frip_plot",
         Rver="R/4.2",
         script=join(workpath,"workflow","scripts","FRiP_plot.R"),
-     shell: """
+    shell: """
     module load {params.Rver}
     Rscript {params.script} \\
         {workpath}
     """
 
-    rule jaccard:
+rule jaccard:
     input:
         lambda w: [ join(workpath, w.PeakTool, chip, chip + PeakExtensions[w.PeakTool]) for chip in chips ],
     output:
