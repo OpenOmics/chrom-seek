@@ -180,17 +180,28 @@ else:
 
 
 #############################
-# QC rules common to all
-include: "rules/commonQC.smk"
 
-# QC/alignment rules specific
-# to paired-end data
-include: "rules/commonPE.smk"
+# QC/alignment rules: trim_pe,
+# BWA_PE, picard_dedup, bam2bw,
+# inputnorm
+include: "rules/trim_align_dedup.smk"
 
-# QC/alignment rules specific
-# to single-end ChIP-seq
-# include: "rules/commonSE.smk"
+# QC rules common to all: preseq, NRF,
+# rawfastqc, fastqc, fastq_screen, 
+# kraken_pe, multiqc, insert_size
+include: "rules/qc.smk"
 
-# cfChIP-specific QC rules
+# MACS2_narrow
+include: "rules/peakcall.smk"
+
+#FRiP, FRiP_plot, jaccard rules
+include: "rules/peakcall_qc.smk"
+
+#UROPA, DiffBind, and manorm rules
+include: "rules/dba.smk"
+
+# cfChIP-specific QC rules:
+# cfChIPtool, cfChIPcompile,
+# promoterTable1:, and promoterTable2
 if assay == "cfchip":
     include: "rules/cfChIP.smk"
