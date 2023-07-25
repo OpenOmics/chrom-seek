@@ -22,7 +22,7 @@ rule MACS2_narrow:
         join(workpath,macsN_dir,"{name}","{name}_peaks.narrowPeak"),
     params:
         rname='MACS2_narrow',
-        gsize=config['references']['EFFECTIVEGENOMESIZE'],
+        gsize=config['references'][genome]['EFFECTIVEGENOMESIZE'],
         macsver=config['tools']['MACSVER'],
         # Building optional argument for paired input option,
         # input: '-c /path/to/input.Q5DD.bam', No input: ''
