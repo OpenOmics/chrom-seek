@@ -141,7 +141,7 @@ extra_fingerprint_dir='deeptools/sorted_fingerprint'
 qc_dir="QC"
 ppqt_dir="ppqt"
 
-
+macsN_dir = "macsNarrow"
 
 # Setup to run with ChIP samples, 
 # which could include IgG samples

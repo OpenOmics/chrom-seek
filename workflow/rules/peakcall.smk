@@ -12,6 +12,7 @@ def get_input_bam(wildcards):
     else:
         # Runs in ChIP-only mode
         return []
+
 # INDIVIDUAL RULES
 rule MACS2_narrow:
     input:

@@ -8,19 +8,6 @@ from scripts.common import (
     allocated
 )
 
-
-def peaks_per_chrom(file, chrom):
-    """
-    Takes a peak file as input and counts how many peaks 
-    there are on a given chromosome of interest.
-    """
-    f = open(file, 'r')
-    datain = f.readlines()
-    f.close()
-    data = [row.strip().split('\t')[0] for row in datain]
-    return(data.count(chrom))
-
-
 def outputIDR(groupswreps, groupdata, chip2input, tools):
     """
     Produces the correct output files for IDR. All supposed replicates
@@ -123,7 +110,6 @@ contrast = config['project']['contrast']
 
 
 # PREPARING TO DEAL WITH A VARIED SET OF PEAKCALL TOOLS
-macsN_dir = "macsNarrow"
 gem_dir = "gem"
 macsB_dir = "macsBroad"
 sicer_dir = "sicer"
