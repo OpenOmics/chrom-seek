@@ -9,7 +9,7 @@ rule FRiP:
         pythonver="python/3.5",
         outroot = lambda w: join(workpath,qc_dir,w.PeakTool),
         script=join(workpath,"workflow","scripts","frip.py"),
-        genome = config['references']['REFLEN'],
+        genome = config['references'][genome]['REFLEN'],
         tmpdir = tmpdir,
     shell: """
     # Setups temporary directory for
