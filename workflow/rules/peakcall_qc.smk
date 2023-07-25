@@ -42,3 +42,22 @@ rule FRiP:
     Rscript {params.script} \\
         {workpath}
     """
+
+    rule jaccard:
+    input:
+        lambda w: [ join(workpath, w.PeakTool, chip, chip + PeakExtensions[w.PeakTool]) for chip in chips ],
+    output:
+        join(workpath,qc_dir,'{PeakTool}_jaccard.txt'),
+    params:
+        rname="jaccard",
+        outroot = lambda w: join(workpath,qc_dir,w.PeakTool),
+        script=join(workpath,"workflow","scripts","jaccard_score.py"),
+        genome = config['references']['REFLEN']
+    envmodules:
+        config['tools']['BEDTOOLSVER']
+    shell: """
+    python {params.script} \\
+        -i "{input}" \\
+        -o "{params.outroot}" \\
+        -g {params.genome}
+    """
