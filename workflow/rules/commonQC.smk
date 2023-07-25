@@ -174,6 +174,56 @@ rule fastq_screen:
         {input}
     """
 
+rule kraken_pe:
+    """
+    Quality-control step to assess for potential sources of microbial contamination.
+    If there are high levels of microbial contamination, Kraken will provide an
+    estimation of the taxonomic composition. Kraken is used in conjunction with
+    Krona to produce an interactive reports.
+    @Input:
+        Trimmed FastQ files (scatter)
+    @Output:
+        Kraken logfile and interative krona report
+    """
+    input:
+        fq1=join(workpath,trim_dir,"{name}.R1.trim.fastq.gz"),
+        fq2=join(workpath,trim_dir,"{name}.R2.trim.fastq.gz"),
+    output:
+        krakenout = join(workpath,kraken_dir,"{name}.trim.kraken_bacteria.out.txt"),
+        krakentaxa = join(workpath,kraken_dir,"{name}.trim.kraken_bacteria.taxa.txt"),
+        kronahtml = join(workpath,kraken_dir,"{name}.trim.kraken_bacteria.krona.html"),
+    params:
+        rname='kraken',
+        outdir=join(workpath,kraken_dir),
+        bacdb=config['shared_resources']['KRAKENBACDB'],
+        tmpdir=tmpdir,
+    threads: int(allocated("threads", "kraken_pe", cluster)),
+    envmodules:
+        config['tools']['KRAKENVER'],
+        config['tools']['KRONATOOLSVER'],
+    shell: """
+    # Setups temporary directory for
+    # intermediate files with built-in 
+    # mechanism for deletion on exit
+    if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
+    tmp=$(mktemp -d -p "{params.tmpdir}")
+    trap 'rm -rf "${{tmp}}"' EXIT
+    
+    # Copy kraken2 db to /lscratch or temp 
+    # location to reduce filesystem strain
+    cp -rv {params.bacdb} ${{tmp}}/;
+    kdb_base=$(basename {params.bacdb})
+    kraken2 --db ${{tmp}}/${{kdb_base}} \\
+        --threads {threads} --report {output.krakentaxa} \\
+        --output {output.krakenout} \\
+        --gzip-compressed \\
+        --paired {input.fq1} {input.fq2}
+    
+    # Generate Krona Report
+    cut -f2,3 {output.krakenout} | \\
+        ktImportTaxonomy - -o {output.kronahtml}
+    """
+
 rule multiqc:
     input: 
         expand(join(workpath,"FQscreen","{name}.R1.trim_screen.txt"),name=samples),
@@ -204,4 +254,22 @@ rule multiqc:
         -e cutadapt \\
         --ignore {params.excludedir} \\
         -d {params.dir}
+    """
+
+    rule insert_size:
+    input:
+        bam = lambda w : join(workpath,bam_dir,w.name + "." + w.ext + "." + extensions3[w.ext + "."])
+    output:
+        txt= join(workpath,qc_dir,"{name}.{ext}.insert_size_metrics.txt"),
+        pdf= temp(join(workpath,qc_dir,"{name}.{ext}.insert_size_histogram.pdf")),
+    params:
+        rname="insert_size",
+        picardver=config['tools']['PICARDVER'],
+        javaram='16g',
+    shell: """
+    module load {params.picardver};
+    java -Xmx{params.javaram} -jar ${{PICARDJARPATH}}/picard.jar CollectInsertSizeMetrics \\
+        INPUT={input.bam} \\
+        OUTPUT={output.txt} \\
+        H={output.pdf}
     """
