@@ -256,7 +256,7 @@ rule multiqc:
         -d {params.dir}
     """
 
-    rule insert_size:
+rule insert_size:
     input:
         bam = lambda w : join(workpath,bam_dir,w.name + "." + w.ext + "." + extensions3[w.ext + "."])
     output:
