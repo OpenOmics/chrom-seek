@@ -1,3 +1,17 @@
+
+# Helper functions
+def get_input_bam(wildcards):
+    """
+    Returns a ChIP samples input BAM file,
+    see chip2input for ChIP, Input pairs.
+    """
+    input_sample = chip2input[wildcards.name]
+    if input_sample:
+        # Runs in a ChIP, input mode
+        return join(workpath, bam_dir, "{0}.Q5DD.bam".format(input_sample))
+    else:
+        # Runs in ChIP-only mode
+        return []
 # INDIVIDUAL RULES
 rule MACS2_narrow:
     input:
