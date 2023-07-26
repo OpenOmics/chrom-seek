@@ -114,9 +114,6 @@ gem_dir = "gem"
 macsB_dir = "macsBroad"
 sicer_dir = "sicer"
 
-PeakTools_narrow = [macsN_dir]
-
-PeakTools = PeakTools_narrow 
 PeakToolsNG = [ tool for tool in PeakTools if tool != "gem" ]
 
 PeakExtensions = { 

@@ -142,6 +142,7 @@ qc_dir="QC"
 ppqt_dir="ppqt"
 
 macsN_dir = "macsNarrow"
+PeakTools = [macsN_dir]
 
 # Setup to run with ChIP samples, 
 # which could include IgG samples
