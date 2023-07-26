@@ -256,7 +256,7 @@ if False:
         fldr = join(workpath, uropa_dir, '{PeakTool1}'),
         json = join(workpath, uropa_dir, '{PeakTool1}','{name}.{PeakTool2}.{type}.json'),
         outroot = join(workpath, uropa_dir, '{PeakTool1}','{name}_{PeakTool2}_uropa_{type}'),
-        gtf = config['references']['GTFFILE'],
+        gtf = config['references'][genome]['GTFFILE'],
         threads = 4,
     shell: """
     module load {params.uropaver};
@@ -300,7 +300,7 @@ if cfChIP == "yes":
         fldr = join(workpath, uropa_dir, '{PeakTool1}'),
         json = join(workpath, uropa_dir, '{PeakTool1}','{name}.{PeakTool2}.{type}.json'),
         outroot = join(workpath, uropa_dir, '{PeakTool1}','{name}_{PeakTool2}_uropa_{type}'),
-        gtf = config['references']['GTFFILE'],
+        gtf = config['references'][genome]['GTFFILE'],
         threads = 4,
     shell: """
     module load {params.uropaver};
