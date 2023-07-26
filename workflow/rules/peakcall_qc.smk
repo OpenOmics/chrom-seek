@@ -52,7 +52,7 @@ rule jaccard:
         rname="jaccard",
         outroot = lambda w: join(workpath,qc_dir,w.PeakTool),
         script=join(workpath,"workflow","scripts","jaccard_score.py"),
-        genome = config['references']['REFLEN']
+        genome = config['references'][genome]['REFLEN']
     envmodules:
         config['tools']['BEDTOOLSVER']
     shell: """
