@@ -318,8 +318,7 @@ if cfChIP == "yes":
     echo '"bed": "{input}" }}' >> {params.json}
     uropa -i {params.json} -p {params.outroot} -t {params.threads} -s
     """
-
-
+    
 rule diffbind:
     input:
         lambda w: [ join(workpath, w.PeakTool, chip, chip + PeakExtensions[w.PeakTool]) for chip in chips ]
@@ -329,41 +328,27 @@ rule diffbind:
         EdgeR = join(workpath,diffbind_dir,"{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind_EdgeR.bed"),
     params:
         rname="diffbind",
-        Rver = config['tools']['RVER'],
-        rscript1 = join(workpath,"workflow","scripts","runDiffBind.R"),
-        rscript2 = join(workpath,"workflow","scripts","DiffBind_v2_ChIPseq.Rmd"),
-        projectID = 'cfChIP-seek',
-        projDesc  = config['project']['version'],
+        rscript = join(workpath,"workflow","scripts","DiffBind_v2_ChIPseq.Rmd"),
         outdir    = join(workpath,diffbind_dir,"{group1}_vs_{group2}-{PeakTool}"),
         contrast  = "{group1}_vs_{group2}",
         csvfile   = join(workpath,diffbind_dir,"{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind_prep.csv"),
-    run:
-        samplesheet = [",".join(["SampleID","Condition", "Replicate", "bamReads", 
-		      "ControlID", "bamControl", "Peaks", "PeakCaller"])]
-        for condition in wildcards.group1,wildcards.group2:
-            for chip in groupdata[condition]:
-                file = join(workpath, wildcards.PeakTool, chip, chip + PeakExtensions[wildcards.PeakTool])
-                replicate = str([ i + 1 for i in range(len(groupdata[condition])) if groupdata[condition][i]== chip ][0])
-                bamReads = join(workpath, bam_dir, chip + ".Q5DD.bam")
-                controlID = chip2input[chip]
-                if controlID != "":
-                    bamControl = join(workpath, bam_dir, controlID + ".Q5DD.bam")
-                else:
-                    bamControl = ""
-                peaks = join(workpath, wildcards.PeakTool, chip, chip + PeakExtensions[wildcards.PeakTool])
-                peakcaller = FileTypesDiffBind[wildcards.PeakTool]
-                samplesheet.append(",".join([chip, condition, replicate, bamReads, 
-						   controlID, bamControl, peaks, peakcaller]))
-
-        f = open(params.csvfile, 'w')
-        f.write ("\n".join(samplesheet))
-        f.close()
-        cmd1 = "module load {params.Rver}; cp {params.rscript2} {params.outdir}; cd {params.outdir}; "
-        cmd2 = "Rscript {params.rscript1} '.' {output.html} {params.csvfile} '{params.contrast}' '{wildcards.PeakTool}' '{params.projectID}' '{params.projDesc}'; "
-        cmd3 = "if [ ! -f {output.Deseq2} ]; then touch {output.Deseq2}; fi; "
-        cmd4 = "if [ ! -f {output.EdgeR} ]; then touch	{output.EdgeR}; fi; "
-        shell( cmd1 + cmd2 + cmd3 + cmd4)
-
+        pythonscript = join(workpath,"workflow","scripts","prep_diffbind.py"),
+        PeakExtension= lambda w: PeakExtensions[w.PeakTool],
+        peakcaller= lambda w: FileTypesDiffBind[w.PeakTool],
+    container:
+        config['images']['cfchip']
+    shell: """
+python {params.pythonscript} --g1 {wildcards.group1} --g2 {wildcards.group2} --wp {workpath} \
+     --pt {wildcards.PeakTool} --pe {params.PeakExtension} --bd {bam_dir} \
+     --pc {params.peakcaller} --csv {params.csvfile}
+cp {params.rscript} {params.outdir}
+cd {params.outdir}
+Rscript -e "rmarkdown::render( {params.rscript}, out_file= {outfile.html}, \
+       params=list(csvfile= {params.csvfile}, contrasts= '{params.contrast}', \
+       peakcaller= '{wildcards.PeakTool}' ))"
+if [ ! -f {output.Deseq2} ]; then touch {output.Deseq2}; fi
+if [ ! -f {output.EdgeR} ]; then touch {output.EdgeR}; fi
+"""
 
 rule manorm:
     input: 
