@@ -49,36 +49,36 @@ rule cfChIPcompile:
     Rscript -e "source('{params.script}'); plotSignatures( '{output.txt}', '{output.pdf}' )";
     """
 
-  rule promoterTable1:
-        input:
-            expand(join(workpath,uropa_dir,'{PeakTool}','{name}_{PeakTool}_uropa_protTSS_allhits.txt'),PeakTool=PeakTools,name=chips),
-        output:
-            txt=join(workpath,uropa_dir,downstream_dir,'{PeakTool}_promoter_overlap_summaryTable.txt'),
-        params:
-            rname="promoter1",
-            script=join(workpath,"workflow","scripts","promoterAnnotation_by_Gene.R"),
-            infolder= lambda w: join(workpath,uropa_dir, w.PeakTool)
-        container:
-            config['images']['cfchip']
-        shell: """
-        Rscript -e "source('{params.script}'); peakcallVersion('{params.infolder}','{output.txt}')";
-        """
+rule promoterTable1:
+    input:
+        expand(join(workpath,uropa_dir,'{PeakTool}','{name}_{PeakTool}_uropa_protTSS_allhits.txt'),PeakTool=PeakTools,name=chips),
+    output:
+        txt=join(workpath,uropa_dir,downstream_dir,'{PeakTool}_promoter_overlap_summaryTable.txt'),
+    params:
+        rname="promoter1",
+        script=join(workpath,"workflow","scripts","promoterAnnotation_by_Gene.R"),
+        infolder= lambda w: join(workpath,uropa_dir, w.PeakTool)
+    container:
+        config['images']['cfchip']
+    shell: """
+    Rscript -e "source('{params.script}'); peakcallVersion('{params.infolder}','{output.txt}')";
+    """
 
-  rule promoterTable2:
-        input:
-            expand(join(workpath,uropa_dir,diffbind_dir,'{name}_{PeakTool}_uropa_protTSS_allhits.txt'),PeakTool='DiffbindDeseq2',name=contrasts),
-        output:
-            txt=join(workpath,uropa_dir,downstream_dir,'{PeakTool}_promoter_overlap_summary_table.txt'),
-        params:
-            rname="promoter2",
-            script1=join(workpath,"workflow","scripts","promoterAnnotation_by_Gene.R"),
-            script2=join(workpath,"workflow","scripts","significantPathways.R"),
-            infolder= workpath,
-            gtf = config['references']['GTFFILE'],
-        container:
-            config['images']['cfchip']
-        shell: """
-        Rscript -e "source('{params.script1}'); diffbindVersion('{params.infolder}','{output.txt}')";
-        Rscript -e "source('{params.script2}'); promoterAnnotationWrapper('{output.txt}','{params.gtf}','KEGG')";
-        Rscript -e "source('{params.script2}'); promoterAnnotationWrapper('{output.txt}','{params.gtf}','Reactome')";
-        """
+rule promoterTable2:
+    input:
+        expand(join(workpath,uropa_dir,diffbind_dir,'{name}_{PeakTool}_uropa_protTSS_allhits.txt'),PeakTool='DiffbindDeseq2',name=contrasts),
+    output:
+        txt=join(workpath,uropa_dir,downstream_dir,'{PeakTool}_promoter_overlap_summary_table.txt'),
+    params:
+        rname="promoter2",
+        script1=join(workpath,"workflow","scripts","promoterAnnotation_by_Gene.R"),
+        script2=join(workpath,"workflow","scripts","significantPathways.R"),
+        infolder= workpath,
+        gtf = config['references'][genome]['GTFFILE'],
+    container:
+        config['images']['cfchip']
+    shell: """
+    Rscript -e "source('{params.script1}'); diffbindVersion('{params.infolder}','{output.txt}')";
+    Rscript -e "source('{params.script2}'); promoterAnnotationWrapper('{output.txt}','{params.gtf}','KEGG')";
+    Rscript -e "source('{params.script2}'); promoterAnnotationWrapper('{output.txt}','{params.gtf}','Reactome')";
+    """
