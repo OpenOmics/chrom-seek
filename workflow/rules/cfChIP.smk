@@ -4,7 +4,6 @@
 #   - cfChIPcompile
 
 
-
 rule cfChIPtool:
     input: 
         join(workpath,bam_dir,"{name}.Q5DD.tagAlign")
@@ -36,8 +35,8 @@ rule cfChIPcompile:
     input:
         expand(join(workpath,cfTool_dir,"Output","H3K4me3","Signatures","{name}.Q5DD.csv"),name=H3K4me3samples)
     output:
-        txt=join(workpath,qc_dir,"H3K4me3_cfChIP_signature.txt"),
-        pdf=join(workpath,qc_dir,"H3K4me3_cfChIP_signature.pdf")
+        txt=join(workpath,"QC","H3K4me3_cfChIP_signature.txt"),
+        pdf=join(workpath,"QC","H3K4me3_cfChIP_signature.pdf")
     params:
         rname="cfChIP2",
         script=join(workpath,"workflow","scripts","cfChIP_signatures.R"),

@@ -160,7 +160,7 @@ if assay == "cfchip":
             expand(join(workpath,qc_dir,"{name}.{ext}.insert_size_metrics.txt"),name=samples,ext=extensions2),
             expand(join(workpath,bam_dir,"{name}.{ext}"),name=samples,ext=extensions4[1]),
             expand(join(workpath,cfTool_dir,"Output","H3K4me3","Signatures","{name}.Q5DD.csv"),name=H3K4me3samples),
-            join(workpath,qc_dir,"H3K4me3_cfChIP_signature.txt")
+            join(workpath,"QC","H3K4me3_cfChIP_signature.txt"),
 else:
     rule all:
         input: 
