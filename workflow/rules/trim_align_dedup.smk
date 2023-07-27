@@ -89,7 +89,7 @@ rule BWA_PE:
         bwaver=config['tools']['BWAVER'],
         samtoolsver=config['tools']['SAMTOOLSVER'],
         script=join(workpath,"workflow","scripts","bam_filter_by_mapq.py"),
-        pythonver="python/3.5"
+        pythonver=config['tools']['PYTHONVER']
     output:
         outbam1=join(workpath,bam_dir,"{name}.sorted.bam"), 
         outbam2=temp(join(join(workpath,bam_dir,"{name}.Q5.bam"))),
