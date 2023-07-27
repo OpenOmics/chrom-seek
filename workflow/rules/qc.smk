@@ -265,11 +265,12 @@ rule insert_size:
     params:
         rname="insert_size",
         picardver=config['tools']['PICARDVER'],
+        rver=config['tools']['RVER'],
         javaram='16g',
     shell: """
     module load {params.picardver};
     java -Xmx{params.javaram} -jar ${{PICARDJARPATH}}/picard.jar CollectInsertSizeMetrics \\
-        INPUT={input.bam} \\
-        OUTPUT={output.txt} \\
-        H={output.pdf}
+        -I {input.bam} \\
+        -O {output.txt} \\
+        -H {output.pdf}
     """
