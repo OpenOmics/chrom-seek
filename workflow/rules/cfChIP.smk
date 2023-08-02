@@ -33,7 +33,7 @@ rule cfChIPtool:
 
 rule cfChIPcompile:
     input:
-        expand(join(workpath,cfTool_dir,"Output","H3K4me3","Signatures","{name}.Q5DD.csv"),name=H3K4me3samples)
+        expand(join(workpath,cfTool_dir,"Output","H3K4me3","Signatures","{name}.Q5DD.csv"),name=chip)
     output:
         txt=join(workpath,"QC","H3K4me3_cfChIP_signature.txt"),
         pdf=join(workpath,"QC","H3K4me3_cfChIP_signature.pdf")
