@@ -203,7 +203,7 @@ elif assay in ["atac", "chip"] and pe == "yes":
             # Filtered bam
             expand(join(workpath,bam_dir,"{name}.{ext}"),name=samples,ext=extensions4[1]),
             expand(join(workpath,macsN_dir,"{name}","{name}_peaks.narrowPeak"),name=chips),
-            expand(join(workpath,bw_dir,"{name}.{ext}.RPGC.bw"),name=samples, ext= ["sorted.RPGC", "Q5DD.RPGC"]),
+            expand(join(workpath,bw_dir,"{name}.{ext}.RPGC.bw"),name=samples, ext= ["sorted", "Q5DD"]),
             expand(join(workpath,bw_dir,"{name}.Q5DD.RPGC.inputnorm.bw"), name=sampleswinput),
             expand(join(workpath,uropa_dir,'{PeakTool}','{name}_{PeakTool}_uropa_{type}_allhits.txt'),PeakTool=PeakTools,name=chips,type=UropaCats),
             expand(join(workpath,diffbind_dir,"{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind.html"), zip,group1=zipGroup1,group2=zipGroup2,PeakTool=zipToolC),
@@ -217,7 +217,7 @@ elif assay in ["atac", "chip"] and se == "yes":
             # Filtered bam
             expand(join(workpath,bam_dir,"{name}.{ext}"),name=samples,ext=extensions4[1]),
             expand(join(workpath,macsN_dir,"{name}","{name}_peaks.narrowPeak"),name=chips),
-            expand(join(workpath,bw_dir,"{name}.{ext}.RPGC.bw"),name=samples, ext= ["sorted.RPGC", "Q5DD.RPGC"]),
+            expand(join(workpath,bw_dir,"{name}.{ext}.RPGC.bw"),name=samples, ext= ["sorted", "Q5DD"]),
             expand(join(workpath,bw_dir,"{name}.Q5DD.RPGC.inputnorm.bw"), name=sampleswinput),
             expand(join(workpath,uropa_dir,'{PeakTool}','{name}_{PeakTool}_uropa_{type}_allhits.txt'),PeakTool=PeakTools,name=chips,type=UropaCats),
             
