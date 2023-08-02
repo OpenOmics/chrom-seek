@@ -150,16 +150,22 @@ qc_dir="QC"
 ppqt_dir="ppqt"
 
 macsN_dir = "macsNarrow"
-PeakTools = [macsN_dir]
+uropa_dir = "UROPA_annotations"
+diffbind_dir = "DiffBind"
+PeakTools = ["macsNarrow"]
+chips = config['project']['peaks']['chips']
+contrast = config['project']['contrast']
+UropaCats = ["protTSS", "prot", "protSEC", "genes"]
+extensions = ["sorted.RPGC", "Q5DD.RPGC"]
 
 # Setup to run with ChIP samples, 
 # which could include IgG samples
-H3K4me3samples = list(config['project']['peaks']['chips'])
 cfTool_dir="cfChIPtool"
 cfTool_subdir2="cfChIPtool/BED/H3K4me3"
 
+zipGroup1, zipGroup2, zipToolC, contrasts = zip_contrasts(contrast, PeakTools)
 # Final targets of the pipeline 
- 
+
 if assay == "cfchip":
     rule all:
         input: 

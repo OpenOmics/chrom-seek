@@ -60,7 +60,7 @@ def calc_effective_genome_fraction(effectivesize, genomefile):
 
 
 # DEFINING SAMPLES
-chips = config['project']['peaks']['chips']
+
 chip2input = config['project']['peaks']['inputs']
 uniq_inputs = list(sorted(set([v for v in chip2input.values() if v])))
 
@@ -93,8 +93,6 @@ groups = list(groupdatawinput.keys())
 reps=""
 if len(groupswreps) > 0:
     reps="yes"
-
-contrast = config['project']['contrast']
 
 
 # PREPARING TO DEAL WITH A VARIED SET OF PEAKCALL TOOLS
@@ -139,12 +137,10 @@ RankColIDR = {
     'sicer': 'q.value'
 }
 
-UropaCats = ["protTSS"]
 
 IDRgroup, IDRsample1, IDRsample2, IDRpeaktool =	outputIDR(groupswreps, groupdata, chip2input, PeakToolsNG)
 
 zipSample, zipTool, zipExt = zip_peak_files(chips, PeakTools, PeakExtensions)
-zipGroup1, zipGroup2, zipToolC, contrasts = zip_contrasts(contrast, PeakTools)
 
 
 # CREATING DIRECTORIES
@@ -153,8 +149,6 @@ qc_dir='PeakQC'
 idr_dir = 'IDR'
 memechip_dir = "MEME"
 homer_dir = "HOMER_motifs"
-uropa_dir = "UROPA_annotations"
-diffbind_dir = "DiffBind"
 manorm_dir = "MANorm"
 downstream_dir = "Downstream"
 
