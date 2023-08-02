@@ -23,19 +23,19 @@ groupdata = config['project']['groups']
 
 samplesheet = [",".join(["SampleID","Condition", "Replicate", "bamReads", 
       "ControlID", "bamControl", "Peaks", "PeakCaller"])]
-for condition in group1, group2:
+for condition in args.group1, args.group2:
     for chip in groupdata[condition]:
         replicate = str([ i + 1 for i in range(len(groupdata[condition])) if groupdata[condition][i]== chip ][0])
-        bamReads = workpath + "/" + bamdir + "/" + chip + ".Q5DD.bam"
+        bamReads = args.workpath + "/" + args.bamdir + "/" + chip + ".Q5DD.bam"
         controlID = chip2input[chip]
         if controlID != "":
-            bamControl = workpath + "/" + bamdir + "/" +  controlID + ".Q5DD.bam"
+            bamControl = args.workpath + "/" + args.bamdir + "/" +  controlID + ".Q5DD.bam"
         else:
             bamControl = ""
-        peaks = workpath + "/" + peaktool + "/" + chip + "/" + chip + peakextension
+        peaks = args.workpath + "/" + args.peaktool + "/" + chip + "/" + chip + args.peakextension
         samplesheet.append(",".join([chip, condition, replicate, bamReads, 
-				   controlID, bamControl, peaks, peakcaller]))
+                   controlID, bamControl, peaks, args.peakcaller]))
 
-f = open(csvfile, 'w')
+f = open(args.csvfile, 'w')
 f.write ("\n".join(samplesheet))
 f.close()

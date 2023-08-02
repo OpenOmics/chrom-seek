@@ -287,20 +287,21 @@ rule diffbind:
         pythonscript = join(workpath,"workflow","scripts","prep_diffbind.py"),
         PeakExtension= lambda w: PeakExtensions[w.PeakTool],
         peakcaller= lambda w: FileTypesDiffBind[w.PeakTool],
+        group1="{group1}",
+        group2="{group2}",
+        PeakTool="{PeakTool}"
     container:
         config['images']['cfchip']
     shell: """
-python {params.pythonscript} --g1 {wildcards.group1} --g2 {wildcards.group2} --wp {workpath} \
-     --pt {wildcards.PeakTool} --pe {params.PeakExtension} --bd {bam_dir} \
-     --pc {params.peakcaller} --csv {params.csvfile}
-cp {params.rscript} {params.outdir}
-cd {params.outdir}
-Rscript -e "rmarkdown::render( {params.rscript}, out_file= {outfile.html}, \
-       params=list(csvfile= {params.csvfile}, contrasts= '{params.contrast}', \
-       peakcaller= '{wildcards.PeakTool}' ))"
-if [ ! -f {output.Deseq2} ]; then touch {output.Deseq2}; fi
-if [ ! -f {output.EdgeR} ]; then touch {output.EdgeR}; fi
-"""
+    python {params.pythonscript} --g1 {params.group1} --g2 {params.group2} --wp {workpath} \
+         --pt {params.PeakTool} --pe {params.PeakExtension} --bd {bam_dir} \
+         --pc {params.peakcaller} --csv {params.csvfile}
+    cp {params.rscript} {params.outdir}
+    cd {params.outdir}
+    Rscript -e 'rmarkdown::render("{params.rscript}", output_file= "{output.html}", params=list(csvfile= "{params.csvfile}", contrasts= "{params.contrast}", peakcaller= "{params.PeakTool}"))'
+    if [ ! -f {output.Deseq2} ]; then touch {output.Deseq2}; fi
+    if [ ! -f {output.EdgeR} ]; then touch {output.EdgeR}; fi
+    """
 
 rule manorm:
     input: 
