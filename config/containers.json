@@ -1,5 +1,5 @@
 {
     "images": {
-        "cfchip": "docker://skchronicles/cfchip_toolkit:v0.2.0"
+        "cfchip": "docker://skchronicles/cfchip_toolkit_v0.3.0.sif"
     }
 }
