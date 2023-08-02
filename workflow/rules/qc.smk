@@ -261,14 +261,14 @@ rule insert_size:
         bam = lambda w : join(workpath,bam_dir,w.name + "." + w.ext + "." + extensions3[w.ext + "."])
     output:
         txt= join(workpath,qc_dir,"{name}.{ext}.insert_size_metrics.txt"),
-        pdf= temp(join(workpath,qc_dir,"{name}.{ext}.insert_size_histogram.pdf")),
+        pdf= join(workpath,qc_dir,"{name}.{ext}.insert_size_histogram.pdf"),
     params:
         rname="insert_size",
         picardver=config['tools']['PICARDVER'],
         rver=config['tools']['RVER'],
         javaram='16g',
     shell: """
-    module load {params.picardver};
+    module load {params.picardver} {params.rver};
     java -Xmx{params.javaram} -jar ${{PICARDJARPATH}}/picard.jar CollectInsertSizeMetrics \\
         -I {input.bam} \\
         -O {output.txt} \\
