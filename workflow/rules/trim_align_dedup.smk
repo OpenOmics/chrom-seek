@@ -74,8 +74,8 @@ rule trim_pe:
     pigz -p {threads} {params.sample}.R1.cutadapt.noBL.fastq;
     pigz -p {threads} {params.sample}.R2.cutadapt.noBL.fastq;
     
-    mv ${{tmp}}/{params.sample}.R1.cutadapt.noBL.fastq.gz {output.outfq1};
-    mv ${{tmp}}/{params.sample}.R2.cutadapt.noBL.fastq.gz {output.outfq2};
+    mv {params.sample}.R1.cutadapt.noBL.fastq.gz {output.outfq1};
+    mv {params.sample}.R2.cutadapt.noBL.fastq.gz {output.outfq2};
     """
 
 rule BWA_PE:
@@ -153,10 +153,11 @@ rule picard_dedup:
         METRICS_FILE={output.out6};
       samtools index {params.tmpBam};
       samtools view -b {params.tmpBam} chr{{1..22}} > {output.out5};
+      Rscript {params.rscript} {params.tmpBam} {output.out7};
+      rm {params.tmpBam} {params.tmpBam}.bai;
       samtools index {output.out5};
       samtools flagstat {output.out5} > {output.out5f};
-      samtools idxstats {output.out5} > {output.out5i};
-      Rscript {params.rscript} {params.tmpBam} {output.out7}; 
+      samtools idxstats {output.out5} > {output.out5i}; 
     else
       java -Xmx{params.javaram} \\
         -jar $PICARDJARPATH/picard.jar MarkDuplicates \\
@@ -180,11 +181,12 @@ rule bam2bw:
         outbw=join(workpath,bw_dir,"{name}.{ext}.RPGC.bw"),
     params:
         rname="bam2bw",
+        pe=pe,
         effectivegenomesize=config['references'][genome]['EFFECTIVEGENOMESIZE'],
     threads: int(allocated("threads", "bam2bw", cluster)),
     envmodules: config['tools']['DEEPTOOLSVER'],
     shell: """
-    if [ '{pe}' == 'pe' ]; then
+    if [ "{params.pe}" == "yes" ]; then
         bamCoverage \\
             --bam {input.bam} \\
             -o {output.outbw} \\
@@ -193,19 +195,7 @@ rule bam2bw:
             --numberOfProcessors {threads} \\
             --normalizeUsing RPGC \\
             --effectiveGenomeSize {params.effectivegenomesize} \\
-            --centerReads
-    else
-        extender=$(grep {wildcards.name} {input.ppqt} | cut -f 2)
-        echo "Extending reads: ${{extender}}"
-        bamCoverage \\
-            --bam {input.bam} \\
-            -o {output.outbw} \\
-            --binSize 25 \\
-            --smoothLength 75 \\
-            --numberOfProcessors {threads} \\
-            --normalizeUsing RPGC \\
-            --effectiveGenomeSize {params.effectivegenomesize} \\
-            -e ${{extender}}
+            --centerReads;   
     fi
     """    
 
