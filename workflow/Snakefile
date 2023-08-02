@@ -70,8 +70,16 @@ def outputfiles2(extensions, groupslist, inputnorm):
     
     return dtoolgroups, dtoolext
 
-
-
+def zip_contrasts(contrast, PeakTools):
+    """making output file names for differential binding analyses"""
+    zipGroup1, zipGroup2, zipTool, contrasts = [], [], [], []
+    for g1, g2 in contrast:
+        for PeakTool in PeakTools:
+            zipGroup1.append(g1)
+            zipGroup2.append(g2)
+            zipTool.append(PeakTool)
+            contrasts.append( g1 + "_vs_" + g2 + "-" + PeakTool )
+    return(zipGroup1, zipGroup2, zipTool, contrasts)
 
 # Creating naming conventions for bam files 
 # and tagAlign files if SE, extension objects 
