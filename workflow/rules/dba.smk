@@ -59,20 +59,8 @@ def calc_effective_genome_fraction(effectivesize, genomefile):
     return(str(float(effectivesize)/ genomelen))
 
 
-def zip_contrasts(contrast, PeakTools):
-    """making output file names for differential binding analyses"""
-    zipGroup1, zipGroup2, zipTool, contrasts = [], [], [], []
-    for g1, g2 in contrast:
-        for PeakTool in PeakTools:
-            zipGroup1.append(g1)
-            zipGroup2.append(g2)
-            zipTool.append(PeakTool)
-            contrasts.append( g1 + "_vs_" + g2 + "-" + PeakTool )
-    return(zipGroup1, zipGroup2, zipTool, contrasts)
-
-
 # DEFINING SAMPLES
-chips = config['project']['peaks']['chips']
+
 chip2input = config['project']['peaks']['inputs']
 uniq_inputs = list(sorted(set([v for v in chip2input.values() if v])))
 
@@ -105,8 +93,6 @@ groups = list(groupdatawinput.keys())
 reps=""
 if len(groupswreps) > 0:
     reps="yes"
-
-contrast = config['project']['contrast']
 
 
 # PREPARING TO DEAL WITH A VARIED SET OF PEAKCALL TOOLS
@@ -151,12 +137,10 @@ RankColIDR = {
     'sicer': 'q.value'
 }
 
-UropaCats = ["protTSS"]
 
 IDRgroup, IDRsample1, IDRsample2, IDRpeaktool =	outputIDR(groupswreps, groupdata, chip2input, PeakToolsNG)
 
 zipSample, zipTool, zipExt = zip_peak_files(chips, PeakTools, PeakExtensions)
-zipGroup1, zipGroup2, zipToolC, contrasts = zip_contrasts(contrast, PeakTools)
 
 
 # CREATING DIRECTORIES
@@ -165,8 +149,6 @@ qc_dir='PeakQC'
 idr_dir = 'IDR'
 memechip_dir = "MEME"
 homer_dir = "HOMER_motifs"
-uropa_dir = "UROPA_annotations"
-diffbind_dir = "DiffBind"
 manorm_dir = "MANorm"
 downstream_dir = "Downstream"
 
@@ -214,111 +196,6 @@ PeakExtensions = {
     'DiffbindDeseq2Block': '_Diffbind_Deseq2_block.bed'
 }
 
-cfChIP="yes"
-
-# RULE ALL
-if reps == "yes":
-    rule ChIPseq:
-        input:
-            expand(join(workpath,macsN_dir,"{name}","{name}_peaks.narrowPeak"),name=chips),
-            expand(join(workpath,qc_dir,"{Group}.FRiP_barplot.pdf"),Group=groups),
-            expand(join(workpath,qc_dir,'{PeakTool}_jaccard.txt'),PeakTool=PeakTools),
-            expand(join(workpath,uropa_dir,'{PeakTool}','{name}_{PeakTool}_uropa_{type}_allhits.txt'),PeakTool=PeakTools,name=chips,type=UropaCats),
-            expand(join(workpath,uropa_dir,downstream_dir,'{PeakTool}_promoter_overlap_summaryTable.txt'),PeakTool=PeakTools),
-            expand(join(workpath,uropa_dir,downstream_dir,'{PeakTool}_promoter_overlap_summary_table.txt'),PeakTool='DiffbindDeseq2'),
-            expand(join(workpath,uropa_dir,diffbind_dir,'{name}_{PeakTool}_uropa_{type}_allhits.txt'),PeakTool=['DiffbindEdgeR','DiffbindDeseq2'],name=contrasts,type=UropaCats),
-            expand(join(workpath,diffbind_dir,"{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind.html"),zip,group1=zipGroup1,group2=zipGroup2,PeakTool=zipToolC),
-            expand(join(workpath,uropa_dir,diffbind_dir2,'{name}_{PeakTool}_uropa_{type}_allhits.txt'),PeakTool=['DiffbindEdgeRBlock','DiffbindDeseq2Block'],name=contrastsB,type=UropaCats),
-        output:
-            touch(join(workpath, 'dba.done'))
-else:
-    rule ChIPseq:
-        input:
-            expand(join(workpath,macsN_dir,"{name}","{name}_peaks.narrowPeak"),name=chips),
-            # expand(join(workpath,qc_dir,"{Group}.FRiP_barplot.pdf"),Group=groups),
-            expand(join(workpath,qc_dir,'{PeakTool}_jaccard.txt'),PeakTool=PeakTools),
-            expand(join(workpath,uropa_dir,'{PeakTool}','{name}_{PeakTool}_uropa_{type}_allhits.txt'),PeakTool=PeakTools,name=chips,type=UropaCats),
-            expand(join(workpath,uropa_dir,'{PeakTool}_promoter_overlap_summaryTable.txt'),PeakTool=PeakTools),
-            expand(join(workpath,uropa_dir,'{PeakTool}','{name}_{PeakTool}_uropa_{type}_allhits.txt'),PeakTool="MANorm",name=contrasts,type=UropaCats),
-            expand(join(workpath,manorm_dir,"{group1}_vs_{group2}-{tool}","{group1}_vs_{group2}-{tool}_all_MAvalues.xls"),zip,group1=zipGroup1,group2=zipGroup2,tool=zipToolC),
-        output:
-            touch(join(workpath, 'dba.done'))
-
-if False:
-  rule UROPA:
-    input:
-        lambda w: [ join(workpath, w.PeakTool1, w.name, w.name + PeakExtensions[w.PeakTool2]) ]
-    output:
-        join(workpath, uropa_dir, '{PeakTool1}', '{name}_{PeakTool2}_uropa_{type}_allhits.txt')
-    params:
-        rname="uropa",
-        uropaver = config['tools']['UROPAVER'],
-        fldr = join(workpath, uropa_dir, '{PeakTool1}'),
-        json = join(workpath, uropa_dir, '{PeakTool1}','{name}.{PeakTool2}.{type}.json'),
-        outroot = join(workpath, uropa_dir, '{PeakTool1}','{name}_{PeakTool2}_uropa_{type}'),
-        gtf = config['references'][genome]['GTFFILE'],
-        threads = 4,
-    shell: """
-    module load {params.uropaver};
-    # Dynamically creates UROPA config file
-    if [ ! -e {params.fldr} ]; then mkdir {params.fldr}; fi
-    echo '{{"queries":[ ' > {params.json}
-    if [ '{wildcards.type}' == 'prot' ]; then
-         echo '      {{ "feature":"gene","distance":5000,"filter.attribute":"gene_type","attribute.value":"protein_coding" }},' >> {params.json}
-         echo '      {{ "feature":"gene","distance":100000,"filter.attribute":"gene_type","attribute.value":"protein_coding" }}],' >> {params.json}
-    elif [ '{wildcards.type}' == 'genes' ]; then
-         echo '      {{ "feature":"gene","distance":5000 }},' >> {params.json}
-         echo '      {{ "feature":"gene","distance":100000 }}],' >> {params.json}
-    elif [ '{wildcards.type}' == 'protSEC' ]; then
-         echo '      {{ "feature":"gene","distance":[3000,1000],"filter.attribute":"gene_type","attribute.value":"protein_coding","feature.anchor":"start" }},' >> {params.json}
-         echo '      {{ "feature":"gene","distance":3000,"filter.attribute":"gene_type","attribute.value":"protein_coding","feature.anchor":"end" }},' >> {params.json}
-         echo '      {{ "feature":"gene","distance":100000,"filter.attribute":"gene_type","attribute.value":"protein_coding","feature.anchor":"center" }},' >> {params.json}
-         echo '      {{ "feature":"gene","distance":100000,"filter.attribute":"gene_type","attribute.value":"protein_coding" }}],' >> {params.json}
-    elif [ '{wildcards.type}' == 'protTSS' ]; then
-         echo '      {{ "feature":"gene","distance":[3000,1000],"filter.attribute":"gene_type","attribute.value":"protein_coding","feature.anchor":"start" }},' >> {params.json}
-         echo '      {{ "feature":"gene","distance":10000,"filter.attribute":"gene_type","attribute.value":"protein_coding","feature.anchor":"start" }},' >> {params.json}
-         echo '      {{ "feature":"gene","distance":100000,"filter.attribute":"gene_type","attribute.value":"protein_coding","feature.anchor":"start" }}],' >> {params.json}
-
-    fi
-    echo '"show_attributes":["gene_id", "gene_name","gene_type"],' >> {params.json}
-    echo '"priority":"Yes",' >> {params.json}
-    echo '"gtf":"{params.gtf}",' >> {params.json}
-    echo '"bed": "{input}" }}' >> {params.json}
-    uropa -i {params.json} -p {params.outroot} -t {params.threads} -s
-    """
-
-
-if cfChIP == "yes":
-  rule UROPA:
-    input:
-        lambda w: [ join(workpath, w.PeakTool1, w.name, w.name + PeakExtensions[w.PeakTool2]) ]
-    output:
-        join(workpath, uropa_dir, '{PeakTool1}', '{name}_{PeakTool2}_uropa_{type}_allhits.txt')
-    params:
-        rname="uropa",
-        uropaver = config['tools']['UROPAVER'],
-        fldr = join(workpath, uropa_dir, '{PeakTool1}'),
-        json = join(workpath, uropa_dir, '{PeakTool1}','{name}.{PeakTool2}.{type}.json'),
-        outroot = join(workpath, uropa_dir, '{PeakTool1}','{name}_{PeakTool2}_uropa_{type}'),
-        gtf = config['references'][genome]['GTFFILE'],
-        threads = 4,
-    shell: """
-    module load {params.uropaver};
-    # Dynamically creates UROPA config file
-    if [ ! -e {params.fldr} ]; then mkdir {params.fldr}; fi
-    echo '{{"queries":[ ' > {params.json}
-    if [ '{wildcards.type}' == 'protTSS' ]; then
-         echo '      {{ "feature":"gene","distance":3000,"filter.attribute":"gene_type","attribute.value":"protein_coding","feature.anchor":"start" }},' >> {params.json}
-         echo '      {{ "feature":"gene","distance":10000,"filter.attribute":"gene_type","attribute.value":"protein_coding","feature.anchor":"start" }},' >> {params.json}
-         echo '      {{ "feature":"gene","distance":100000,"filter.attribute":"gene_type","attribute.value":"protein_coding","feature.anchor":"start" }}],' >> {params.json}
-    fi
-    echo '"show_attributes":["gene_id", "gene_name","gene_type"],' >> {params.json}
-    echo '"priority":"Yes",' >> {params.json}
-    echo '"gtf":"{params.gtf}",' >> {params.json}
-    echo '"bed": "{input}" }}' >> {params.json}
-    uropa -i {params.json} -p {params.outroot} -t {params.threads} -s
-    """
-    
 rule diffbind:
     input:
         lambda w: [ join(workpath, w.PeakTool, chip, chip + PeakExtensions[w.PeakTool]) for chip in chips ]
@@ -335,20 +212,93 @@ rule diffbind:
         pythonscript = join(workpath,"workflow","scripts","prep_diffbind.py"),
         PeakExtension= lambda w: PeakExtensions[w.PeakTool],
         peakcaller= lambda w: FileTypesDiffBind[w.PeakTool],
+        group1="{group1}",
+        group2="{group2}",
+        PeakTool="{PeakTool}"
     container:
         config['images']['cfchip']
     shell: """
-python {params.pythonscript} --g1 {wildcards.group1} --g2 {wildcards.group2} --wp {workpath} \
-     --pt {wildcards.PeakTool} --pe {params.PeakExtension} --bd {bam_dir} \
-     --pc {params.peakcaller} --csv {params.csvfile}
-cp {params.rscript} {params.outdir}
-cd {params.outdir}
-Rscript -e "rmarkdown::render( {params.rscript}, out_file= {outfile.html}, \
-       params=list(csvfile= {params.csvfile}, contrasts= '{params.contrast}', \
-       peakcaller= '{wildcards.PeakTool}' ))"
-if [ ! -f {output.Deseq2} ]; then touch {output.Deseq2}; fi
-if [ ! -f {output.EdgeR} ]; then touch {output.EdgeR}; fi
-"""
+    python {params.pythonscript} --g1 {params.group1} --g2 {params.group2} --wp {workpath} \
+         --pt {params.PeakTool} --pe {params.PeakExtension} --bd {bam_dir} \
+         --pc {params.peakcaller} --csv {params.csvfile}
+    cp {params.rscript} {params.outdir}
+    cd {params.outdir}
+    Rscript -e 'rmarkdown::render("{params.rscript}", output_file= "{output.html}", params=list(csvfile= "{params.csvfile}", contrasts= "{params.contrast}", peakcaller= "{params.PeakTool}"))'
+    if [ ! -f {output.Deseq2} ]; then touch {output.Deseq2}; fi
+    if [ ! -f {output.EdgeR} ]; then touch {output.EdgeR}; fi
+    """
+if assay == "cfchip":
+    rule UROPA:
+        input:
+            lambda w: [ join(workpath, w.PeakTool1, w.name, w.name + PeakExtensions[w.PeakTool2]) ]
+        output:
+            join(workpath, uropa_dir, '{PeakTool1}', '{name}_{PeakTool2}_uropa_{type}_allhits.txt')
+        params:
+            rname="uropa",
+            uropaver = config['tools']['UROPAVER'],
+            fldr = join(workpath, uropa_dir, '{PeakTool1}'),
+            json = join(workpath, uropa_dir, '{PeakTool1}','{name}.{PeakTool2}.{type}.json'),
+            outroot = join(workpath, uropa_dir, '{PeakTool1}','{name}_{PeakTool2}_uropa_{type}'),
+            gtf = config['references'][genome]['GTFFILE'],
+            threads = 4,
+        shell: """
+        module load {params.uropaver};
+        # Dynamically creates UROPA config file
+        if [ ! -e {params.fldr} ]; then mkdir {params.fldr}; fi
+        echo '{{"queries":[ ' > {params.json}
+        if [ '{wildcards.type}' == 'protTSS' ]; then
+             echo '      {{ "feature":"gene","distance":3000,"filter.attribute":"gene_type","attribute.value":"protein_coding","feature.anchor":"start" }},' >> {params.json}
+             echo '      {{ "feature":"gene","distance":10000,"filter.attribute":"gene_type","attribute.value":"protein_coding","feature.anchor":"start" }},' >> {params.json}
+             echo '      {{ "feature":"gene","distance":100000,"filter.attribute":"gene_type","attribute.value":"protein_coding","feature.anchor":"start" }}],' >> {params.json}
+        fi
+        echo '"show_attributes":["gene_id", "gene_name","gene_type"],' >> {params.json}
+        echo '"priority":"Yes",' >> {params.json}
+        echo '"gtf":"{params.gtf}",' >> {params.json}
+        echo '"bed": "{input}" }}' >> {params.json}
+        uropa -i {params.json} -p {params.outroot} -t {params.threads} -s
+        """
+else:
+    rule UROPA:
+        input:
+            lambda w: [ join(workpath, w.PeakTool1, w.name, w.name + PeakExtensions[w.PeakTool2]) ]
+        output:
+            join(workpath, uropa_dir, '{PeakTool1}', '{name}_{PeakTool2}_uropa_{type}_allhits.txt')
+        params:
+            rname="uropa",
+            uropaver = config['tools']['UROPAVER'],
+            fldr = join(workpath, uropa_dir, '{PeakTool1}'),
+            json = join(workpath, uropa_dir, '{PeakTool1}','{name}.{PeakTool2}.{type}.json'),
+            outroot = join(workpath, uropa_dir, '{PeakTool1}','{name}_{PeakTool2}_uropa_{type}'),
+            gtf = config['references'][genome]['GTFFILE'],
+            threads = 4,
+        shell: """
+        module load {params.uropaver};
+        # Dynamically creates UROPA config file
+        if [ ! -e {params.fldr} ]; then mkdir {params.fldr}; fi
+        echo '{{"queries":[ ' > {params.json}
+        if [ '{wildcards.type}' == 'prot' ]; then
+             echo '      {{ "feature":"gene","distance":5000,"filter.attribute":"gene_type","attribute.value":"protein_coding" }},' >> {params.json}
+             echo '      {{ "feature":"gene","distance":100000,"filter.attribute":"gene_type","attribute.value":"protein_coding" }}],' >> {params.json}
+        elif [ '{wildcards.type}' == 'genes' ]; then
+             echo '      {{ "feature":"gene","distance":5000 }},' >> {params.json}
+             echo '      {{ "feature":"gene","distance":100000 }}],' >> {params.json}
+        elif [ '{wildcards.type}' == 'protSEC' ]; then
+             echo '      {{ "feature":"gene","distance":[3000,1000],"filter.attribute":"gene_type","attribute.value":"protein_coding","feature.anchor":"start" }},' >> {params.json}
+             echo '      {{ "feature":"gene","distance":3000,"filter.attribute":"gene_type","attribute.value":"protein_coding","feature.anchor":"end" }},' >> {params.json}
+             echo '      {{ "feature":"gene","distance":100000,"filter.attribute":"gene_type","attribute.value":"protein_coding","feature.anchor":"center" }},' >> {params.json}
+             echo '      {{ "feature":"gene","distance":100000,"filter.attribute":"gene_type","attribute.value":"protein_coding" }}],' >> {params.json}
+        elif [ '{wildcards.type}' == 'protTSS' ]; then
+             echo '      {{ "feature":"gene","distance":[3000,1000],"filter.attribute":"gene_type","attribute.value":"protein_coding","feature.anchor":"start" }},' >> {params.json}
+             echo '      {{ "feature":"gene","distance":10000,"filter.attribute":"gene_type","attribute.value":"protein_coding","feature.anchor":"start" }},' >> {params.json}
+             echo '      {{ "feature":"gene","distance":100000,"filter.attribute":"gene_type","attribute.value":"protein_coding","feature.anchor":"start" }}],' >> {params.json}
+
+        fi
+        echo '"show_attributes":["gene_id", "gene_name","gene_type"],' >> {params.json}
+        echo '"priority":"Yes",' >> {params.json}
+        echo '"gtf":"{params.gtf}",' >> {params.json}
+        echo '"bed": "{input}" }}' >> {params.json}
+        uropa -i {params.json} -p {params.outroot} -t {params.threads} -s
+        """
 
 rule manorm:
     input: 
