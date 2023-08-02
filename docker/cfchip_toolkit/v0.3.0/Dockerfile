@@ -1,0 +1,32 @@
+# Dockerfile for cfChIP Toolkit
+# https://www.nature.com/articles/s41587-020-00775-6
+# Uses Ubuntu Focal (20.04 LTS) as base image
+# https://github.com/OpenOmics/chrom-seek/commit/48c3903261fe1c5979b2f6b62beb03cbd62c7468
+FROM skchronicles/cfchip_toolkit:v0.2.0
+LABEL maintainer="Skyler Kuhn <kuhnsa@nih.gov>" \
+    base_image="ubuntu:20.04" \
+    version="v0.3.0"   \
+    software="chrom-seek_cfchip_toolkit" \
+    about.summary="An awesome set of Epigenetic Pipeline" \
+    about.home="https://github.com/OpenOmics/chrom-seek" \
+    about.documentation="https://openomics.github.io/chrom-seek/" \
+    about.tags="cell-free ChIP-seq"
+
+############# OVERVIEW ##################
+# Adds the following packages:
+#  • R/4.1
+#    - rmarkdown              (CRAN)
+
+
+############### INSTALL #################
+# Extra packages for new DiffBind Rmarkdown report
+RUN Rscript -e 'install.packages(c("rmarkdown"), repos="http://cran.r-project.org")'
+
+
+################ POST ###################
+# Add Dockerfile and export env variables
+RUN mv /opt2/Dockerfile /opt2/cfchip_toolkit-v0.2.0.dockerfile
+ADD Dockerfile /opt2/Dockerfile
+RUN chmod -R a+rX /opt2 
+ENV PATH="/opt2:$PATH"
+WORKDIR /data2
