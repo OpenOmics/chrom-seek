@@ -36,7 +36,7 @@ rule trim_pe:
     if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
     tmp=$(mktemp -d -p "{params.tmpdir}")
     trap 'rm -rf "${{tmp}}"' EXIT
-    cd "${{tmp}}"
+
     cutadapt \\
         --pair-filter=any \\
         --nextseq-trim=2 \\
@@ -48,8 +48,8 @@ rule trim_pe:
         -b file:{params.fastawithadaptersetd} \\
         -B file:{params.fastawithadaptersetd} \\
         -j {threads} \\
-        -o {params.sample}.R1.cutadapt.fastq \\
-        -p {params.sample}.R2.cutadapt.fastq \\
+        -o ${{tmp}}/{params.sample}.R1.cutadapt.fastq \\
+        -p ${{tmp}}/{params.sample}.R2.cutadapt.fastq \\
         {input.file1} {input.file2}
     
     module load {params.bwaver};
@@ -57,25 +57,25 @@ rule trim_pe:
     module load {params.picardver};
     bwa mem -t {threads} \\
         {params.blacklistbwaindex} \\
-        {params.sample}.R1.cutadapt.fastq \\
-        {params.sample}.R2.cutadapt.fastq \\
+        ${{tmp}}/{params.sample}.R1.cutadapt.fastq \\
+        ${{tmp}}/{params.sample}.R2.cutadapt.fastq \\
         | samtools view -@{threads} \\
             -f4 \\
             -b \\
-            -o {params.sample}.bam
+            -o ${{tmp}}/{params.sample}.bam
     
     java -Xmx{params.javaram} -jar $PICARDJARPATH/picard.jar SamToFastq \\
         VALIDATION_STRINGENCY=SILENT \\
-        INPUT={params.sample}.bam \\
-        FASTQ={params.sample}.R1.cutadapt.noBL.fastq \\
-        SECOND_END_FASTQ={params.sample}.R2.cutadapt.noBL.fastq \\
-        UNPAIRED_FASTQ={params.sample}.unpaired.noBL.fastq
+        INPUT=${{tmp}}/{params.sample}.bam \\
+        FASTQ=${{tmp}}/{params.sample}.R1.cutadapt.noBL.fastq \\
+        SECOND_END_FASTQ=${{tmp}}/{params.sample}.R2.cutadapt.noBL.fastq \\
+        UNPAIRED_FASTQ=${{tmp}}/{params.sample}.unpaired.noBL.fastq
     
-    pigz -p {threads} {params.sample}.R1.cutadapt.noBL.fastq;
-    pigz -p {threads} {params.sample}.R2.cutadapt.noBL.fastq;
+    pigz -p {threads} ${{tmp}}/{params.sample}.R1.cutadapt.noBL.fastq;
+    pigz -p {threads} ${{tmp}}/{params.sample}.R2.cutadapt.noBL.fastq;
     
-    mv {params.sample}.R1.cutadapt.noBL.fastq.gz {output.outfq1};
-    mv {params.sample}.R2.cutadapt.noBL.fastq.gz {output.outfq2};
+    mv ${{tmp}}/{params.sample}.R1.cutadapt.noBL.fastq.gz {output.outfq1};
+    mv ${{tmp}}/{params.sample}.R2.cutadapt.noBL.fastq.gz {output.outfq2};
     """
 
 rule BWA_PE:
