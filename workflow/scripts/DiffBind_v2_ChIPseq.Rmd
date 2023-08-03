@@ -41,6 +41,7 @@ peakcaller <- params$peakcaller
 knitr::opts_chunk$set(echo = FALSE, include=TRUE, message=FALSE, warning=FALSE, error=FALSE)
 suppressMessages(library(DT))
 suppressMessages(library(DiffBind))
+suppressMessages(library(parallel))
 ```
 
 # Peak Data
