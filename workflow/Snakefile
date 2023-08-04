@@ -108,25 +108,18 @@ else:
 # Getting sample relationships from config
 # using ChIP/input nomenclature. NOTE: ATAC
 # won't have input samples
-chip2input = config['project']['peaks']['inputs']
-uniq_inputs = list(sorted(set([v for v in chip2input.values() if v])))
 
-sampleswinput = []
-for input in chip2input:
-	if chip2input[input] != 'NA' and chip2input[input] != '':
-		sampleswinput.append(input)
-
-if len(sampleswinput) == 0:
-    inputnorm = [""]
-else:
-    inputnorm = ["",".inputnorm"]
-
-groupdata = config['project']['groups']
+###########
+chip2input = config['project']['peaks']['inputs'] #{"WT_S1": "Input_S1","WT_S2": "Input_S2","WT_S3": "Input_S3","WT_S4": "Input_S4"}
+groupdata = config['project']['groups'] # {"G1": ["WT_S1","WT_S2"],"G2": ["WT_S3","WT_S4"]}
 
 groupdatawinput = {}
-for group, chips in groupdata.items() :
+groupswreps = []
+for group, chipsamples in groupdata.items() :
     tmp = [ ]
-    for chip in chips :
+    if len(chipsamples) > 1:
+        groupswreps.append(group)
+    for chip in chipsamples :
         if chip in samples:
             tmp.append(chip)
             input = chip2input[chip]
@@ -136,7 +129,28 @@ for group, chips in groupdata.items() :
         groupdatawinput[group]=set(tmp)
 
 groups = list(groupdatawinput.keys())
+
+reps="no"
+if len(groupswreps) > 0:
+    reps="yes"
+##############
+
+uniq_inputs = list(sorted(set([v for v in chip2input.values() if v])))
+
+sampleswinput = []
+for input in chip2input:
+	if chip2input[input] != 'NA' and chip2input[input] != '':
+		sampleswinput.append(input)
+
+
+if len(sampleswinput) == 0:
+    inputnorm = [""]
+else:
+    inputnorm = ["",".inputnorm"]
+
+
 deepgroups, deepexts = outputfiles2(extensions, groups,inputnorm)
+
 
 
 # Directory names
@@ -166,10 +180,9 @@ cfTool_subdir2="cfChIPtool/BED/H3K4me3"
 zipGroup1, zipGroup2, zipToolC, contrasts = zip_contrasts(contrast, PeakTools)
 # Final targets of the pipeline 
 
-if assay == "cfchip" and pe == "yes":
+if assay == "cfchip" and reps == "yes":
     rule all:
         input: 
-            # MultiQC, only PE-specific ones listed here
             join(workpath,"multiqc_report.html"),
             expand(join(workpath,qc_dir,"{name}.{ext}.insert_size_metrics.txt"),name=samples,ext=extensions2),
             expand(join(workpath,bam_dir,"{name}.{ext}"),name=samples,ext=extensions4[1]),
@@ -178,13 +191,12 @@ if assay == "cfchip" and pe == "yes":
             join(workpath,"QC","H3K4me3_cfChIP_signature.txt"),
             expand(join(workpath,bw_dir,"{name}.{ext}.RPGC.bw"),name=samples, ext=["sorted", "Q5DD"]),
             expand(join(workpath,bw_dir,"{name}.Q5DD.RPGC.inputnorm.bw"), name=sampleswinput),
-            #expand(join(workpath,uropa_dir,'{PeakTool}','{name}_{PeakTool}_uropa_{type}_allhits.txt'),PeakTool=PeakTools,name=chips,type=UropaCats),
             expand(join(workpath,diffbind_dir,"{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind.html"), zip,group1=zipGroup1,group2=zipGroup2,PeakTool=zipToolC),
-            #expand(join(workpath,uropa_dir,diffbind_dir,'{name}_{PeakTool}_uropa_{type}_allhits.txt'), PeakTool=['DiffbindEdgeR','DiffbindDeseq2'],name=contrasts,type=UropaCats),
-elif assay == "cfchip" and se == "yes":
+            expand(join(workpath,uropa_dir,'{PeakTool}','{name}_{PeakTool}_uropa_{type}_allhits.txt'),PeakTool=PeakTools,name=chips,type=["protTSS"]),
+            expand(join(workpath,uropa_dir,diffbind_dir,'{name}_{PeakTool}_uropa_{type}_allhits.txt'), PeakTool=['DiffbindEdgeR','DiffbindDeseq2'],name=contrasts,type=["protTSS"]),
+elif assay == "cfchip" and reps == "no":
     rule all:
         input: 
-            # MultiQC, only PE-specific ones listed here
             join(workpath,"multiqc_report.html"),
             expand(join(workpath,qc_dir,"{name}.{ext}.insert_size_metrics.txt"),name=samples,ext=extensions2),
             expand(join(workpath,bam_dir,"{name}.{ext}"),name=samples,ext=extensions4[1]),
@@ -193,33 +205,33 @@ elif assay == "cfchip" and se == "yes":
             join(workpath,"QC","H3K4me3_cfChIP_signature.txt"),
             expand(join(workpath,bw_dir,"{name}.{ext}.RPGC.bw"),name=samples, ext=["sorted", "Q5DD"]),
             expand(join(workpath,bw_dir,"{name}.Q5DD.RPGC.inputnorm.bw"), name=sampleswinput),
-            expand(join(workpath,uropa_dir,'{PeakTool}','{name}_{PeakTool}_uropa_{type}_allhits.txt'),PeakTool=PeakTools,name=chips,type=UropaCats),
-elif assay in ["atac", "chip"] and pe == "yes":
-    rule all:
-        input: 
-            # MultiQC, only PE-specific ones listed here
-            join(workpath,"multiqc_report.html"),
-            expand(join(workpath,qc_dir,"{name}.{ext}.insert_size_metrics.txt"),name=samples,ext=extensions2),
-            # Filtered bam
-            expand(join(workpath,bam_dir,"{name}.{ext}"),name=samples,ext=extensions4[1]),
-            expand(join(workpath,macsN_dir,"{name}","{name}_peaks.narrowPeak"),name=chips),
-            expand(join(workpath,bw_dir,"{name}.{ext}.RPGC.bw"),name=samples, ext= ["sorted", "Q5DD"]),
-            expand(join(workpath,bw_dir,"{name}.Q5DD.RPGC.inputnorm.bw"), name=sampleswinput),
-            expand(join(workpath,uropa_dir,'{PeakTool}','{name}_{PeakTool}_uropa_{type}_allhits.txt'),PeakTool=PeakTools,name=chips,type=UropaCats),
             expand(join(workpath,diffbind_dir,"{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind.html"), zip,group1=zipGroup1,group2=zipGroup2,PeakTool=zipToolC),
-            expand(join(workpath,uropa_dir,diffbind_dir,'{name}_{PeakTool}_uropa_{type}_allhits.txt'), PeakTool=['DiffbindEdgeR','DiffbindDeseq2'],name=contrasts,type=UropaCats),
-elif assay in ["atac", "chip"] and se == "yes":
+            expand(join(workpath,uropa_dir,'{PeakTool}','{name}_{PeakTool}_uropa_{type}_allhits.txt'),PeakTool=PeakTools,name=chips,type=["protTSS"]),
+elif assay in ["atac", "chip"] and reps == "yes":
     rule all:
         input: 
-            # MultiQC, only PE-specific ones listed here
             join(workpath,"multiqc_report.html"),
             expand(join(workpath,qc_dir,"{name}.{ext}.insert_size_metrics.txt"),name=samples,ext=extensions2),
-            # Filtered bam
             expand(join(workpath,bam_dir,"{name}.{ext}"),name=samples,ext=extensions4[1]),
             expand(join(workpath,macsN_dir,"{name}","{name}_peaks.narrowPeak"),name=chips),
-            expand(join(workpath,bw_dir,"{name}.{ext}.RPGC.bw"),name=samples, ext= ["sorted", "Q5DD"]),
+            expand(join(workpath,cfTool_dir,"Output","H3K4me3","Signatures","{name}.Q5DD.csv"),name=chips),
+            expand(join(workpath,bw_dir,"{name}.{ext}.RPGC.bw"),name=samples, ext=["sorted", "Q5DD"]),
             expand(join(workpath,bw_dir,"{name}.Q5DD.RPGC.inputnorm.bw"), name=sampleswinput),
-            expand(join(workpath,uropa_dir,'{PeakTool}','{name}_{PeakTool}_uropa_{type}_allhits.txt'),PeakTool=PeakTools,name=chips,type=UropaCats),
+            expand(join(workpath,diffbind_dir,"{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind.html"), zip,group1=zipGroup1,group2=zipGroup2,PeakTool=zipToolC),
+            expand(join(workpath,uropa_dir,'{PeakTool}','{name}_{PeakTool}_uropa_{type}_allhits.txt'),PeakTool=PeakTools,name=chips,type=["protTSS"]),
+            expand(join(workpath,uropa_dir,diffbind_dir,'{name}_{PeakTool}_uropa_{type}_allhits.txt'), PeakTool=['DiffbindEdgeR','DiffbindDeseq2'],name=contrasts,type=["protTSS"]),
+elif assay in ["atac", "chip"] and reps == "no":
+    rule all:
+        input: 
+            join(workpath,"multiqc_report.html"),
+            expand(join(workpath,qc_dir,"{name}.{ext}.insert_size_metrics.txt"),name=samples,ext=extensions2),
+            expand(join(workpath,bam_dir,"{name}.{ext}"),name=samples,ext=extensions4[1]),
+            expand(join(workpath,macsN_dir,"{name}","{name}_peaks.narrowPeak"),name=chips),
+            expand(join(workpath,cfTool_dir,"Output","H3K4me3","Signatures","{name}.Q5DD.csv"),name=chips),
+            expand(join(workpath,bw_dir,"{name}.{ext}.RPGC.bw"),name=samples, ext=["sorted", "Q5DD"]),
+            expand(join(workpath,bw_dir,"{name}.Q5DD.RPGC.inputnorm.bw"), name=sampleswinput),
+            expand(join(workpath,diffbind_dir,"{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind.html"), zip,group1=zipGroup1,group2=zipGroup2,PeakTool=zipToolC),
+            expand(join(workpath,uropa_dir,'{PeakTool}','{name}_{PeakTool}_uropa_{type}_allhits.txt'),PeakTool=PeakTools,name=chips,type=["protTSS"]),
             
 #############################
 

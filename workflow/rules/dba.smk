@@ -59,41 +59,6 @@ def calc_effective_genome_fraction(effectivesize, genomefile):
     return(str(float(effectivesize)/ genomelen))
 
 
-# DEFINING SAMPLES
-
-chip2input = config['project']['peaks']['inputs']
-uniq_inputs = list(sorted(set([v for v in chip2input.values() if v])))
-
-sampleswinput = []
-
-for inp in chip2input:
-        if chip2input[inp] != 'NA' and chip2input[inp] != '':
-                sampleswinput.append(inp)
-
-groupdata = config['project']['groups']
-
-groupdatawinput = {}
-groupswreps = []
-
-for group, chipsamples in groupdata.items() :
-    tmp = [ ]
-    if len(chipsamples) > 1:
-        groupswreps.append(group)
-    for chip in chipsamples :
-        if chip in samples:
-            tmp.append(chip)
-            input = chip2input[chip]
-            if input != 'NA' and input != '':
-                tmp.append(input)
-    if len(tmp) != 0:
-        groupdatawinput[group]=set(tmp)
-
-groups = list(groupdatawinput.keys())
-
-reps=""
-if len(groupswreps) > 0:
-    reps="yes"
-
 
 # PREPARING TO DEAL WITH A VARIED SET OF PEAKCALL TOOLS
 gem_dir = "gem"
