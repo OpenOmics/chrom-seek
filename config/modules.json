@@ -25,6 +25,7 @@
         "SICERVER": "sicer/2-1.0.3",
         "UCSCVER": "ucsc/450",
         "UROPAVER": "uropa/4.0.2",
-        "PYTHONVER": "python/3.10"
+        "PYTHONVER": "python/3.10",
+        "GENRICHVER": "genrich/0.6"
     }
 }
