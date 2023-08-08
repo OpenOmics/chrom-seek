@@ -70,5 +70,12 @@
     "multiqc": {
         "mem": "24g",
         "threads": "2"
+    },
+    "sortByRead":{
+        "threads": "4"
+    },
+    "genrich": {
+        "threads": "1",
+        "mem": "100g"
     }
 }
