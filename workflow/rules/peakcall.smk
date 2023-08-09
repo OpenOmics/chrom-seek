@@ -13,6 +13,35 @@ def get_input_bam(wildcards):
         # Runs in ChIP-only mode
         return []
 
+if assay == "atac": 
+    rule genrich_all:
+        input:
+            expand(join(workpath,"Genrich","{name}","{name}.narrowPeak"),name=chips)
+
+rule genrich:
+    input: 
+        join(workpath,bam_dir,"{name}.sortedByRead.bam")
+    output: 
+        join(workpath,"Genrich","{name}","{name}.narrowPeak")
+    params:
+        rname="genrich",
+        genrich_ver=config['tools']['GENRICHVER'],
+        blacklist_genrich=config['references'][genome]['BLACKLISTGENRICH']
+    shell: """
+    module load {params.genrich_ver}
+    Genrich \\
+        -t {input} \\
+        -o {output} \\
+        -j \\
+        -y \\
+        -r \\
+        -v \\
+        -d 150 \\
+        -m 5 \\
+        -e chrM,chrY \\
+        -E {params.blacklist_genrich}
+    """
+
 # INDIVIDUAL RULES
 rule MACS2_narrow:
     input:

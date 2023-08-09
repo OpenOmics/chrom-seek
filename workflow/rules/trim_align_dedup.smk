@@ -221,3 +221,20 @@ rule inputnorm:
         --skipNonCoveredRegions \\
         -p {threads}
     """
+    
+rule sortByRead:
+    input: 
+        join(workpath,bam_dir,"{name}.sorted.bam")
+    output: 
+        join(workpath,bam_dir,"{name}.sortedByRead.bam")
+    params:
+        rname="sortByRead",
+        samtools=config['tools']['SAMTOOLSVER'],
+        mem=allocated("mem", "sortByRead", cluster)
+    threads: int(allocated("threads", "sortByRead", cluster))
+    shell: """
+    module load {params.samtools}
+    samtools sort {input} -n \\
+        -@ {threads} \\
+        -o {output}
+    """

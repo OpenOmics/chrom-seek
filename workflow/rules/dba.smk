@@ -67,21 +67,25 @@ sicer_dir = "sicer"
 
 PeakToolsNG = [ tool for tool in PeakTools if tool != "gem" ]
 
-PeakExtensions = { 
+PeakExtensions = {
     'macsNarrow': '_peaks.narrowPeak',
     'macsBroad': '_peaks.broadPeak',
     'sicer': '_broadpeaks.bed',
     'gem': '.GEM_events.narrowPeak' ,
-    'MANorm': '_all_MA.bed', 
+    'MANorm': '_all_MA.bed',
     'DiffbindEdgeR': '_Diffbind_EdgeR.bed',
-    'DiffbindDeseq2': '_Diffbind_Deseq2.bed'
+    'DiffbindDeseq2': '_Diffbind_Deseq2.bed', 
+    'DiffbindEdgeRBlock': '_Diffbind_EdgeR_block.bed',
+    'DiffbindDeseq2Block': '_Diffbind_Deseq2_block.bed',
+    'Genrich': '.narrowPeak'
 }
 
 FileTypesDiffBind = { 
     'macsNarrow': 'narrowPeak',
     'macsBroad': 'narrowPeak',
     'sicer': 'bed', 
-    'gem': 'narrowPeak'
+    'gem': 'narrowPeak',
+    'Genrich': 'narrowPeak'
 }
 
 PeakExtensionsIDR = { 
@@ -148,18 +152,6 @@ def test_for_block(contrast, blocks):
 
 contrastBlock = test_for_block(contrast,blocks)
 zipGroup1B, zipGroup2B, zipToolCB, contrastsB = zip_contrasts(contrastBlock, PeakTools)
-
-PeakExtensions = {
-    'macsNarrow': '_peaks.narrowPeak',
-    'macsBroad': '_peaks.broadPeak',
-    'sicer': '_broadpeaks.bed',
-    'gem': '.GEM_events.narrowPeak' ,
-    'MANorm': '_all_MA.bed',
-    'DiffbindEdgeR': '_Diffbind_EdgeR.bed',
-    'DiffbindDeseq2': '_Diffbind_Deseq2.bed', 
-    'DiffbindEdgeRBlock': '_Diffbind_EdgeR_block.bed',
-    'DiffbindDeseq2Block': '_Diffbind_Deseq2_block.bed'
-}
 
 rule diffbind:
     input:

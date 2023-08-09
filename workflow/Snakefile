@@ -166,7 +166,10 @@ ppqt_dir="ppqt"
 macsN_dir = "macsNarrow"
 uropa_dir = "UROPA_annotations"
 diffbind_dir = "DiffBind"
-PeakTools = ["macsNarrow"]
+if assay == "atac": 
+    PeakTools = ["macsNarrow", "Genrich"] 
+else: 
+    PeakTools = ["macsNarrow"]
 chips = config['project']['peaks']['chips']
 contrast = config['project']['contrast']
 UropaCats = ["protTSS", "prot", "protSEC", "genes"]
@@ -244,6 +247,7 @@ include: "rules/trim_align_dedup.smk"
 include: "rules/qc.smk"
 
 # MACS2_narrow
+# if assay=="atac" then run rules sortByRead and genrich
 include: "rules/peakcall.smk"
 
 #FRiP, FRiP_plot, jaccard rules
