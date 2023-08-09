@@ -65,11 +65,11 @@ rule trim_pe:
             -o ${{tmp}}/{params.sample}.bam
     
     java -Xmx{params.javaram} -jar $PICARDJARPATH/picard.jar SamToFastq \\
-        VALIDATION_STRINGENCY=SILENT \\
-        INPUT=${{tmp}}/{params.sample}.bam \\
-        FASTQ=${{tmp}}/{params.sample}.R1.cutadapt.noBL.fastq \\
-        SECOND_END_FASTQ=${{tmp}}/{params.sample}.R2.cutadapt.noBL.fastq \\
-        UNPAIRED_FASTQ=${{tmp}}/{params.sample}.unpaired.noBL.fastq
+        -VALIDATION_STRINGENCY SILENT \\
+        -INPUT ${{tmp}}/{params.sample}.bam \\
+        -FASTQ ${{tmp}}/{params.sample}.R1.cutadapt.noBL.fastq \\
+        -SECOND_END_FASTQ ${{tmp}}/{params.sample}.R2.cutadapt.noBL.fastq \\
+        -UNPAIRED_FASTQ ${{tmp}}/{params.sample}.unpaired.noBL.fastq
     
     pigz -p {threads} ${{tmp}}/{params.sample}.R1.cutadapt.noBL.fastq;
     pigz -p {threads} ${{tmp}}/{params.sample}.R2.cutadapt.noBL.fastq;
@@ -146,12 +146,12 @@ rule picard_dedup:
     if [ "{assay}" == "cfchip" ];then
       java -Xmx{params.javaram} \\
         -jar $PICARDJARPATH/picard.jar MarkDuplicates \\
-        INPUT={input.bam2} \\
-        OUTPUT={params.tmpBam} \\
-        TMP_DIR=${{tmp}} \\
-        VALIDATION_STRINGENCY=SILENT \\
-        REMOVE_DUPLICATES=true \\
-        METRICS_FILE={output.out6};
+        -I {input.bam2} \\
+        -O {params.tmpBam} \\
+        -TMP_DIR ${{tmp}} \\
+        -VALIDATION_STRINGENCY SILENT \\
+        -REMOVE_DUPLICATES true \\
+        -METRICS_FILE {output.out6};
       samtools index {params.tmpBam};
       samtools view -b {params.tmpBam} chr{{1..22}} > {output.out5};
       Rscript {params.rscript} {params.tmpBam} {params.out7};
@@ -162,12 +162,12 @@ rule picard_dedup:
     else
       java -Xmx{params.javaram} \\
         -jar $PICARDJARPATH/picard.jar MarkDuplicates \\
-        INPUT={input.bam2} \\
-        OUTPUT={output.out5} \\
-        TMP_DIR=${{tmp}} \\
-        VALIDATION_STRINGENCY=SILENT \\
-        REMOVE_DUPLICATES=true \\
-        METRICS_FILE={output.out6};
+        -I {input.bam2} \\
+        -O {output.out5} \\
+        -TMP_DIR ${{tmp}} \\
+        -VALIDATION_STRINGENCY SILENT \\
+        -REMOVE_DUPLICATES true \\
+        -METRICS_FILE {output.out6};
       samtools index {output.out5};
       samtools flagstat {output.out5} > {output.out5f};
       samtools idxstats {output.out5} > {output.out5i}; 
