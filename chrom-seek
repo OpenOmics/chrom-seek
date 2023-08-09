@@ -122,8 +122,6 @@ def run(sub_args):
         output_path = sub_args.output
     )
 
-
-
     # Step 3. Resolve docker/singularity bind
     # paths from the config file.
     bindpaths = bind(
@@ -198,6 +196,29 @@ def run(sub_args):
                 missing_inputs
             )
         )
+    
+    # Sanity checks for cfchip pipeline
+    #  1. cfchip only supports hg19
+    #  2. cfchip requires Input samples in peakcall file  
+    if sub_args.assay.lower() == 'cfchip':
+        chip_missing_input = {c:i for c,i in config['project']['peaks']['inputs'].items() if not i}
+        if sub_args.genome != 'hg19':
+            err('Error: Unsupported reference genome, "{0}", for pipeline: "cfchip"'.format(sub_args.genome))
+            fatal('  └── The cfchip pipeline only runs with the following reference genome : "hg19"')
+        if chip_missing_input:
+            err('Error: Missing input for chip sample in peakcall file!')
+            err('  └── Input samples are required for the cfchip pipeline.')
+            fatal('  └── Please provide inputs for the following chips: {}'.format(list(chip_missing_input.keys())))
+
+    # Sanity checks for atac pipeline
+    # ATAC pipeline does not use input samples
+    if sub_args.assay.lower() == 'atac':
+        chip_with_input = {c:i for c,i in config['project']['peaks']['inputs'].items() if i}
+        for c,i in chip_with_input.items():
+            err(
+                'Warning: Provided input "{}" to sample "{}" when using the ATAC-seq pipeline!'.format(i,c),
+                'ATAC-seq does not use input samples, skipping over provided input.'
+            )
 
     # Add contrast information to config.json
     if sub_args.contrasts:
@@ -210,8 +231,7 @@ def run(sub_args):
         json.dump(config, fh, indent = 4, sort_keys = True)
     
     if sub_args.assay not in config['references'][sub_args.genome]['SUPPORTED_PIPELINES']:
-        print("\nWarning: {} assay is not supported for {} genome".format(sub_args.assay, sub_args.genome))
-        sys.exit(1)
+        fatal("\nWarning: {} assay is not supported for {} genome".format(sub_args.assay, sub_args.genome))
 
     # Optional Step: Dry-run pipeline
     if sub_args.dry_run:
