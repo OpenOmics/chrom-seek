@@ -6,7 +6,7 @@
 
 rule cfChIPtool:
     input: 
-        join(workpath,bam_dir,"{name}.Q5DD.tagAlign")
+        out5=join(workpath,bam_dir,"{name}.Q5DD.bam.idxstat"),
     output:
         out1=join(workpath,cfTool_subdir2,"{name}.Q5DD.tagAlign.gz"),
         out2=join(workpath,cfTool_dir,"Output","H3K4me3","Signatures","{name}.Q5DD.csv"),
@@ -16,10 +16,11 @@ rule cfChIPtool:
         rver="R/4.1.0",
         toolkit = config['references'][genome]['cfChIP_TOOLS_SRC'],
         tmpfile = lambda w: join(workpath,cfTool_subdir2, w.name + ".Q5DD.tagAlign"),
+        tag=lambda w: temp(join(workpath,bam_dir, w.name+".Q5DD.tagAlign"))
     container:
         config['images']['cfchip']
     shell: """
-    cp {input} {params.tmpfile}
+    cp {params.tag} {params.tmpfile}
     gzip {params.tmpfile}
 
     Rscript {params.toolkit}/ProcessBEDFiles.R \\

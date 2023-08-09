@@ -124,7 +124,6 @@ rule picard_dedup:
         out5f=join(workpath,bam_dir,"{name}.Q5DD.bam.flagstat"),
         out5i=join(workpath,bam_dir,"{name}.Q5DD.bam.idxstat"),
         out6=join(workpath,bam_dir,"{name}.bwa.Q5.duplic"),
-        out7=temp(join(workpath,bam_dir,"{name}.Q5DD.tagAlign"))
     params:
         rname='dedup',
         picardver=config['tools']['PICARDVER'],
@@ -133,7 +132,9 @@ rule picard_dedup:
         javaram='16g',
         tmpdir=tmpdir,
         tmpBam="{name}.Q5DD.withXY.bam",
-        rscript=join(config['references'][genome]['cfChIP_TOOLS_SRC'], "bam2fragment.R")
+        rscript=join(config['references'][genome]['cfChIP_TOOLS_SRC'], "bam2fragment.R"),
+        out7 = lambda w: join(workpath,bam_dir, w.name+".Q5DD.tagAlign") \
+            if assay=="cfchip" else ""
     shell: """
     module load {params.samtoolsver};
     module load {params.picardver};
@@ -153,7 +154,7 @@ rule picard_dedup:
         METRICS_FILE={output.out6};
       samtools index {params.tmpBam};
       samtools view -b {params.tmpBam} chr{{1..22}} > {output.out5};
-      Rscript {params.rscript} {params.tmpBam} {output.out7};
+      Rscript {params.rscript} {params.tmpBam} {params.out7};
       rm {params.tmpBam} {params.tmpBam}.bai;
       samtools index {output.out5};
       samtools flagstat {output.out5} > {output.out5f};
