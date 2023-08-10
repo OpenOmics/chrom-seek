@@ -18,6 +18,23 @@ if assay == "atac":
         input:
             expand(join(workpath,"Genrich","{name}","{name}.narrowPeak"),name=chips)
 
+rule sortByRead:
+    input:
+        join(workpath,bam_dir,"{name}.sorted.bam")
+    output:
+        temp(join(workpath,bam_dir,"{name}.sortedByRead.bam"))
+    params:
+        rname="sortByRead",
+        samtools=config['tools']['SAMTOOLSVER'],
+        mem=allocated("mem", "sortByRead", cluster)
+    threads: int(allocated("threads", "sortByRead", cluster))
+    shell: """
+    module load {params.samtools}
+    samtools sort {input} -n \\
+        -@ {threads} \\
+        -o {output}
+    """
+
 rule genrich:
     input: 
         join(workpath,bam_dir,"{name}.sortedByRead.bam")

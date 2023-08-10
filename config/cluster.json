@@ -72,7 +72,7 @@
         "threads": "2"
     },
     "sortByRead":{
-        "threads": "4"
+        "threads": "10"
     },
     "genrich": {
         "threads": "1",
