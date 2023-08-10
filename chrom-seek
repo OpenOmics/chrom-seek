@@ -221,6 +221,7 @@ def run(sub_args):
             )
 
     # Add contrast information to config.json
+    config['project']['contrast'] = {}
     if sub_args.contrasts:
         user_defined_groups = list(groups.keys())
         comparsions = contrasts(sub_args.contrasts, user_defined_groups)
