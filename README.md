@@ -2,7 +2,7 @@
    
   <h1>chrom-seek 🔬</h1>
   
-  **_An awesome set of eipgenetic pipelines_**
+  **_An awesome set of epigenetic pipelines_**
 
   [![tests](https://github.com/OpenOmics/chrom-seek/workflows/tests/badge.svg)](https://github.com/OpenOmics/chrom-seek/actions/workflows/main.yaml) [![docs](https://github.com/OpenOmics/chrom-seek/workflows/docs/badge.svg)](https://github.com/OpenOmics/chrom-seek/actions/workflows/docs.yml) [![GitHub issues](https://img.shields.io/github/issues/OpenOmics/chrom-seek?color=brightgreen)](https://github.com/OpenOmics/chrom-seek/issues)  [![GitHub license](https://img.shields.io/github/license/OpenOmics/chrom-seek)](https://github.com/OpenOmics/chrom-seek/blob/main/LICENSE) 
   

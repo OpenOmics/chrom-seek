@@ -2,7 +2,7 @@
 
   <h1 style="font-size: 250%">chrom-seek 🔬</h1>
 
-  <b><i>An awesome set of eipgenetic pipelines</i></b><br> 
+  <b><i>An awesome set of epigenetic pipelines</i></b><br> 
   <a href="https://github.com/OpenOmics/chrom-seek/actions/workflows/main.yaml">
     <img alt="tests" src="https://github.com/OpenOmics/chrom-seek/workflows/tests/badge.svg">
   </a>
