@@ -7,7 +7,7 @@
             "BLACKLISTGENRICH": "/data/OpenOmics/references/cfChIP-seek/hg19_basic/indexes/hg19.blacklist.bed.gz",
             "BWA": "/data/OpenOmics/references/cfChIP-seek/hg19_basic/indexes/hg19",
             "cfChIP_TOOLS_SRC": "/data/OpenOmics/references/cfChIP-seek/hg19_basic/cfChIP_tools",
-            "EFFECTIVEGENOMESIZE": "22776919808",
+            "EFFECTIVEGENOMESIZE": "2776919808",
             "GENEINFO": "/data/OpenOmics/references/cfChIP-seek/hg19_basic/geneinfo.bed",
             "GENOME": "/data/OpenOmics/references/cfChIP-seek/hg19_basic/ref.fa",
             "GENOMECHR": "/data/OpenOmics/references/cfChIP-seek/hg19_basic/Chromsomes/",
