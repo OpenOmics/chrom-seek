@@ -41,6 +41,20 @@
             "GENOMECHR": "/data/OpenOmics/references/chrom-seek/mm10_basic/Chromsomes/",
             "GTFFILE": "/data/OpenOmics/references/chrom-seek/mm10_basic/genes.gtf",
             "REFLEN": "/data/OpenOmics/references/chrom-seek/mm10_basic/indexes/mm10.fa.sizes"
-        }    
+        },
+        "rheMac10": {
+            "ALIAS": "rheMac10",
+            "SUPPORTED_PIPELINES": ["chip", "atac"],
+            "BLACKLISTBWAINDEX": "",
+            "BLACKLISTGENRICH": "",
+            "BWA": "/data/OpenOmics/references/chrom-seek/rheMac10/Macaca_mulatta.Mmul_10.dna.chr",
+            "cfChIP_TOOLS_SRC": "",
+            "EFFECTIVEGENOMESIZE": "2000000000",
+            "GENEINFO": "",
+            "GENOME": "/data/OpenOmics/references/chrom-seek/rheMac10/Macaca_mulatta.Mmul_10.dna.chr.fa.gz",
+            "GENOMECHR": "",
+            "GTFFILE": "/data/OpenOmics/references/chrom-seek/rheMac10/Macaca_mulatta.Mmul_10.110.chr.gtf",
+            "REFLEN": "/data/OpenOmics/references/chrom-seek/rheMac10/Macaca_mulatta.Mmul_10.dna.chr.sizes"
+        }
     }
 }
