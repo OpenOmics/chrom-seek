@@ -48,8 +48,8 @@ rule trim_pe:
         -b file:{params.fastawithadaptersetd} \\
         -B file:{params.fastawithadaptersetd} \\
         -j {threads} \\
-        -o ${{tmp}}/{params.sample}.R1.cutadapt.fastq \\
-        -p ${{tmp}}/{params.sample}.R2.cutadapt.fastq \\
+        -o ${{tmp}}/{params.sample}.R1.cutadapt.fastq.gz \\
+        -p ${{tmp}}/{params.sample}.R2.cutadapt.fastq.gz \\
         {input.file1} {input.file2}
     
     module load {params.bwaver};
@@ -57,12 +57,14 @@ rule trim_pe:
     module load {params.picardver};
     bwa mem -t {threads} \\
         {params.blacklistbwaindex} \\
-        ${{tmp}}/{params.sample}.R1.cutadapt.fastq \\
-        ${{tmp}}/{params.sample}.R2.cutadapt.fastq \\
+        ${{tmp}}/{params.sample}.R1.cutadapt.fastq.gz \\
+        ${{tmp}}/{params.sample}.R2.cutadapt.fastq.gz \\
         | samtools view -@{threads} \\
             -f4 \\
             -b \\
             -o ${{tmp}}/{params.sample}.bam
+    
+    rm ${{tmp}}/{params.sample}.R1.cutadapt.fastq.gz ${{tmp}}/{params.sample}.R2.cutadapt.fastq.gz;
     
     java -Xmx{params.javaram} -jar $PICARDJARPATH/picard.jar SamToFastq \\
         -VALIDATION_STRINGENCY SILENT \\
@@ -70,6 +72,8 @@ rule trim_pe:
         -FASTQ ${{tmp}}/{params.sample}.R1.cutadapt.noBL.fastq \\
         -SECOND_END_FASTQ ${{tmp}}/{params.sample}.R2.cutadapt.noBL.fastq \\
         -UNPAIRED_FASTQ ${{tmp}}/{params.sample}.unpaired.noBL.fastq
+        
+    rm ${{tmp}}/{params.sample}.bam;
     
     pigz -p {threads} ${{tmp}}/{params.sample}.R1.cutadapt.noBL.fastq;
     pigz -p {threads} ${{tmp}}/{params.sample}.R2.cutadapt.noBL.fastq;
