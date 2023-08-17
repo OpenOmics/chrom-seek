@@ -78,8 +78,6 @@ rule trim_pe:
     
     pigz -p {threads} ${{tmp}}/{params.sample}.R1.trim.fastq;
     pigz -p {threads} ${{tmp}}/{params.sample}.R2.trim.fastq;
-    
-    touch ${{tmp}}/inIf.txt; mv ${{tmp}}/inIf.txt {params.workpath};
     fi
     mv ${{tmp}}/{params.sample}.R1.trim.fastq.gz {output.outfq1};
     mv ${{tmp}}/{params.sample}.R2.trim.fastq.gz {output.outfq2};
