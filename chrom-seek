@@ -622,7 +622,7 @@ def parsed_arguments(name, description):
         '--genome',
         required = True,
         type = str,
-        choices = ['hg19', 'hg38', 'mm10'],
+        choices = ['hg19', 'hg38', 'mm10', 'rheMac10'],
         help = argparse.SUPPRESS
     )
 

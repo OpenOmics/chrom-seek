@@ -30,6 +30,9 @@ rule trim_pe:
     threads: 16
     shell: """
     module load {params.cutadaptver};
+    module load {params.bwaver};
+    module load {params.samtoolsver};
+    module load {params.picardver};
     # Setups temporary directory for
     # intermediate files with built-in 
     # mechanism for deletion on exit
@@ -48,38 +51,38 @@ rule trim_pe:
         -b file:{params.fastawithadaptersetd} \\
         -B file:{params.fastawithadaptersetd} \\
         -j {threads} \\
-        -o ${{tmp}}/{params.sample}.R1.cutadapt.fastq.gz \\
-        -p ${{tmp}}/{params.sample}.R2.cutadapt.fastq.gz \\
+        -o ${{tmp}}/{params.sample}.R1.trim.fastq.gz \\
+        -p ${{tmp}}/{params.sample}.R2.trim.fastq.gz \\
         {input.file1} {input.file2}
     
-    module load {params.bwaver};
-    module load {params.samtoolsver};
-    module load {params.picardver};
-    bwa mem -t {threads} \\
+    if [ "{params.blacklistbwaindex}" != ""];
+    then bwa mem -t {threads} \\
         {params.blacklistbwaindex} \\
-        ${{tmp}}/{params.sample}.R1.cutadapt.fastq.gz \\
-        ${{tmp}}/{params.sample}.R2.cutadapt.fastq.gz \\
+        ${{tmp}}/{params.sample}.R1.trim.fastq.gz \\
+        ${{tmp}}/{params.sample}.R2.trim.fastq.gz \\
         | samtools view -@{threads} \\
             -f4 \\
             -b \\
-            -o ${{tmp}}/{params.sample}.bam
-    
-    rm ${{tmp}}/{params.sample}.R1.cutadapt.fastq.gz ${{tmp}}/{params.sample}.R2.cutadapt.fastq.gz;
+            -o ${{tmp}}/{params.sample}.bam;
+    rm ${{tmp}}/{params.sample}.R1.trim.fastq.gz;
+    rm ${{tmp}}/{params.sample}.R2.trim.fastq.gz;
     
     java -Xmx{params.javaram} -jar $PICARDJARPATH/picard.jar SamToFastq \\
         -VALIDATION_STRINGENCY SILENT \\
         -INPUT ${{tmp}}/{params.sample}.bam \\
-        -FASTQ ${{tmp}}/{params.sample}.R1.cutadapt.noBL.fastq \\
-        -SECOND_END_FASTQ ${{tmp}}/{params.sample}.R2.cutadapt.noBL.fastq \\
+        -FASTQ ${{tmp}}/{params.sample}.R1.trim.fastq \\
+        -SECOND_END_FASTQ ${{tmp}}/{params.sample}.R2.trim.fastq \\
         -UNPAIRED_FASTQ ${{tmp}}/{params.sample}.unpaired.noBL.fastq
         
     rm ${{tmp}}/{params.sample}.bam;
     
-    pigz -p {threads} ${{tmp}}/{params.sample}.R1.cutadapt.noBL.fastq;
-    pigz -p {threads} ${{tmp}}/{params.sample}.R2.cutadapt.noBL.fastq;
+    pigz -p {threads} ${{tmp}}/{params.sample}.R1.trim.fastq;
+    pigz -p {threads} ${{tmp}}/{params.sample}.R2.trim.fastq;
     
-    mv ${{tmp}}/{params.sample}.R1.cutadapt.noBL.fastq.gz {output.outfq1};
-    mv ${{tmp}}/{params.sample}.R2.cutadapt.noBL.fastq.gz {output.outfq2};
+    touch ${{tmp}}/inIf.txt; mv ${{tmp}}/inIf.txt {params.workpath};
+    fi
+    mv ${{tmp}}/{params.sample}.R1.trim.fastq.gz {output.outfq1};
+    mv ${{tmp}}/{params.sample}.R2.trim.fastq.gz {output.outfq2};
     """
 
 rule BWA_PE:

@@ -42,8 +42,7 @@ rule genrich:
         join(workpath,"Genrich","{name}","{name}.narrowPeak")
     params:
         rname="genrich",
-        genrich_ver=config['tools']['GENRICHVER'],
-        blacklist_genrich=config['references'][genome]['BLACKLISTGENRICH']
+        genrich_ver=config['tools']['GENRICHVER']
     shell: """
     module load {params.genrich_ver}
     Genrich \\
@@ -55,8 +54,7 @@ rule genrich:
         -v \\
         -d 150 \\
         -m 5 \\
-        -e chrM,chrY \\
-        -E {params.blacklist_genrich}
+        -e chrM,chrY
     """
 
 # INDIVIDUAL RULES
