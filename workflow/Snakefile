@@ -162,14 +162,20 @@ deeptools_dir='deeptools'
 extra_fingerprint_dir='deeptools/sorted_fingerprint'
 qc_dir="QC"
 ppqt_dir="ppqt"
+macsN_dir="macsNarrow"
+macsB_dir="macsBroad"
+sicer_dir="sicer"
 
-macsN_dir = "macsNarrow"
 uropa_dir = "UROPA_annotations"
 diffbind_dir = "DiffBind"
+
 if assay == "atac": 
     PeakTools = ["macsNarrow", "Genrich"] 
+elif assay == "chip":
+    PeakTools = ["macsNarrow", "macsBroad", "sicer"]
 else: 
     PeakTools = ["macsNarrow"]
+
 chips = config['project']['peaks']['chips']
 contrast = config['project']['contrast']
 UropaCats = ["protTSS", "prot", "protSEC", "genes"]
@@ -196,8 +202,10 @@ if assay == "cfchip" and reps == "yes":
             expand(join(workpath,bw_dir,"{name}.{ext}.RPGC.bw"),name=samples, ext=["sorted", "Q5DD"]),
             expand(join(workpath,bw_dir,"{name}.Q5DD.RPGC.inputnorm.bw"), name=sampleswinput),
             expand(join(workpath,diffbind_dir,"{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind.html"), zip,group1=zipGroup1,group2=zipGroup2,PeakTool=zipToolC),
-            expand(join(workpath,uropa_dir,'{PeakTool}','{name}_{PeakTool}_uropa_{type}_allhits.txt'), PeakTool=PeakTools,name=chips,type=["protTSS"]),
-            expand(join(workpath,uropa_dir,diffbind_dir,'{name}_{PeakTool}_uropa_{type}_allhits.txt'), PeakTool=['DiffbindEdgeR','DiffbindDeseq2'],name=contrasts,type=["protTSS"]),
+            expand(join(workpath,uropa_dir,'{PeakTool}','{name}_{PeakTool}_uropa_{type}_allhits.txt'), 
+                PeakTool=PeakTools,name=chips,type=["protTSS"]),
+            expand(join(workpath,uropa_dir,diffbind_dir,'{name}_{PeakTool}_uropa_{type}_allhits.txt'), 
+                PeakTool=['DiffbindEdgeR','DiffbindDeseq2'],name=contrasts,type=["protTSS"]),
 elif assay == "cfchip" and reps == "no":
     rule all:
         input: 
@@ -218,14 +226,18 @@ elif assay in ["atac", "chip"] and reps == "yes":
             expand(join(workpath,qc_dir,"{name}.{ext}.insert_size_metrics.txt"),name=samples,ext=extensions2),
             expand(join(workpath,bam_dir,"{name}.{ext}"),name=samples,ext=extensions4[1]),
             expand(join(workpath,qc_dir,"{name}.preseq.dat"), name=samples),
-            expand(join(workpath,macsN_dir,"{name}","{name}_peaks.narrowPeak"),name=chips),
+            
+            expand(join(workpath,"macsNarrow","{name}","{name}_peaks.narrowPeak"),name=chips),
+            provided(expand(join(workpath,"macsBroad","{name}","{name}_peaks.broadPeak"),name=chips), assay=="chip"),
+            provided(expand(join(workpath,"sicer","{name}","{name}_broadpeaks.bed"),name=chips), assay=="chip"),
+            
+
             expand(join(workpath,bw_dir,"{name}.{ext}.RPGC.bw"),name=samples, ext=["sorted", "Q5DD"]),
             expand(join(workpath,bw_dir,"{name}.Q5DD.RPGC.inputnorm.bw"), name=sampleswinput),
+
             expand(join(workpath,diffbind_dir,"{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind.html"), zip,group1=zipGroup1,group2=zipGroup2,PeakTool=zipToolC),
-            expand(join(workpath,uropa_dir,'{PeakTool}','{name}_{PeakTool}_uropa_{type}_allhits.txt'),
-                PeakTool=PeakTools,name=chips,type=["protTSS", "prot", "protSEC", "genes"]),
-            expand(join(workpath,uropa_dir,diffbind_dir,'{name}_{PeakTool}_uropa_{type}_allhits.txt'), 
-                PeakTool=['DiffbindEdgeR','DiffbindDeseq2'],name=contrasts,type=["protTSS", "prot", "protSEC", "genes"]),
+            expand(join(workpath,uropa_dir,'{PeakTool}','{name}_{PeakTool}_uropa_{type}_allhits.txt'),PeakTool=PeakTools,name=chips,type=["protTSS", "prot", "protSEC", "genes"]),
+            expand(join(workpath,uropa_dir,diffbind_dir,'{name}_{PeakTool}_uropa_{type}_allhits.txt'), PeakTool=['DiffbindEdgeR','DiffbindDeseq2'],name=contrasts,type=["protTSS", "prot", "protSEC", "genes"]),
 elif assay in ["atac", "chip"] and reps == "no":
     rule all:
         input: 
