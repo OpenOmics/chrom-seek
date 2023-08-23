@@ -150,6 +150,7 @@ rule SICER:
         -egf 0.75 \\
         -g 600 \\
         -fdr 1E-2 \\
+        -cpu 30 \\
         -o .
         mv {params.name}.Q5DD-W300-G600-FDR0.01-island.bed {output.bed};
         mv {params.name}.Q5DD-W300-G600-islands-summary {params.sicer_dir}
@@ -163,6 +164,7 @@ rule SICER:
         -egf 0.75 \\
         -g 600 \\
         -e 100 \\
+        -cpu 30 \\
         -o .
         mv {params.name}.Q5DD-W300-G600.scoreisland {output.bed}
     fi
