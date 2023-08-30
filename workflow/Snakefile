@@ -197,6 +197,7 @@ if assay == "cfchip" and reps == "yes":
             expand(join(workpath,bam_dir,"{name}.{ext}"),name=samples,ext=extensions4[1]),
             expand(join(workpath,qc_dir,"{name}.preseq.dat"), name=samples),
             expand(join(workpath,macsN_dir,"{name}","{name}_peaks.narrowPeak"),name=chips),
+            expand(join(workpath,"PeakQC","{PeakTool}.{name}.Q5DD.FRiP_table.txt"), PeakTool=PeakTools, name=samples),
             expand(join(workpath,cfTool_dir,"Output","H3K4me3","Signatures","{name}.Q5DD.csv"),name=chips),
             join(workpath,"QC","H3K4me3_cfChIP_signature.txt"),
             expand(join(workpath,bw_dir,"{name}.{ext}.RPGC.bw"),name=samples, ext=["sorted", "Q5DD"]),
@@ -214,6 +215,7 @@ elif assay == "cfchip" and reps == "no":
             expand(join(workpath,bam_dir,"{name}.{ext}"),name=samples,ext=extensions4[1]),
             expand(join(workpath,qc_dir,"{name}.preseq.dat"), name=samples),
             expand(join(workpath,macsN_dir,"{name}","{name}_peaks.narrowPeak"),name=chips),
+            expand(join(workpath,"PeakQC","{PeakTool}.{name}.Q5DD.FRiP_table.txt"), PeakTool=PeakTools, name=samples),
             expand(join(workpath,cfTool_dir,"Output","H3K4me3","Signatures","{name}.Q5DD.csv"),name=H3K4me3samples),
             join(workpath,"QC","H3K4me3_cfChIP_signature.txt"),
             expand(join(workpath,bw_dir,"{name}.{ext}.RPGC.bw"),name=samples, ext=["sorted", "Q5DD"]),
@@ -230,8 +232,9 @@ elif assay in ["atac", "chip"] and reps == "yes":
             expand(join(workpath,"macsNarrow","{name}","{name}_peaks.narrowPeak"),name=chips),
             provided(expand(join(workpath,"macsBroad","{name}","{name}_peaks.broadPeak"),name=chips), assay=="chip"),
             provided(expand(join(workpath,"sicer","{name}","{name}_broadpeaks.bed"),name=chips), assay=="chip"),
-            
 
+            expand(join(workpath,"PeakQC","{PeakTool}.{name}.Q5DD.FRiP_table.txt"), PeakTool=PeakTools, name=samples),
+            
             expand(join(workpath,bw_dir,"{name}.{ext}.RPGC.bw"),name=samples, ext=["sorted", "Q5DD"]),
             expand(join(workpath,bw_dir,"{name}.Q5DD.RPGC.inputnorm.bw"), name=sampleswinput),
 
@@ -246,6 +249,9 @@ elif assay in ["atac", "chip"] and reps == "no":
             expand(join(workpath,bam_dir,"{name}.{ext}"),name=samples,ext=extensions4[1]),
             expand(join(workpath,qc_dir,"{name}.preseq.dat"), name=samples),
             expand(join(workpath,macsN_dir,"{name}","{name}_peaks.narrowPeak"),name=chips),
+            provided(expand(join(workpath,"macsBroad","{name}","{name}_peaks.broadPeak"),name=chips), assay=="chip"),
+            provided(expand(join(workpath,"sicer","{name}","{name}_broadpeaks.bed"),name=chips), assay=="chip"),
+            expand(join(workpath,"PeakQC","{PeakTool}.{name}.Q5DD.FRiP_table.txt"), PeakTool=PeakTools, name=samples),
             expand(join(workpath,bw_dir,"{name}.{ext}.RPGC.bw"),name=samples, ext=["sorted", "Q5DD"]),
             expand(join(workpath,bw_dir,"{name}.Q5DD.RPGC.inputnorm.bw"), name=sampleswinput),
             expand(join(workpath,uropa_dir,'{PeakTool}','{name}_{PeakTool}_uropa_{type}_allhits.txt'),

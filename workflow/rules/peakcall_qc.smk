@@ -1,16 +1,16 @@
 rule FRiP:
     input:
         bed = lambda w: [ join(workpath, w.PeakTool, chip, chip + PeakExtensions[w.PeakTool]) for chip in chips ],
-        bam = join(workpath,bam_dir,"{Sample}.Q5DD.bam"),
+        bam = join(workpath,bam_dir,"{name}.Q5DD.bam"),
     output:
-        join(workpath,qc_dir,"{PeakTool}.{Sample}.Q5DD.FRiP_table.txt"),
+        join(workpath,"PeakQC","{PeakTool}.{name}.Q5DD.FRiP_table.txt"),
     params:
         rname="frip",
-        pythonver="python/3.5",
-        outroot = lambda w: join(workpath,qc_dir,w.PeakTool),
+        outroot = lambda w: join(workpath,"PeakQC",w.PeakTool),
         script=join(workpath,"workflow","scripts","frip.py"),
         genome = config['references'][genome]['REFLEN'],
         tmpdir = tmpdir,
+    container: config['images']['python']
     shell: """
     # Setups temporary directory for
     # intermediate files with built-in 
@@ -19,28 +19,11 @@ rule FRiP:
     tmp=$(mktemp -d -p "{params.tmpdir}")
     trap 'rm -rf "${{tmp}}"' EXIT
 
-    module load {params.pythonver}
-    export TMPDIR="${{tmp}}"  # pysam writes to $TMPDIR
     python {params.script} \\
-        -p "{input.bed}" \\
-        -b "{input.bam}" \\
+        -p {input.bed} \\
+        -b {input.bam} \\
         -g {params.genome} \\
-        -o "{params.outroot}"
-    """
-
-rule FRiP_plot:
-    input:
-        expand(join(workpath,qc_dir,"{PeakTool}.{Sample}.Q5DD.FRiP_table.txt"), PeakTool=PeakTools, Sample=samples),
-    output:
-        expand(join(workpath, qc_dir, "{Group}.FRiP_barplot.pdf"),Group=groups),
-    params:
-        rname="frip_plot",
-        Rver="R/4.2",
-        script=join(workpath,"workflow","scripts","FRiP_plot.R"),
-    shell: """
-    module load {params.Rver}
-    Rscript {params.script} \\
-        {workpath}
+        -o {params.outroot}
     """
 
 rule jaccard:
