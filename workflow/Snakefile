@@ -2,6 +2,7 @@
 from os.path import join
 from os import listdir
 import os, sys, re, datetime
+import json
 
 # 3rd party imports from pypi
 from snakemake.workflow import workflow as wf_api
@@ -207,6 +208,8 @@ if assay == "cfchip" and reps == "yes":
                 PeakTool=PeakTools,name=chips,type=["protTSS"]),
             expand(join(workpath,uropa_dir,diffbind_dir,'{name}_{PeakTool}_uropa_{type}_allhits.txt'), 
                 PeakTool=['DiffbindEdgeR','DiffbindDeseq2'],name=contrasts,type=["protTSS"]),
+            expand(join(workpath,uropa_dir,"promoterTable1",'{PeakTool}_promoter_overlap_summaryTable.txt'),PeakTool=PeakTools),
+            expand(join(workpath,uropa_dir,"promoterTable2",'DiffbindDeseq2_{PeakTool}_promoter_overlap_summaryTable.txt'), PeakTool=PeakTools)
 elif assay == "cfchip" and reps == "no":
     rule all:
         input: 

@@ -94,7 +94,7 @@ significantPathways <- function(Genes, bkgGeneFILE, database="KEGG", PDFfile=NA,
   }
   backgroundGenes <- processGenes(bkgGenes)
   if (database == "KEGG") {
-    pathwaySig <- enrichKEGG(sigGenes, organism= "hsa", keyType="kegg", universe=backgroundGenes)
+    pathwaySig <- enrichKEGG(sigGenes, organism= "hsa", keyType="kegg", universe=backgroundGenes, use_internal_data=TRUE)
     pathwayData <- pathwaySig@result[which(pathwaySig@result$p.adjust < 0.1),]
   } else {
     library(ReactomePA)

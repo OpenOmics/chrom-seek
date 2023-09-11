@@ -160,6 +160,10 @@ rule diffbind:
         html = join(workpath,diffbind_dir,"{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind.html"),
         Deseq2 = join(workpath,diffbind_dir,"{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind_Deseq2.bed"),
         EdgeR = join(workpath,diffbind_dir,"{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind_EdgeR.bed"),
+        EdgeR_txt = join(workpath,diffbind_dir,"{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind_EdgeR.txt"),
+        Deseq2_txt = join(workpath,diffbind_dir,"{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind_Deseq2.txt"),
+        EdgeR_ftxt = join(workpath,diffbind_dir,"{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind_EdgeR_fullList.txt"),
+        Deseq2_ftxt = join(workpath,diffbind_dir,"{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind_Deseq2_fullList.txt"),  
     params:
         rname="diffbind",
         rscript = join(workpath,"workflow","scripts","DiffBind_v2_ChIPseq.Rmd"),
@@ -180,7 +184,8 @@ rule diffbind:
          --pc {params.peakcaller} --csv {params.csvfile}
     cp {params.rscript} {params.outdir}
     cd {params.outdir}
-    Rscript -e 'rmarkdown::render("{params.rscript}", output_file= "{output.html}", params=list(csvfile= "{params.csvfile}", contrasts= "{params.contrast}", peakcaller= "{params.PeakTool}"))'
+    Rscript -e 'rmarkdown::render("DiffBind_v2_ChIPseq.Rmd", output_file= "{output.html}", 
+    params=list(csvfile= "{params.csvfile}", contrasts= "{params.contrast}", peakcaller= "{params.PeakTool}"))'
     if [ ! -f {output.Deseq2} ]; then touch {output.Deseq2}; fi
     if [ ! -f {output.EdgeR} ]; then touch {output.EdgeR}; fi
     """

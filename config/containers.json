@@ -1,6 +1,6 @@
 {
     "images": {
-        "cfchip": "docker://skchronicles/cfchip_toolkit_v0.3.0",
+        "cfchip": "docker://skchronicles/cfchip_toolkit_v0.4.0",
         "python": "docker://asyakhleborodova/chrom_seek_python_v0.1.0"
     }
 }
