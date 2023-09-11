@@ -19,6 +19,14 @@ if assay == "atac":
             expand(join(workpath,"Genrich","{name}","{name}.narrowPeak"),name=chips)
 
 rule sortByRead:
+    """
+    Bam files(extension: sorted.bam) need to be sorted by read name
+    for Genrich.
+    @Input:
+        Bam file (extension: sorted.bam)
+    @Output:
+        Bam file sorted by read name (extension: sortByRead.bam)
+    """
     input:
         join(workpath,bam_dir,"{name}.sorted.bam")
     output:
@@ -36,6 +44,17 @@ rule sortByRead:
     """
 
 rule genrich:
+    """
+    In ATAC-mode, identifies open chromatic regions at intervals 
+    centered on transposase cut sites (ends of the reads/fragments).
+    @Input:
+        Bam file sorted by read name (extension: sortByRead.bam)
+    @Output:
+        Output peak file (in ENCODE narrowPeak format):
+        chrom name, star pos of peak, end pos of peak, peak name,
+        AUC score, strand, area under AUC, summit -log(p-value),
+        summit -log(q-value), and summit position.
+    """
     input: 
         join(workpath,bam_dir,"{name}.sortedByRead.bam")
     output: 
