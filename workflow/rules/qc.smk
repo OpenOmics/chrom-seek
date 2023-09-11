@@ -7,6 +7,15 @@
 #   - fastq_screen
 #   - multiQC
 rule preseq:
+    """
+    Quality step to estimate library complexity. Low library complexity may indicate
+    an issue with library preparation or sample storage (FFPE samples) where very
+    little input RNA was over-amplified or the sample may be highly degraded.
+    @Input:
+        Sorted, duplicate marked genomic BAM file (scatter)
+    @Output:
+        Logfile containing library complexity information
+    """
     input:
         bam = join(workpath,bam_dir,"{name}.sorted.bam"),
     output:
@@ -24,6 +33,18 @@ rule preseq:
 
 
 rule NRF:
+    """
+    Quality step computes the expected yield for theoretical 
+    larger experiments and the associated confidence intervals
+    @Input:
+        Sorted BAM file (scatter)
+    @Output:
+        Output is a text file with four columns. The total number 
+        of reads, average expected number of distinct reads, and
+        the lower and upper limits of the confidence interval.
+        And pyhton code produces NRF = distinct_reads/tot_reads,
+        PBC1 = one_pair/distinct_reads, and PBC2 = one_pair/two_pair.
+    """
     input:
         bam=join(workpath,bam_dir,"{name}.sorted.bam"),
     output:
@@ -225,6 +246,16 @@ rule kraken_pe:
     """
 
 rule multiqc:
+    """
+    Reporting step to aggregate sample statistics and quality-control information
+    across all samples. This will be one of the last steps of the pipeline. The inputs
+    listed here are to ensure that this step runs last. During runtime, MultiQC will
+    recurively crawl through the working directory and parse files that it supports.
+    @Input:
+        List of files to ensure this step runs last (gather)
+    @Output:
+        Interactive MulitQC report and a QC metadata table
+    """
     input: 
         expand(join(workpath,"FQscreen","{name}.R1.trim_screen.txt"),name=samples),
         expand(join(workpath,"FQscreen2","{name}.R1.trim_screen.txt"),name=samples),
@@ -257,6 +288,15 @@ rule multiqc:
     """
 
 rule insert_size:
+    """
+    Quality step calculates number of reads per insert size.
+    @Input:
+        Sorted only bam file, and also bam files that were sorted, 
+        filtered by mapQ a value, and deduplicated (extensions: sorted and Q5DD),
+        for all samples.
+    @Output:
+        Number of reads per insert size and their histogram
+    """
     input:
         bam = lambda w : join(workpath,bam_dir,w.name + "." + w.ext + "." + extensions3[w.ext + "."])
     output:
