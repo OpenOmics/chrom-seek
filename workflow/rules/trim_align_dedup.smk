@@ -6,6 +6,22 @@
 
 # trim, remove PolyX and remove blacklist reads
 rule trim_pe:
+    """
+    Data-processing step to remove adapter sequences and perform quality trimming
+    prior to alignment the reference genome.  Adapters are composed of synthetic
+    sequences and should be removed prior to alignment. Bwa mem aligns adapter-free 
+    fastqs to ba lacklist that has anomalous, unstructured, or high signal in 
+    next-generation sequencing experiments independent of cell line or experiment.
+    Samtools view -f4 selects for reads unmapped and outpute a blacklist-sequences-free bam file.
+    SamToFastq convers BAM file to FASTQs. All file processing is done in
+    "tmp_dir": "/lscratch/$SLURM_JOBID/", meaning all files are lost at job completion
+    except for final R1.trim.fastq.gz and R2.trim.fastq.gz
+
+    @Input:
+        Raw FastQ files
+    @Output:
+        Trimmed and blacklist-sequences-free FastQ files
+    """
     input:
         file1=join(workpath,"{name}.R1.fastq.gz"),
         file2=join(workpath,"{name}.R2.fastq.gz"),
@@ -84,6 +100,20 @@ rule trim_pe:
     """
 
 rule BWA_PE:
+    """
+    Data processing rule to align trimmed and blacklist-sequences-free reads 
+    to the reference genome using bwa mem aligner. Samtools sort sort alignments 
+    by coordinates to produce bam file. Samtools flagstats summarizes reads by QC
+    and number of alignments for each FLAG type. Samtools idxstats outputs
+    stats by chromosomesequence,length, # mapped read-segments and 
+    # unmapped read-segments. Resulting bam file is filtered by a mapQ value.
+
+    @Input:
+        Trimmed and blacklist-sequences-free FastQ files
+    @Output:
+        Bam file that have read aligned: sorted.bam
+        Bam file that has reads aligned and filted by mapQ a value: Q5.bam
+    """
     input:
         infq1 = join(workpath,trim_dir,"{name}.R1.trim.fastq.gz"),
         infq2 = join(workpath,trim_dir,"{name}.R2.trim.fastq.gz"),
@@ -122,6 +152,22 @@ rule BWA_PE:
     """
 
 rule picard_dedup:
+    """
+    Picard MarkDuplicates removes duplicates from bam file.
+    Samtools flagstats summarizes reads by QC
+    and number of alignments for each FLAG type. Samtools idxstats outputs
+    stats by chromosomesequence,length, # mapped read-segments and 
+    # unmapped read-segments. If assay is cfchip, deduplicated bam file is
+    filtered for chromosomes 1 through 22 to produce: Q5DD.bam; 
+    the original deduplicated file also convereted to bed file of fragments 
+    via granges and rtracklayer: Q5DD.tagAlign.
+
+    @Input:
+        Bam file that has reads aligned and filted by mapQ a value: Q5.bam
+    @Output:
+        Deduplicated Q5DD.bam for all assays, plus Q5DD.tagAlign if cfchip assay
+
+    """
     input: 
         bam2=join(workpath,bam_dir,"{name}.Q5.bam")
     output:
@@ -180,6 +226,16 @@ rule picard_dedup:
     """
 
 rule bam2bw:
+    """
+    bamCoverage converts bams to bigwig files for read visialization
+    in UCSC Genome Browser or IGV.
+    @Input:
+        Files with extensions: sorted.bam and Q5DD.bam,
+        for all samples (treatment and input controls)
+    @Output:
+       bigWig file with contains coordinates for an interval and 
+       an associated score, RPGC
+    """
     input:
         bam=join(workpath,bam_dir,"{name}.{ext}.bam"),
         # ppqt=join(workpath,bam_dir,"{ext}.ppqt.txt"),
@@ -206,6 +262,15 @@ rule bam2bw:
     """    
 
 rule inputnorm:
+    """
+    bigwigCompare (deepTools) subracts input control from treatment bigWig file,
+    normalizing treatment bigWig.
+    @Input:
+        Treatment sample, which has input control: extension Q5DD.RPGC.bw
+        and input its control: extension Q5DD.RPGC.bw
+    @Output:
+       bigWig file of treatmment sample normalizes with its input control
+    """
     input:
         chip = join(workpath,bw_dir,"{name}.Q5DD.RPGC.bw"),
         ctrl = lambda w : join(workpath,bw_dir,chip2input[w.name] + ".Q5DD.RPGC.bw")
