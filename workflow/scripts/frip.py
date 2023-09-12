@@ -11,7 +11,8 @@ Currently only works with python/3.5
 
 ##########################################
 # Modules
-import optparse
+import argparse
+from argparse import RawTextHelpFormatter
 from pybedtools import BedTool
 import pysam
 import pandas as pd
@@ -82,8 +83,8 @@ def process_files(bamfile, bedfiles, genome, filetypes):
     put out an array containing key file name information, read 
     counts, and FRiP scores
     """
-    bedfileL = split_infiles(bedfiles)
-    filetypesL = split_infiles(filetypes)
+    bedfileL = bedfiles
+    filetypesL = filetypes
     out = [[ "bedtool", "bedsample", "bamsample", "bamcondition", 
     "n_reads", "n_overlap_reads", "FRiP", "n_basesM" ]]
     nreads = count_reads_in_bam(bamfile)
@@ -129,28 +130,23 @@ each bed-like file. Note: this function assumes that the file
 naming system of the input files matches that of Pipeliner.
     """
 
-    parser = optparse.OptionParser(description=desc)
-
-    parser.add_option('-p', dest='peakfiles', default='', 
-           help='A space- or semicolon-delimited list of peakfiles \
+    parser = argparse.ArgumentParser(description=desc, formatter_class=RawTextHelpFormatter)
+    parser.add_argument('-p', nargs = '+', required=True, type=str, help='A space- or semicolon-delimited list of peakfiles \
 (or bed-like files).')
-    parser.add_option('-b', dest='bamfile', default='', 
-           help='The name of a bamfile to analyze.')
-    parser.add_option('-g', dest='genomefile', default='', 
-           help='The name of the .genome file so bedtools knows the \
+    parser.add_argument('-b', required=True, type=str, help='The name of a bamfile to analyze.')
+    parser.add_argument('-g', required=True, type=str, help='The name of the .genome file so bedtools knows the \
 size of every chromosome.')
-    parser.add_option('-o', dest='outroot', default='', 
-           help='The root name of the multiple output files. Default: ""')
-    parser.add_option('-t', dest='filetypes', default='', help='A space- \
+    parser.add_argument('-o', required=True, type=str, help='The root name of the multiple output files. Default:""')
+    parser.add_argument('-t', required=False, default=[""], type=list, help='A space- \
 or semicolon-delimited list of input file sources/types. Only needed when \
 source of bed file is not built into the script. Default: ""')
 
-    (options,args) = parser.parse_args()
-    bedfiles = options.peakfiles
-    bamfile = options.bamfile
-    genomefile = options.genomefile
-    outroot = options.outroot
-    filetypes = options.filetypes
+    args = parser.parse_args()
+    bedfiles = args.p
+    bamfile = args.b
+    genomefile = args.g
+    outroot = args.o
+    filetypes = args.t
 
     out2 = process_files(bamfile, bedfiles, genomefile, filetypes)
     outtable = create_outfile_name(bamfile, outroot)
