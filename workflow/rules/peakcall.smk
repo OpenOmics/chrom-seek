@@ -13,11 +13,6 @@ def get_input_bam(wildcards):
         # Runs in ChIP-only mode
         return []
 
-if assay == "atac": 
-    rule genrich_all:
-        input:
-            expand(join(workpath,"Genrich","{name}","{name}.narrowPeak"),name=chips)
-
 rule sortByRead:
     """
     Bam files(extension: sorted.bam) need to be sorted by read name
