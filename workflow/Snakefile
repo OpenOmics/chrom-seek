@@ -211,7 +211,7 @@ if assay == "cfchip":
             provided(expand(join(workpath,uropa_dir,diffbind_dir,'{name}_{PeakTool}_uropa_{type}_allhits.txt'), 
                 PeakTool=['DiffbindEdgeR','DiffbindDeseq2'],name=contrasts,type=["protTSS"]), reps == "yes"),
             provided(expand(join(workpath,uropa_dir,"promoterTable2",'DiffbindDeseq2_{PeakTool}_promoter_overlap_summaryTable.txt'), 
-                PeakTool=PeakTools),reps == "yes")
+                PeakTool=PeakTools),reps == "yes" and contrast)
 
 elif assay in ["atac", "chip"]:
     rule all:
