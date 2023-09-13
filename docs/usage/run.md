@@ -14,6 +14,7 @@ $ chrom-seek run [--help] \
       [--tmp-dir TMP_DIR] [--silent] [--sif-cache SIF_CACHE] \ 
       [--singularity-cache SINGULARITY_CACHE] \
       [--dry-run] [--threads THREADS] \
+      [--contrasts CONTRASTS] \
       --assay {cfChIP,ChIP,ATAC} \
       --genome GENOME \
       --input INPUT [INPUT ...] \
