@@ -267,7 +267,7 @@ rule multiqc:
         expand(join(workpath,"rawfastQC","{name}.R1_fastqc.html"),name=samples),
         expand(join(workpath,"fastQC","{name}.R1.trim_fastqc.html"),name=samples),
         # expand(join(workpath,deeptools_dir,"{group}.fingerprint.raw.Q5DD.tab"),group=groups),
-        # join(workpath,deeptools_dir,"spearman_heatmap.Q5DD.RPGC.pdf"),
+        join(workpath,deeptools_dir,"spearman_heatmap.Q5DD_mqc.png")
     output:
         join(workpath,"multiqc_report.html")
     params:
@@ -314,3 +314,24 @@ rule insert_size:
         -O {output.txt} \\
         -H {output.pdf}
     """
+
+rule deeptools_QC:
+    input:
+        [ join(workpath, bw_dir, name + ".Q5DD.RPGC.bw") for name in samples ] # this should be all bigwigs
+    output:
+        heatmap=join(workpath,deeptools_dir,"spearman_heatmap.Q5DD.pdf"),
+        pca=join(workpath,deeptools_dir,"pca.Q5DD.pdf"),
+	    npz=temp(join(workpath,deeptools_dir,"Q5DD.npz")),
+	    png=join(workpath,deeptools_dir,"spearman_heatmap.Q5DD_mqc.png")
+    params:
+        rname="deeptools_QC",
+        deeptoolsver=config['tools']['DEEPTOOLSVER'],
+        labels=samples # this should be the sample names to match the bigwigs in the same order
+    shell: """    
+module load {params.deeptoolsver}
+multiBigwigSummary bins -b {input} -l {params.labels} -out {output.npz}
+plotCorrelation -in {output.npz} -o {output.heatmap} -c 'spearman' -p 'heatmap' --skipZeros --removeOutliers
+plotCorrelation -in {output.npz} -o {output.png} -c 'spearman' -p 'heatmap' --skipZeros --removeOutliers
+plotPCA -in {output.npz} -o {output.pca}
+"""
+
