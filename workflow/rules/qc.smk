@@ -328,10 +328,10 @@ rule deeptools_QC:
         deeptoolsver=config['tools']['DEEPTOOLSVER'],
         labels=samples # this should be the sample names to match the bigwigs in the same order
     shell: """    
-module load {params.deeptoolsver}
-multiBigwigSummary bins -b {input} -l {params.labels} -out {output.npz}
-plotCorrelation -in {output.npz} -o {output.heatmap} -c 'spearman' -p 'heatmap' --skipZeros --removeOutliers
-plotCorrelation -in {output.npz} -o {output.png} -c 'spearman' -p 'heatmap' --skipZeros --removeOutliers
-plotPCA -in {output.npz} -o {output.pca}
-"""
+    module load {params.deeptoolsver}
+    multiBigwigSummary bins -b {input} -l {params.labels} -out {output.npz}
+    plotCorrelation -in {output.npz} -o {output.heatmap} -c 'spearman' -p 'heatmap' --skipZeros --removeOutliers
+    plotCorrelation -in {output.npz} -o {output.png} -c 'spearman' -p 'heatmap' --skipZeros --removeOutliers
+    plotPCA -in {output.npz} -o {output.pca}
+    """
 
