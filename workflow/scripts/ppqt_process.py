@@ -22,6 +22,6 @@ else:
     print("Potential causes include: wrong ref genome selected or low starting DNA.")
     print("Assuming default estimated fragment length of 200bp.\n")
     o.write("200" + "\n")
-if inputSample:
+#if inputSample:
     o.write("200" + "\n")
 o.close()
