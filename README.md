@@ -54,13 +54,26 @@ This site is a living document, created for and by members like you. chrom-seek 
 
 ## Cite
 
-If you use this software, please cite it as below:  
+If you use this software, please cite our [methods paper](https://www.doi.org/10.26508/lsa.202302003):  
 
 <details>
   <summary><b><i>@BibText</i></b></summary>
  
 ```text
-Citation coming soon!
+@article {Jange202302003,
+	author = {Moon Kyoo Jang and Tovah E Markowitz and Temesgen E Andargie and Zainab Apalara and Skyler Kuhn and Sean Agbor-Enoh},
+	title = {Cell-free chromatin immunoprecipitation to detect molecular pathways in heart transplantation},
+	volume = {6},
+	number = {12},
+	elocation-id = {e202302003},
+	year = {2023},
+	doi = {10.26508/lsa.202302003},
+	publisher = {Life Science Alliance},
+	abstract = {Existing monitoring approaches in heart transplantation lack the sensitivity to provide deep molecular assessments to guide management, or require endomyocardial biopsy, an invasive and blind procedure that lacks the precision to reliably obtain biopsy samples from diseased sites. This study examined plasma cell-free DNA chromatin immunoprecipitation sequencing (cfChIP-seq) as a noninvasive proxy to define molecular gene sets and sources of tissue injury in heart transplant patients. In healthy controls and in heart transplant patients, cfChIP-seq reliably detected housekeeping genes. cfChIP-seq identified differential gene signals of relevant immune and nonimmune molecular pathways that were predominantly down-regulated in immunosuppressed heart transplant patients compared with healthy controls. cfChIP-seq also identified cell-free DNA tissue sources. Compared with healthy controls, heart transplant patients demonstrated greater cell-free DNA from tissue types associated with heart transplant complications, including the heart, hematopoietic cells, lungs, liver, and vascular endothelium. cfChIP-seq may therefore be a reliable approach to profile dynamic assessments of molecular pathways and sources of tissue injury in heart transplant patients.},
+	URL = {https://www.life-science-alliance.org/content/6/12/e202302003},
+	eprint = {https://www.life-science-alliance.org/content/6/12/e202302003.full.pdf},
+	journal = {Life Science Alliance}
+}
 ```
 
 </details>
@@ -69,7 +82,7 @@ Citation coming soon!
   <summary><b><i>@APA</i></b></summary>
 
 ```text
-Citation coming soon!
+Jang, M. K., Markowitz, T. E., Andargie, T. E., Apalara, Z., Kuhn, S., & Agbor-Enoh, S. (2023). Cell-free chromatin immunoprecipitation to detect molecular pathways in heart transplantation. Life Science Alliance, 6(12), e202302003. https://doi.org/10.26508/lsa.202302003 
 ```
 
 </details>
