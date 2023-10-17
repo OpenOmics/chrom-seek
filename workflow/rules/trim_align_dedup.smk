@@ -136,7 +136,7 @@ rule trim:
     fi
         """
 
-rule BWA_PE:
+rule BWA:
     """
     Data processing rule to align trimmed and blacklist-sequences-free reads 
     to the reference genome using bwa mem aligner. Samtools sort sort alignments 
@@ -153,7 +153,7 @@ rule BWA_PE:
     """
     input:
         infq1 = join(workpath,trim_dir,"{name}.R1.trim.fastq.gz"),
-        infq2 = join(workpath,trim_dir,"{name}.R2.trim.fastq.gz"),
+        infq2 = provided(join(workpath,trim_dir,"{name}.R2.trim.fastq.gz"), paired_end)
     params:
         d=join(workpath,bam_dir),
         rname='bwa',
@@ -161,7 +161,8 @@ rule BWA_PE:
         bwaver=config['tools']['BWAVER'],
         samtoolsver=config['tools']['SAMTOOLSVER'],
         script=join(workpath,"workflow","scripts","bam_filter_by_mapq.py"),
-        pythonver=config['tools']['PYTHONVER']
+        pythonver=config['tools']['PYTHONVER'],
+        paired_end = paired_end
     output:
         outbam1=join(workpath,bam_dir,"{name}.sorted.bam"), 
         outbam2=temp(join(join(workpath,bam_dir,"{name}.Q5.bam"))),
@@ -174,18 +175,32 @@ rule BWA_PE:
     module load {params.bwaver};
     module load {params.samtoolsver};
     module load {params.pythonver};
-    bwa mem -t {threads} {params.reference} {input.infq1} {input.infq2} \\
-        | samtools sort -@{threads} -o {output.outbam1}
-    
-    samtools index {output.outbam1}
-    samtools flagstat {output.outbam1} > {output.flagstat1}
-    samtools idxstats {output.outbam1} > {output.idxstat1}
-    #samtools view -b -q 6 {output.outbam1} -o {output.outbam2}
-    
-    python {params.script} -i {output.outbam1} -o {output.outbam2} -q 6
-    samtools index {output.outbam2}
-    samtools flagstat {output.outbam2} > {output.flagstat2}
-    samtools idxstats {output.outbam2} > {output.idxstat2}
+    if [ '{params.paired_end}' == True ];then
+        bwa mem -t {threads} {params.reference} {input.infq1} {input.infq2} \\
+            | samtools sort -@{threads} -o {output.outbam1}
+        
+        samtools index {output.outbam1}
+        samtools flagstat {output.outbam1} > {output.flagstat1}
+        samtools idxstats {output.outbam1} > {output.idxstat1}
+        #samtools view -b -q 6 {output.outbam1} -o {output.outbam2}
+        
+        python {params.script} -i {output.outbam1} -o {output.outbam2} -q 6
+        samtools index {output.outbam2}
+        samtools flagstat {output.outbam2} > {output.flagstat2}
+        samtools idxstats {output.outbam2} > {output.idxstat2}
+    else
+        bwa mem -t {threads} {params.reference} {input.infq1} \\
+            | samtools sort -@{threads} -o {output.outbam1}
+        
+        samtools index {output.outbam1}
+        samtools flagstat {output.outbam1} > {output.flagstat1}
+        samtools idxstats {output.outbam1} > {output.idxstat1}
+        samtools view -b -q 6 {output.outbam1} -o {output.outbam2}
+        
+        samtools index {output.outbam2}
+        samtools flagstat {output.outbam2} > {output.flagstat2}
+        samtools idxstats {output.outbam2} > {output.idxstat2}
+    fi
     """
 
 rule picard_dedup:
