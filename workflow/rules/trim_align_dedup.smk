@@ -203,7 +203,7 @@ rule BWA:
     fi
     """
 
-rule picard_dedup:
+rule dedup:
     """
     Picard MarkDuplicates removes duplicates from bam file.
     Samtools flagstats summarizes reads by QC
@@ -226,21 +226,29 @@ rule picard_dedup:
         out5=join(workpath,bam_dir,"{name}.Q5DD.bam"),
         out5f=join(workpath,bam_dir,"{name}.Q5DD.bam.flagstat"),
         out5i=join(workpath,bam_dir,"{name}.Q5DD.bam.idxstat"),
-        out6=join(workpath,bam_dir,"{name}.bwa.Q5.duplic"),
+        out6=provided(join(workpath,bam_dir,"{name}.bwa.Q5.duplic"), paired_end),
+        out7=provided(join(workpath,bam_dir,"{name}.Q5DD_tagAlign"),assay=="cfchip"),
+        outtagalign=provided(join(workpath,bam_dir,"{name}.Q5DD_tagAlign.gz"), paired_end == False)
     params:
         rname='dedup',
         picardver=config['tools']['PICARDVER'],
         samtoolsver=config['tools']['SAMTOOLSVER'],
+        bedtoolsver=config['tools']['BEDTOOLSVER'],
+        macsver=config['tools']['MACSVER'],
+        gsize=config['references'][genome]['EFFECTIVEGENOMESIZE'],
+        folder=join(workpath,bam_dir),
+        genomefile=config['references'][genome]['REFLEN'],
         rver=config['tools']['RVER'],
         javaram='16g',
         tmpdir=tmpdir,
         tmpBam="{name}.Q5DD.withXY.bam",
         rscript=join(config['references'][genome]['cfChIP_TOOLS_SRC'], "bam2fragment.R"),
-        out7 = lambda w: join(workpath,bam_dir, w.name+".Q5DD.tagAlign") \
-            if assay=="cfchip" else ""
+        paired_end = paired_end
     shell: """
     module load {params.samtoolsver};
     module load {params.picardver};
+    module load {params.bedtoolsver};
+    module load {params.macsver};
     module load {params.rver}; 
     if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
     tmp=$(mktemp -d -p "{params.tmpdir}")
@@ -257,11 +265,22 @@ rule picard_dedup:
         -METRICS_FILE {output.out6};
       samtools index {params.tmpBam};
       samtools view -b {params.tmpBam} chr{{1..22}} > {output.out5};
-      Rscript {params.rscript} {params.tmpBam} {params.out7};
+      Rscript {params.rscript} {params.tmpBam} {output.out7};
       rm {params.tmpBam} {params.tmpBam}.bai;
       samtools index {output.out5};
       samtools flagstat {output.out5} > {output.out5f};
       samtools idxstats {output.out5} > {output.out5i}; 
+    elif [ '{params.paired_end}' == False ];then
+      macs2 filterdup -i {input} -g {params.gsize} --keep-dup="auto" -o ${{tmp}}/TmpTagAlign;
+      awk -F"\\t" -v OFS="\\t" '{{if ($2>0 && $3>0) {{print}}}}' ${{tmp}}/TmpTagAlign > ${{tmp}}/TmpTagAlign2;
+      awk -F"\\t" -v OFS="\\t" '{{print $1,1,$2}}' {params.genomefile} | sort -k1,1 -k2,2n > ${{tmp}}/GenomeFileBed;
+      bedtools intersect -wa -f 1.0 -a ${{tmp}}/TmpTagAlign2 -b ${{tmp}}/GenomeFileBed > ${{tmp}}/TmpTagAlign3;
+      bedtools bedtobam -i ${{tmp}}/TmpTagAlign3 -g {params.genomefile} | samtools sort -@4 -o {output.out5};
+      gzip ${{tmp}}/TmpTagAlign3;
+      mv ${{tmp}}/TmpTagAlign3.gz {output.outtagalign};
+      samtools index {output.out5};
+      samtools flagstat {output.out5} > {output.out5f}
+      samtools idxstats {output.out5} > {output.out5i}
     else
       java -Xmx{params.javaram} \\
         -jar $PICARDJARPATH/picard.jar MarkDuplicates \\
