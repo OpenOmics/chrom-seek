@@ -26,7 +26,7 @@ FROM ubuntu:22.04
 #     @requires: scipy          # pip install from pypi
 LABEL maintainer="kundajelab" \
    base_image="ubuntu:22.04" \
-   version="v0.1.0"   \
+   version="v0.2.0"   \
    software="ppqt/v1.2.2-6984a713" \
    about.summary="Computes informative enrichment and quality measures for ChIP-seq, DNase-seq, MNase-seq data." \
    about.home="https://github.com/kundajelab/phantompeakqualtools" \
@@ -115,6 +115,15 @@ RUN mkdir -p /opt2/ppqt/v1.2.2-6984a713 \
    && git clone https://github.com/kundajelab/phantompeakqualtools.git \
    && cd /opt2/ppqt/v1.2.2-6984a713/phantompeakqualtools \
    && git checkout 6984a713aba0218b76bacc63f2fb5087425fd6a3 \
+   # Fixes a bug in the current version of
+   # ppqt due to undeclared variable name,
+   # probably a typo from the authors or 
+   # the name of the variable changed at
+   # some point in time. It is pretty 
+   # harmless and only occurs if it does 
+   # not recongize the extension of the
+   # input file name (*.bam* / *.tagAlign*) 
+   && sed -i 's/align.fname/align.filename/' /opt2/ppqt/v1.2.2-6984a713/phantompeakqualtools/run_spp.R \
    && wget https://github.com/hms-dbmi/spp/archive/refs/tags/1.15.2.tar.gz -P /opt2/ppqt/v1.2.2-6984a713/phantompeakqualtools \
    && Rscript -e 'install.packages("/opt2/ppqt/v1.2.2-6984a713/phantompeakqualtools/1.15.2.tar.gz")' 
 ENV PATH="${PATH}:/opt2/ppqt/v1.2.2-6984a713/phantompeakqualtools"
