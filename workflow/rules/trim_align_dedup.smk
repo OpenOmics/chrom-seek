@@ -5,7 +5,7 @@
 #   - insert_size
 
 # trim, remove PolyX and remove blacklist reads
-rule trim_pe:
+rule trim:
     """
     Data-processing step to remove adapter sequences and perform quality trimming
     prior to alignment the reference genome.  Adapters are composed of synthetic
@@ -24,10 +24,10 @@ rule trim_pe:
     """
     input:
         file1=join(workpath,"{name}.R1.fastq.gz"),
-        file2=join(workpath,"{name}.R2.fastq.gz"),
+        file2=provided(join(workpath,"{name}.R2.fastq.gz"),paired_end)
     output:
         outfq1=temp(join(workpath,trim_dir,"{name}.R1.trim.fastq.gz")),
-        outfq2=temp(join(workpath,trim_dir,"{name}.R2.trim.fastq.gz")),
+        outfq2=provided(temp(join(workpath,trim_dir,"{name}.R2.trim.fastq.gz")),paired_end)
     params:
         rname="trim",
         cutadaptver=config['tools']['CUTADAPTVER'],
@@ -42,7 +42,8 @@ rule trim_pe:
         trailingquality=10,
         javaram="64g",
         sample="{name}",
-        tmpdir=tmpdir
+        tmpdir=tmpdir,
+        paired_end = paired_end
     threads: 16
     shell: """
     module load {params.cutadaptver};
@@ -56,48 +57,84 @@ rule trim_pe:
     tmp=$(mktemp -d -p "{params.tmpdir}")
     trap 'rm -rf "${{tmp}}"' EXIT
 
-    cutadapt \\
-        --pair-filter=any \\
-        --nextseq-trim=2 \\
-        --trim-n \\
-        -n 5 \\
-        -O 5 \\
-        -q {params.leadingquality},{params.trailingquality} \\
-        -m {params.minlen}:{params.minlen} \\
-        -b file:{params.fastawithadaptersetd} \\
-        -B file:{params.fastawithadaptersetd} \\
-        -j {threads} \\
-        -o ${{tmp}}/{params.sample}.R1.trim.fastq.gz \\
-        -p ${{tmp}}/{params.sample}.R2.trim.fastq.gz \\
-        {input.file1} {input.file2}
-    
-    if [ "{params.blacklistbwaindex}" != ""];
-    then bwa mem -t {threads} \\
-        {params.blacklistbwaindex} \\
-        ${{tmp}}/{params.sample}.R1.trim.fastq.gz \\
-        ${{tmp}}/{params.sample}.R2.trim.fastq.gz \\
-        | samtools view -@{threads} \\
-            -f4 \\
-            -b \\
-            -o ${{tmp}}/{params.sample}.bam;
-    rm ${{tmp}}/{params.sample}.R1.trim.fastq.gz;
-    rm ${{tmp}}/{params.sample}.R2.trim.fastq.gz;
-    
-    java -Xmx{params.javaram} -jar $PICARDJARPATH/picard.jar SamToFastq \\
-        -VALIDATION_STRINGENCY SILENT \\
-        -INPUT ${{tmp}}/{params.sample}.bam \\
-        -FASTQ ${{tmp}}/{params.sample}.R1.trim.fastq \\
-        -SECOND_END_FASTQ ${{tmp}}/{params.sample}.R2.trim.fastq \\
-        -UNPAIRED_FASTQ ${{tmp}}/{params.sample}.unpaired.noBL.fastq
+    if [ '{params.paired_end}' == True ];then
+        cutadapt \\
+            --pair-filter=any \\
+            --nextseq-trim=2 \\
+            --trim-n \\
+            -n 5 \\
+            -O 5 \\
+            -q {params.leadingquality},{params.trailingquality} \\
+            -m {params.minlen}:{params.minlen} \\
+            -b file:{params.fastawithadaptersetd} \\
+            -B file:{params.fastawithadaptersetd} \\
+            -j {threads} \\
+            -o ${{tmp}}/{params.sample}.R1.trim.fastq.gz \\
+            -p ${{tmp}}/{params.sample}.R2.trim.fastq.gz \\
+            {input.file1} {input.file2}
         
-    rm ${{tmp}}/{params.sample}.bam;
-    
-    pigz -p {threads} ${{tmp}}/{params.sample}.R1.trim.fastq;
-    pigz -p {threads} ${{tmp}}/{params.sample}.R2.trim.fastq;
+        if [ "{params.blacklistbwaindex}" != ""];
+        then bwa mem -t {threads} \\
+            {params.blacklistbwaindex} \\
+            ${{tmp}}/{params.sample}.R1.trim.fastq.gz \\
+            ${{tmp}}/{params.sample}.R2.trim.fastq.gz \\
+            | samtools view -@{threads} \\
+                -f4 \\
+                -b \\
+                -o ${{tmp}}/{params.sample}.bam;
+        rm ${{tmp}}/{params.sample}.R1.trim.fastq.gz;
+        rm ${{tmp}}/{params.sample}.R2.trim.fastq.gz;
+        
+        java -Xmx{params.javaram} -jar $PICARDJARPATH/picard.jar SamToFastq \\
+            -VALIDATION_STRINGENCY SILENT \\
+            -INPUT ${{tmp}}/{params.sample}.bam \\
+            -FASTQ ${{tmp}}/{params.sample}.R1.trim.fastq \\
+            -SECOND_END_FASTQ ${{tmp}}/{params.sample}.R2.trim.fastq \\
+            -UNPAIRED_FASTQ ${{tmp}}/{params.sample}.unpaired.noBL.fastq
+            
+        rm ${{tmp}}/{params.sample}.bam;
+        
+        pigz -p {threads} ${{tmp}}/{params.sample}.R1.trim.fastq;
+        pigz -p {threads} ${{tmp}}/{params.sample}.R2.trim.fastq;
+        fi
+        mv ${{tmp}}/{params.sample}.R1.trim.fastq.gz {output.outfq1};
+        mv ${{tmp}}/{params.sample}.R2.trim.fastq.gz {output.outfq2};
+    else
+        cutadapt \\
+            --nextseq-trim=2 \\
+            --trim-n \\
+            -n 5 \\
+            -O 5 \\
+            -q {params.leadingquality},{params.trailingquality} \\
+            -m {params.minlen} \\
+            -b file:{params.fastawithadaptersetd} \\
+            -j {threads} \\
+            -o ${{tmp}}/{params.sample}.R1.trim.fastq.gz \\
+            {input.file1}
+        
+        if [ "{params.blacklistbwaindex}" != ""];
+        then bwa mem -t {threads} \\
+            {params.blacklistbwaindex} \\
+            ${{tmp}}/{params.sample}.R1.trim.fastq.gz \\
+            | samtools view -@{threads} \\
+                -f4 \\
+                -b \\
+                -o ${{tmp}}/{params.sample}.bam;
+        rm ${{tmp}}/{params.sample}.R1.trim.fastq.gz;
+        
+        java -Xmx{params.javaram} -jar $PICARDJARPATH/picard.jar SamToFastq \\
+            -VALIDATION_STRINGENCY SILENT \\
+            -INPUT ${{tmp}}/{params.sample}.bam \\
+            -FASTQ ${{tmp}}/{params.sample}.R1.trim.fastq
+            
+        rm ${{tmp}}/{params.sample}.bam;
+        
+        pigz -p {threads} ${{tmp}}/{params.sample}.R1.trim.fastq;
+
+        fi
+        mv ${{tmp}}/{params.sample}.R1.trim.fastq.gz {output.outfq1};
     fi
-    mv ${{tmp}}/{params.sample}.R1.trim.fastq.gz {output.outfq1};
-    mv ${{tmp}}/{params.sample}.R2.trim.fastq.gz {output.outfq2};
-    """
+        """
 
 rule BWA_PE:
     """
