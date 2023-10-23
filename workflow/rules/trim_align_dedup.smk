@@ -5,6 +5,21 @@
 #   - insert_size
 
 # trim, remove PolyX and remove blacklist reads
+def dedup_out7(input, assay, paired_end):
+    if assay == "cfchip":
+        i = [
+            
+            input+".Q5DD_tagAlign"
+        ]
+        return i 
+    elif paired_end == False and assay == "chip":
+        i = [
+            input+".Q5DD_tagAlign.gz"
+        ]
+        return i
+    else:
+        i = []
+        return i
 rule trim:
     """
     Data-processing step to remove adapter sequences and perform quality trimming
@@ -227,8 +242,7 @@ rule dedup:
         out5f=join(workpath,bam_dir,"{name}.Q5DD.bam.flagstat"),
         out5i=join(workpath,bam_dir,"{name}.Q5DD.bam.idxstat"),
         out6=provided(join(workpath,bam_dir,"{name}.bwa.Q5.duplic"), paired_end),
-        out7=provided(join(workpath,bam_dir,"{name}.Q5DD_tagAlign"),assay=="cfchip"),
-        outtagalign=provided(join(workpath,bam_dir,"{name}.Q5DD_tagAlign.gz"), paired_end == False)
+        out7=dedup_out7(join(workpath,bam_dir,"{name}"), assay, paired_end)
     params:
         rname='dedup',
         picardver=config['tools']['PICARDVER'],
@@ -277,7 +291,7 @@ rule dedup:
       bedtools intersect -wa -f 1.0 -a ${{tmp}}/TmpTagAlign2 -b ${{tmp}}/GenomeFileBed > ${{tmp}}/TmpTagAlign3;
       bedtools bedtobam -i ${{tmp}}/TmpTagAlign3 -g {params.genomefile} | samtools sort -@4 -o {output.out5};
       gzip ${{tmp}}/TmpTagAlign3;
-      mv ${{tmp}}/TmpTagAlign3.gz {output.outtagalign};
+      mv ${{tmp}}/TmpTagAlign3.gz {output.out7};
       samtools index {output.out5};
       samtools flagstat {output.out5} > {output.out5f}
       samtools idxstats {output.out5} > {output.out5i}
