@@ -6,7 +6,7 @@
         "threads": "4",
         "time": "1-18:00:00"
     },
-    "trim_pe": {
+    "trim": {
         "mem": "64g",
         "threads": "32"
     },
@@ -15,12 +15,12 @@
         "gres": "lscratch:256",
         "mem": "110g"
     },
-    "BWA_PE": {
+    "BWA": {
         "threads": "32",
         "mem": "220g",
         "gres": "lscratch:64"
     },
-    "picard_dedup": {
+    "dedup": {
         "gres": "lscratch:256",
         "mem": "96g",
         "threads": "2"
