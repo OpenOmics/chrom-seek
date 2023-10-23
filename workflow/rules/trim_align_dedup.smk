@@ -4,7 +4,7 @@
 #   - BWA_PE
 #   - insert_size
 
-# trim, remove PolyX and remove blacklist reads
+
 def dedup_out7(input, assay, paired_end):
     if assay == "cfchip":
         i = [
@@ -20,6 +20,8 @@ def dedup_out7(input, assay, paired_end):
     else:
         i = []
         return i
+
+        
 rule trim:
     """
     Data-processing step to remove adapter sequences and perform quality trimming
