@@ -314,12 +314,12 @@ rule bam2bw:
         outbw=join(workpath,bw_dir,"{name}.{ext}.RPGC.bw"),
     params:
         rname="bam2bw",
-        pe=pe,
+        paired_end=paired_end,
         effectivegenomesize=config['references'][genome]['EFFECTIVEGENOMESIZE'],
     threads: int(allocated("threads", "bam2bw", cluster)),
     envmodules: config['tools']['DEEPTOOLSVER'],
     shell: """
-    if [ "{params.pe}" == "yes" ]; then
+    if [ "{params.paired_end}" == True ]; then
         bamCoverage \\
             --bam {input.bam} \\
             -o {output.outbw} \\
