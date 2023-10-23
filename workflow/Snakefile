@@ -26,9 +26,6 @@ try:
 except KeyError:
     # Catching case when value is -1 or unknown
     sys.exit("Fatal: Raw data could not be classified as single-end or paired-end data!")
-print("PAIRED_END:")
-print(paired_end)
-print(type(paired_end))
 
 # Global workflow variables
 configfile: "config.json"
