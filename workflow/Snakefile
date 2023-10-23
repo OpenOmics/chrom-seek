@@ -19,6 +19,17 @@ from scripts.common import (
 # Timestamp in YYYYMMDD format
 today = str(datetime.datetime.today()).split()[0].replace('-', '')
 
+# Check for SE or PE FastQ files:
+convert = {1: False, 2: True}                     # 1 = SE, 2 = PE, -1 = Unknown
+try:
+    paired_end = convert[config['project']['nends']]  # True if PE else false
+except KeyError:
+    # Catching case when value is -1 or unknown
+    sys.exit("Fatal: Raw data could not be classified as single-end or paired-end data!")
+print("PAIRED_END:")
+print(paired_end)
+print(type(paired_end))
+
 # Global workflow variables
 configfile: "config.json"
 samples  = config['samples']
@@ -82,28 +93,8 @@ def zip_contrasts(contrast, PeakTools):
             contrasts.append( g1 + "_vs_" + g2 + "-" + PeakTool )
     return(zipGroup1, zipGroup2, zipTool, contrasts)
 
-# Creating naming conventions for bam files 
-# and tagAlign files if SE, extension objects 
-# defined here are especially relevant for the
-# deeptools rules and all four are used in at
-# least one rule
-se=""
-pe=""
-if config['project']['nends'] == 2 :
-    pe="yes"
-elif config['project']['nends'] == 1 :
-    se="yes"
 
 extensions = [ "sorted.RPGC", "Q5DD.RPGC" ]
-extensions2 = list(map(lambda x:re.sub(".RPGC","",x),extensions))
-
-if pe == "yes":
-    extensions3 = { extensions2[i] + "." : "bam" for i in range(len(extensions2)) }
-    extensions4 = [ extensions2[i] + ".bam" for i in range(len(extensions2)) ]
-else:
-    types = [ "bam", "tagAlign.gz" ]
-    extensions3 = { extensions2[i] + "." : types[i] for i in range(len(extensions2)) }
-    extensions4 = [ extensions2[i] + "." + types[i] for i in range(len(extensions2)) ]
 
 
 # Getting sample relationships from config
@@ -188,14 +179,21 @@ cfTool_dir="cfChIPtool"
 cfTool_subdir2="cfChIPtool/BED/H3K4me3"
 
 zipGroup1, zipGroup2, zipToolC, contrasts = zip_contrasts(contrast, PeakTools)
-# Final targets of the pipeline 
+# Final targets of the pipeline
+ 
+if paired_end:
+    extensionsDict = {"sorted": "bam", "Q5DD":"bam"}
+    extensionsFull = ['sorted.bam', 'Q5DD.bam']
+else:
+    extensionsDict= {"sorted": "bam", "Q5DD_tagAlign": "gz"}
+    extensionsFull = ['sorted.bam', 'Q5DD_tagAlign.gz']
 
 if assay == "cfchip":
     rule all:
         input: 
             join(workpath,"multiqc_report.html"),
-            expand(join(workpath,qc_dir,"{name}.{ext}.insert_size_metrics.txt"),name=samples,ext=extensions2),
-            expand(join(workpath,bam_dir,"{name}.{ext}"),name=samples,ext=extensions4[1]),
+            expand(join(workpath,qc_dir,"{name}.{ext}.insert_size_metrics.txt"),name=samples,ext=list(extensionsDict.keys())),
+            expand(join(workpath,bam_dir,"{name}.{ext}"),name=samples,ext=extensionsFull),
             expand(join(workpath,qc_dir,"{name}.preseq.dat"), name=samples),
             expand(join(workpath,macsN_dir,"{name}","{name}_peaks.narrowPeak"),name=chips),
             expand(join(workpath,"PeakQC","{PeakTool}.{name}.Q5DD.FRiP_table.txt"), PeakTool=PeakTools, name=samples),
@@ -217,8 +215,8 @@ elif assay in ["atac", "chip"]:
     rule all:
         input: 
             join(workpath,"multiqc_report.html"),
-            expand(join(workpath,qc_dir,"{name}.{ext}.insert_size_metrics.txt"),name=samples,ext=extensions2),
-            expand(join(workpath,bam_dir,"{name}.{ext}"),name=samples,ext=extensions4[1]),
+            provided(expand(join(workpath,qc_dir,"{name}.{ext}.insert_size_metrics.txt"),name=samples,ext=list(extensionsDict.keys())), paired_end==True),
+            expand(join(workpath,bam_dir,"{name}.{ext}"),name=samples,ext=extensionsFull),
             expand(join(workpath,qc_dir,"{name}.preseq.dat"), name=samples),
             expand(join(workpath,macsN_dir,"{name}","{name}_peaks.narrowPeak"),name=chips),
             provided(expand(join(workpath,"macsBroad","{name}","{name}_peaks.broadPeak"),name=chips), assay=="chip"),
@@ -236,7 +234,9 @@ elif assay in ["atac", "chip"]:
             provided(expand(join(workpath,uropa_dir,diffbind_dir,'{name}_{PeakTool}_uropa_{type}_allhits.txt'), 
                 PeakTool=['DiffbindEdgeR','DiffbindDeseq2'],name=contrasts,type=["protTSS", "prot", "protSEC", "genes"]), reps == "yes"),
 
-            provided(expand(join(workpath,"Genrich","{name}","{name}.narrowPeak"),name=chips), assay=="atac")
+            provided(expand(join(workpath,"Genrich","{name}","{name}.narrowPeak"),name=chips), assay=="atac"),
+
+            
 #############################
 
 # QC/alignment rules: trim_pe,
