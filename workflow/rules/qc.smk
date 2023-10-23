@@ -88,7 +88,7 @@ rule rawfastqc:
     """
     input:
         expand(join(workpath,"{name}.R1.fastq.gz"), name=samples) if \
-            se == "yes" else \
+            not paired_end else \
             expand(join(workpath,"{name}.R{rn}.fastq.gz"), name=samples,rn=[1,2])
     output:
         expand(join(workpath,'rawfastQC',"{name}.R1_fastqc.html"),name=samples),
@@ -119,7 +119,7 @@ rule fastqc:
     """
     input:
         expand(join(workpath,trim_dir,"{name}.R1.trim.fastq.gz"),name=samples) if \
-            se == "yes" else \
+            not paired_end else \
             expand(join(workpath,trim_dir,"{name}.R{rn}.trim.fastq.gz"), name=samples,rn=[1,2])
     output:
         expand(join(workpath,'fastQC',"{name}.R1.trim_fastqc.html"),name=samples),
@@ -149,16 +149,16 @@ rule fastq_screen:
         FastQ Screen report and logfiles
     """
     input:
-        join(workpath,trim_dir,"{name}.R1.trim.fastq.gz") if se == "yes" else \
+        join(workpath,trim_dir,"{name}.R1.trim.fastq.gz") if not paired_end else \
             expand(join(workpath,trim_dir,"{name}.R{rn}.trim.fastq.gz"),name=samples,rn=[1,2])
     output:
-        join(workpath,"FQscreen","{name}.R1.trim_screen.txt") if se == "yes" else \
+        join(workpath,"FQscreen","{name}.R1.trim_screen.txt") if not paired_end else \
             expand(join(workpath,"FQscreen","{name}.R{rn}.trim_screen.txt"),name=samples,rn=[1,2]),
-        join(workpath,"FQscreen","{name}.R1.trim_screen.png") if se == "yes" else \
+        join(workpath,"FQscreen","{name}.R1.trim_screen.png") if not paired_end else \
             expand(join(workpath,"FQscreen","{name}.R{rn}.trim_screen.png"),name=samples,rn=[1,2]),
-        join(workpath,"FQscreen2","{name}.R1.trim_screen.txt") if se == "yes" else \
+        join(workpath,"FQscreen2","{name}.R1.trim_screen.txt") if not paired_end else \
             expand(join(workpath,"FQscreen2","{name}.R{rn}.trim_screen.txt"),name=samples,rn=[1,2]),
-        join(workpath,"FQscreen2","{name}.R1.trim_screen.png") if se == "yes" else \
+        join(workpath,"FQscreen2","{name}.R1.trim_screen.png") if not paired_end else \
             expand(join(workpath,"FQscreen2","{name}.R{rn}.trim_screen.png"),name=samples,rn=[1,2]),
     params:
         rname   = 'fqscreen',
@@ -298,7 +298,7 @@ rule insert_size:
         Number of reads per insert size and their histogram
     """
     input:
-        bam = lambda w : join(workpath,bam_dir,w.name + "." + w.ext + "." + extensions3[w.ext + "."])
+        bam = lambda w : join(workpath,bam_dir,w.name + "." + w.ext + "." + extensionsDict[w.ext])
     output:
         txt= join(workpath,qc_dir,"{name}.{ext}.insert_size_metrics.txt"),
         pdf= join(workpath,qc_dir,"{name}.{ext}.insert_size_histogram.pdf"),
