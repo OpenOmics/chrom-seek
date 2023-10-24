@@ -233,6 +233,13 @@ elif assay in ["atac", "chip"]:
 
             provided(expand(join(workpath,"Genrich","{name}","{name}.narrowPeak"),name=chips), assay=="atac"),
 
+            provided(expand(join(workpath,bam_dir,ppqt_dir,"{name}.{ext}.ppqt"), name=samples, ext=["sorted", "Q5DD"]), paired_end == True and assay=="chip"),
+            provided(expand(join(workpath,bam_dir,ppqt_dir,"{name}.{ext}.pdf"), name=samples, ext=["sorted", "Q5DD"]), paired_end == True and assay=="chip"),
+            provided(expand(join(workpath,bam_dir,ppqt_dir,"{name}.{ext}.ppqt.txt"),name=samples, ext=["sorted", "Q5DD"]), paired_end == True and assay=="chip"),
+            provided(expand(join(workpath,bam_dir,ppqt_dir,"{name}.{ext}.ppqt"), name=samples, ext=["sorted", "Q5DD_tagAlign"]), paired_end == False and assay=="chip"),
+            provided(expand(join(workpath,bam_dir,ppqt_dir,"{name}.{ext}.pdf"), name=samples, ext=["sorted", "Q5DD_tagAlign"]), paired_end == False and assay=="chip"),
+            provided(expand(join(workpath,bam_dir,ppqt_dir,"{name}.{ext}.ppqt.txt"),name=samples, ext=["sorted", "Q5DD_tagAlign"]), paired_end == False and assay=="chip"),
+
             
 #############################
 
