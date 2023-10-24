@@ -359,7 +359,6 @@ rule ppqt:
         rname="ppqt",
         samtoolsver=config['tools']['SAMTOOLSVER'],
         rver=config['tools']['RVER'],
-        scriptR=join(workpath,"workflow","scripts", "ppqt", "run_spp.R"),
         scriptPy=join(workpath,"workflow","scripts","ppqt_process.py"),
         inputSample=(lambda w: w.name in uniq_inputs),
         tmpdir=tmpdir,
