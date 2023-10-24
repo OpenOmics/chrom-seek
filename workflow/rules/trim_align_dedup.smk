@@ -4,7 +4,6 @@
 #   - BWA_PE
 #   - insert_size
 
-
 def dedup_out7(input, assay, paired_end):
     if assay == "cfchip":
         i = [
@@ -21,6 +20,43 @@ def dedup_out7(input, assay, paired_end):
         i = []
         return i
 
+
+def get_ppqt_input(wildcards):
+    if paired_end:
+        i = [
+            join(workpath, bam_dir, ppqt_dir, "{0}.{1}.ppqt.txt".format(wildcards.name, wildcards.ext))
+        ]
+        return i 
+    else:
+        if wildcards.ext == "Q5DD":
+            i = [
+                join(workpath, bam_dir, ppqt_dir, "{0}.Q5DD_tagAlign.ppqt.txt".format(wildcards.name))
+            ]
+            return i 
+        elif wildcards.ext == "sorted":
+            i = [
+                join(workpath, bam_dir, ppqt_dir, "{0}.sorted.ppqt.txt".format(wildcards.name))
+            ]
+            return i
+
+
+def get_bam_input(wildcards):
+    if paired_end:
+        i = [
+            join(workpath, bam_dir, "{0}.{1}.bam".format(wildcards.name, wildcards.ext))
+        ]
+        return i 
+    else:
+        if wildcards.ext == "Q5DD":
+            i = [
+                join(workpath, bam_dir, "{0}.Q5DD.bam".format(wildcards.name))
+            ]
+            return i
+        elif wildcards.ext == "sorted":
+            i = [
+                join(workpath, bam_dir, "{0}.sorted.bam".format(wildcards.name))
+            ]
+            return i
         
 rule trim:
     """
@@ -312,6 +348,52 @@ rule dedup:
     fi
     """
 
+rule ppqt:
+    input:
+        bam = lambda w : join(workpath,bam_dir,w.name + "." + w.ext + "." + extensionsDict[w.ext])
+    output:                                          
+        ppqt= join(workpath,bam_dir,ppqt_dir,"{name}.{ext}.ppqt"),
+        pdf= join(workpath,bam_dir,ppqt_dir,"{name}.{ext}.pdf"),
+        txt= join(workpath,bam_dir,ppqt_dir,"{name}.{ext}.ppqt.txt"),
+    params:
+        rname="ppqt",
+        samtoolsver=config['tools']['SAMTOOLSVER'],
+        rver=config['tools']['RVER'],
+        scriptR=join(workpath,"workflow","scripts", "ppqt", "run_spp.R"),
+        scriptPy=join(workpath,"workflow","scripts","ppqt_process.py"),
+        inputSample=(lambda w: w.name in uniq_inputs),
+        tmpdir=tmpdir,
+        paired_end = paired_end,
+        file_name = "{name}"
+    container: config['images']['ppqt']
+    shell: """
+    if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
+    tmp=$(mktemp -d -p "{params.tmpdir}")
+    trap 'rm -rf "${{tmp}}"' EXIT
+
+    if [ '{params.paired_end}' == True ]; then
+        samtools view -b \\
+          -f 66 \\
+          -o ${{tmp}}/bam1.f66.bam {input.bam};
+        samtools index ${{tmp}}/bam1.f66.bam;
+        run_spp.R -c=${{tmp}}/bam1.f66.bam \
+                    -savp={output.pdf} -out={output.ppqt} \
+                    -tmpdir=${{tmp}} -rf
+    else
+        if [[ '{input.bam}' == *.gz ]]; then 
+            ln -s {input.bam} ${{tmp}}/{params.file_name}.Q5DD.tagAlign.gz;
+            run_spp.R -c=${{tmp}}/{params.file_name}.Q5DD.tagAlign.gz \
+                     -savp={output.pdf} -out={output.ppqt} \
+                     -tmpdir=/lscratch/$SLURM_JOBID -rf
+        else
+            run_spp.R -c={input.bam} \
+                     -savp={output.pdf} -out={output.ppqt} \
+                     -tmpdir=/lscratch/$SLURM_JOBID -rf
+        fi
+    fi
+    python {params.scriptPy} -i {output.ppqt} -o {output.txt}
+    """
+
 rule bam2bw:
     """
     bamCoverage converts bams to bigwig files for read visialization
@@ -324,28 +406,41 @@ rule bam2bw:
        an associated score, RPGC
     """
     input:
-        bam=join(workpath,bam_dir,"{name}.{ext}.bam"),
-        # ppqt=join(workpath,bam_dir,"{ext}.ppqt.txt"),
+        bam = get_bam_input,
+        ppqt = get_ppqt_input
     output:
         outbw=join(workpath,bw_dir,"{name}.{ext}.RPGC.bw"),
     params:
         rname="bam2bw",
-        paired_end=paired_end,
         effectivegenomesize=config['references'][genome]['EFFECTIVEGENOMESIZE'],
+        paired_end = paired_end,
+        tmpdir=tmpdir,
+        name = "{name}"
     threads: int(allocated("threads", "bam2bw", cluster)),
     envmodules: config['tools']['DEEPTOOLSVER'],
     shell: """
-    if [ "{params.paired_end}" == True ]; then
-        bamCoverage \\
-            --bam {input.bam} \\
-            -o {output.outbw} \\
-            --binSize 25 \\
-            --smoothLength 75 \\
-            --numberOfProcessors {threads} \\
-            --normalizeUsing RPGC \\
-            --effectiveGenomeSize {params.effectivegenomesize} \\
-            --centerReads;   
+    if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
+    tmp=$(mktemp -d -p "{params.tmpdir}")
+    trap 'rm -rf "${{tmp}}"' EXIT
+
+    bam_cov_option={input.ppqt}
+    if [ '{params.paired_end}' == False ]; then
+        ppqt_len=$(awk '{{print $1}}' {input.ppqt})
+        bam_cov_option="-e ${{ppqt_len}}"
+    else 
+        bam_cov_option=--centerReads
     fi
+    echo "printing out value of bam-cov-option $bam_cov_option"
+    
+    bamCoverage \\
+        --bam {input.bam} \\
+        -o {output.outbw} \\
+        --binSize 25 \\
+        --smoothLength 75 \\
+        --numberOfProcessors {threads} \\
+        --normalizeUsing RPGC \\
+        --effectiveGenomeSize {params.effectivegenomesize} \\
+        ${{bam_cov_option}};  
     """    
 
 rule inputnorm:
