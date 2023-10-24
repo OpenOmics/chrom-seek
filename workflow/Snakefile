@@ -19,14 +19,6 @@ from scripts.common import (
 # Timestamp in YYYYMMDD format
 today = str(datetime.datetime.today()).split()[0].replace('-', '')
 
-# Check for SE or PE FastQ files:
-convert = {1: False, 2: True}                     # 1 = SE, 2 = PE, -1 = Unknown
-try:
-    paired_end = convert[config['project']['nends']]  # True if PE else false
-except KeyError:
-    # Catching case when value is -1 or unknown
-    sys.exit("Fatal: Raw data could not be classified as single-end or paired-end data!")
-
 # Global workflow variables
 configfile: "config.json"
 samples  = config['samples']
@@ -35,6 +27,14 @@ tmpdir = config['options']['tmp_dir']
 genome   = config['options']['genome']         # Reference genome of a set of samples
 assay   = config['options']['assay']
 
+# Check for SE or PE FastQ files:
+convert = {1: False, 2: True}                     # 1 = SE, 2 = PE, -1 = Unknown
+try:
+    paired_end = convert[config['project']['nends']]  # True if PE else false
+except KeyError:
+    # Catching case when value is -1 or unknown
+    sys.exit("Fatal: Raw data could not be classified as single-end or paired-end data!")
+    
 # Analysis options
 # Run differential binding pipeline
 run_dba = True 
