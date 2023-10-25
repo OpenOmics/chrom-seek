@@ -74,29 +74,54 @@ rule genrich:
 # INDIVIDUAL RULES
 rule MACS2_narrow:
     input:
-        chip = join(workpath,bam_dir,"{name}.Q5DD.bam"),
-        ctrl = get_input_bam,
+        chip = lambda w: join(workpath,bam_dir, w.name+".Q5DD.bam") \
+        if paired_end else join(workpath,bam_dir, w.name+".Q5DD_tagAlign.gz"),
+        txt = lambda w: join(workpath,bam_dir, ppqt_dir, w.name+".Q5DD.ppqt.txt") \
+        if paired_end else join(workpath,bam_dir, ppqt_dir, w.name+".Q5DD_tagAlign.ppqt.txt"),
+        c_option_pe = provided( lambda w: "{0}.Q5DD.bam".format(
+            join(workpath, bam_dir, chip2input[w.name])
+        ) if chip2input[w.name] else "", paired_end == True),
+        c_option_se = provided(lambda w: "{0}.Q5DD_tagAlign.gz".format(
+            join(workpath, bam_dir, chip2input[w.name])
+        ) if chip2input[w.name] else "", paired_end == False) # Building optional argument for paired input option, input: '-c /path/to/input.Q5DD.bam', No input: ''
     output:
         join(workpath,macsN_dir,"{name}","{name}_peaks.narrowPeak"),
     params:
         rname='MACS2_narrow',
         gsize=config['references'][genome]['EFFECTIVEGENOMESIZE'],
         macsver=config['tools']['MACSVER'],
-        # Building optional argument for paired input option,
-        # input: '-c /path/to/input.Q5DD.bam', No input: ''
-        c_option = lambda w: "-c {0}.Q5DD.bam".format(
-            join(workpath, bam_dir, chip2input[w.name])
-        ) if chip2input[w.name] else "",
+        paired_end = paired_end,
+        flag= lambda w: "-c" if chip2input[w.name] else ""
     shell: """
     module load {params.macsver};
-    macs2 callpeak \\
-        -t {input.chip} {params.c_option} \\
-        -g {params.gsize} \\
-        -n {wildcards.name} \\
-        --outdir {workpath}/{macsN_dir}/{wildcards.name} \\
-        -q 0.01 \\
-        --keep-dup="all" \\
-        -f "BAMPE"
+    if [ '{params.paired_end}' == True ]; then
+
+        echo "Printing paired-end"
+        a={input.c_option_pe}
+        echo "Printing input.c_option_pe ${{a}}"
+        macs2 callpeak \\
+            -t {input.chip} {params.flag} {input.c_option_pe} \\
+            -g {params.gsize} \\
+            -n {wildcards.name} \\
+            --outdir {workpath}/{macsN_dir}/{wildcards.name} \\
+            -q 0.01 \\
+            --keep-dup="all" \\
+            -f "BAMPE"
+    else
+        echo "Printing single-end"
+        a={input.c_option_se}
+        echo "Printing input.c_option_se ${{a}}"
+        ppqt_len=$(awk '{{print $1}}' {input.txt})
+        macs2 callpeak \\
+            -t {input.chip} {params.flag} {input.c_option_se} \\
+            -g {params.gsize} \\
+            -n {wildcards.name} \\
+            --outdir {workpath}/{macsN_dir}/{wildcards.name} \\
+            -q 0.01 \\
+            --keep-dup="all" \\
+            --nomodel \\
+            --extsize $ppqt_len
+    fi
     """
 
 rule MACS2_broad:
