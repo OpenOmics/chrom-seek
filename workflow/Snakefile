@@ -19,14 +19,6 @@ from scripts.common import (
 # Timestamp in YYYYMMDD format
 today = str(datetime.datetime.today()).split()[0].replace('-', '')
 
-# Check for SE or PE FastQ files:
-convert = {1: False, 2: True}                     # 1 = SE, 2 = PE, -1 = Unknown
-try:
-    paired_end = convert[config['project']['nends']]  # True if PE else false
-except KeyError:
-    # Catching case when value is -1 or unknown
-    sys.exit("Fatal: Raw data could not be classified as single-end or paired-end data!")
-
 # Global workflow variables
 configfile: "config.json"
 samples  = config['samples']
@@ -35,6 +27,14 @@ tmpdir = config['options']['tmp_dir']
 genome   = config['options']['genome']         # Reference genome of a set of samples
 assay   = config['options']['assay']
 
+# Check for SE or PE FastQ files:
+convert = {1: False, 2: True}                     # 1 = SE, 2 = PE, -1 = Unknown
+try:
+    paired_end = convert[config['project']['nends']]  # True if PE else false
+except KeyError:
+    # Catching case when value is -1 or unknown
+    sys.exit("Fatal: Raw data could not be classified as single-end or paired-end data!")
+    
 # Analysis options
 # Run differential binding pipeline
 run_dba = True 
@@ -232,6 +232,13 @@ elif assay in ["atac", "chip"]:
                 PeakTool=['DiffbindEdgeR','DiffbindDeseq2'],name=contrasts,type=["protTSS", "prot", "protSEC", "genes"]), reps == "yes"),
 
             provided(expand(join(workpath,"Genrich","{name}","{name}.narrowPeak"),name=chips), assay=="atac"),
+
+            provided(expand(join(workpath,bam_dir,ppqt_dir,"{name}.{ext}.ppqt"), name=samples, ext=["sorted", "Q5DD"]), paired_end == True and assay=="chip"),
+            provided(expand(join(workpath,bam_dir,ppqt_dir,"{name}.{ext}.pdf"), name=samples, ext=["sorted", "Q5DD"]), paired_end == True and assay=="chip"),
+            provided(expand(join(workpath,bam_dir,ppqt_dir,"{name}.{ext}.ppqt.txt"),name=samples, ext=["sorted", "Q5DD"]), paired_end == True and assay=="chip"),
+            provided(expand(join(workpath,bam_dir,ppqt_dir,"{name}.{ext}.ppqt"), name=samples, ext=["sorted", "Q5DD_tagAlign"]), paired_end == False and assay=="chip"),
+            provided(expand(join(workpath,bam_dir,ppqt_dir,"{name}.{ext}.pdf"), name=samples, ext=["sorted", "Q5DD_tagAlign"]), paired_end == False and assay=="chip"),
+            provided(expand(join(workpath,bam_dir,ppqt_dir,"{name}.{ext}.ppqt.txt"),name=samples, ext=["sorted", "Q5DD_tagAlign"]), paired_end == False and assay=="chip"),
 
             
 #############################
