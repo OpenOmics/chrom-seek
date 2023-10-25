@@ -195,7 +195,7 @@ rule fastq_screen:
         {input}
     """
 
-rule kraken_pe:
+rule kraken:
     """
     Quality-control step to assess for potential sources of microbial contamination.
     If there are high levels of microbial contamination, Kraken will provide an
@@ -208,7 +208,7 @@ rule kraken_pe:
     """
     input:
         fq1=join(workpath,trim_dir,"{name}.R1.trim.fastq.gz"),
-        fq2=join(workpath,trim_dir,"{name}.R2.trim.fastq.gz"),
+        fq2=provided(join(workpath,trim_dir,"{name}.R2.trim.fastq.gz"), paired_end)
     output:
         krakenout = join(workpath,kraken_dir,"{name}.trim.kraken_bacteria.out.txt"),
         krakentaxa = join(workpath,kraken_dir,"{name}.trim.kraken_bacteria.taxa.txt"),
@@ -234,11 +234,19 @@ rule kraken_pe:
     # location to reduce filesystem strain
     cp -rv {params.bacdb} ${{tmp}}/;
     kdb_base=$(basename {params.bacdb})
-    kraken2 --db ${{tmp}}/${{kdb_base}} \\
-        --threads {threads} --report {output.krakentaxa} \\
-        --output {output.krakenout} \\
-        --gzip-compressed \\
-        --paired {input.fq1} {input.fq2}
+    if [ '{params.paired_end}' == True ]; then
+        kraken2 --db ${{tmp}}/${{kdb_base}} \\
+            --threads {threads} --report {output.krakentaxa} \\
+            --output {output.krakenout} \\
+            --gzip-compressed \\
+            --paired {input.fq1} {input.fq2}
+    else
+        kraken2 --db ${{tmp}}/${{kdb_base}} \\
+            --threads {threads} --report {output.krakentaxa} \\
+            --output {output.krakenout} \\
+            --gzip-compressed \\
+            {input.fq1}
+    fi
     
     # Generate Krona Report
     cut -f2,3 {output.krakenout} | \\
