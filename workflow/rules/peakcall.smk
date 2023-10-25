@@ -95,10 +95,6 @@ rule MACS2_narrow:
     shell: """
     module load {params.macsver};
     if [ '{params.paired_end}' == True ]; then
-
-        echo "Printing paired-end"
-        a={input.c_option_pe}
-        echo "Printing input.c_option_pe ${{a}}"
         macs2 callpeak \\
             -t {input.chip} {params.flag} {input.c_option_pe} \\
             -g {params.gsize} \\
@@ -108,9 +104,6 @@ rule MACS2_narrow:
             --keep-dup="all" \\
             -f "BAMPE"
     else
-        echo "Printing single-end"
-        a={input.c_option_se}
-        echo "Printing input.c_option_se ${{a}}"
         ppqt_len=$(awk '{{print $1}}' {input.txt})
         macs2 callpeak \\
             -t {input.chip} {params.flag} {input.c_option_se} \\
