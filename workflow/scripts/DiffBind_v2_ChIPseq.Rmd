@@ -225,7 +225,7 @@ if (D2i == 0) {
 }
 try(DT::datatable(data.frame(DBReportDeseq2)[1:i,], rownames=F),silent=TRUE)
 
-report2 <- dba.report(DBAnalysisDeseq2,method = DBA_DESEQ2,th=100,bNormalized=T,bFlip=FALSE,precision=0)
+report2 <- dba.report(DBAnalysisDeseq2,method = DBA_DESEQ2,th=100,bNormalized=T,bFlip=FALSE,precision=0,bCalled=T)
 outfile3 <- paste0(contrasts, "-", peakcaller, "_Diffbind_Deseq2_fullList.txt")
 write.table(report2, outfile3, quote=F, sep="\t", row.names=F)
 ```
@@ -247,7 +247,7 @@ if (Ei == 0) {
 }
 try(DT::datatable(data.frame(DBReportEdgeR)[1:i,], rownames=F),silent=TRUE)
 
-report2 <- dba.report(DBAnalysisEdgeR,method = DBA_EDGER,th=100,bNormalized=T,bFlip=FALSE,precision=0)
+report2 <- dba.report(DBAnalysisEdgeR,method = DBA_EDGER,th=100,bNormalized=T,bFlip=FALSE,precision=0,bCalled=T)
 outfile3 <- paste0(contrasts, "-", peakcaller, "_Diffbind_EdgeR_fullList.txt")
 write.table(report2, outfile3, quote=F, sep="\t", row.names=F)
 ```
