@@ -31,7 +31,7 @@
         "mm10": {
             "ALIAS": "mm10",
             "SUPPORTED_PIPELINES": ["chip", "atac"],
-            "BLACKLISTBWAINDEX": "/data/OpenOmics/references/chrom-seek/mm10_basic/indexes/mm10.blacklist.chrM",
+            "BLACKLISTBWAINDEX": "/data/OpenOmics/references/chrom-seek/mm10_basic/indexes/mm10.blacklist.chrM.chr_rDNA",
             "BLACKLISTGENRICH": "/data/OpenOmics/references/chrom-seek/mm10_basic/indexes/mm10.blacklist.bed.gz",
             "BWA": "/data/OpenOmics/references/chrom-seek/mm10_basic/indexes/mm10",
             "cfChIP_TOOLS_SRC": "",
