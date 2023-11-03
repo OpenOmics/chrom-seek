@@ -218,6 +218,7 @@ rule kraken:
         outdir=join(workpath,kraken_dir),
         bacdb=config['shared_resources']['KRAKENBACDB'],
         tmpdir=tmpdir,
+        paired_end = paired_end
     threads: int(allocated("threads", "kraken_pe", cluster)),
     envmodules:
         config['tools']['KRAKENVER'],
