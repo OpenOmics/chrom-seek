@@ -13,6 +13,19 @@ def get_input_bam(wildcards):
         # Runs in ChIP-only mode
         return []
 
+def calc_effective_genome_fraction(effectivesize, genomefile):
+    """
+    calculate the effective genome fraction by calculating the
+    actual genome size from a .genome-like file and then dividing
+    the effective genome size by that number
+    """
+    lines=list(map(lambda x:x.strip().split("\t"),open(genomefile).readlines()))
+    genomelen=0
+    for chrom,l in lines:
+        if not "_" in chrom:
+            genomelen+=int(l)
+    return( str( float(effectivesize)/ genomelen ) )
+
 rule sortByRead:
     """
     Bam files(extension: sorted.bam) need to be sorted by read name
@@ -187,6 +200,7 @@ rule SICER:
         sicer_dir=join(workpath,sicer_dir,"{name}"),
         tmpdir=tmpdir,
         paired_end = paired_end,
+        frac=calc_effective_genome_fraction(gsize, reflen),
         flag= lambda w: "-c" if chip2input[w.name] else ""
     shell: """
     module load {params.sicerver}
@@ -216,7 +230,7 @@ rule SICER:
             -rt 100 \\
             -w 300 \\
             -f ${{mean_insert_size}} \\
-            -egf 0.75 \\
+            -egf {params.frac} \\
             -g 600 \\
             -fdr 1E-2 \\
             -cpu 30 \\
@@ -232,7 +246,7 @@ rule SICER:
             -rt 100 \\
             -w 300 \\
             -f ${{mean_insert_size}} \\
-            -egf 0.75 \\
+            -egf {params.frac} \\
             -g 600 \\
             -e 100 \\
             -cpu 30 \\
@@ -257,7 +271,7 @@ rule SICER:
             -rt 100 \\
             -w 300 \\
             -f ${{mean_insert_size}} \\
-            -egf 0.75 \\
+            -egf {params.frac} \\
             -g 600 \\
             -fdr 1E-2 \\
             -cpu 30 \\
@@ -274,7 +288,7 @@ rule SICER:
             -rt 100 \\
             -w 300 \\
             -f ${{mean_insert_size}} \\
-            -egf 0.75 \\
+            -egf {params.frac} \\
             -g 600 \\
             -e 100 \\
             -cpu 30 \\
