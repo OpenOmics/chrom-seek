@@ -26,6 +26,8 @@ workpath = config['project']['workpath']
 tmpdir = config['options']['tmp_dir']
 genome   = config['options']['genome']         # Reference genome of a set of samples
 assay   = config['options']['assay']
+gsize=config['references'][genome]['EFFECTIVEGENOMESIZE']
+reflen = config['references'][genome]['REFLEN']
 
 # Check for SE or PE FastQ files:
 convert = {1: False, 2: True}                     # 1 = SE, 2 = PE, -1 = Unknown
