@@ -126,7 +126,7 @@ rule trim:
             -p ${{tmp}}/{params.sample}.R2.trim.fastq.gz \\
             {input.file1} {input.file2}
         
-        if [ "{params.blacklistbwaindex}" != ""];
+        if [ "{params.blacklistbwaindex}" != "" ];
         then bwa mem -t {threads} \\
             {params.blacklistbwaindex} \\
             ${{tmp}}/{params.sample}.R1.trim.fastq.gz \\
@@ -165,7 +165,7 @@ rule trim:
             -o ${{tmp}}/{params.sample}.R1.trim.fastq.gz \\
             {input.file1}
         
-        if [ "{params.blacklistbwaindex}" != ""];
+        if [ "{params.blacklistbwaindex}" != "" ];
         then bwa mem -t {threads} \\
             {params.blacklistbwaindex} \\
             ${{tmp}}/{params.sample}.R1.trim.fastq.gz \\

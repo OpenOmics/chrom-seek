@@ -12,7 +12,8 @@
             "GENOME": "/data/OpenOmics/references/cfChIP-seek/hg19_basic/ref.fa",
             "GENOMECHR": "/data/OpenOmics/references/cfChIP-seek/hg19_basic/Chromsomes/",
             "GTFFILE": "/data/OpenOmics/references/cfChIP-seek/hg19_basic/genes.gtf",
-            "REFLEN": "/data/OpenOmics/references/cfChIP-seek/hg19_basic/indexes/hg19.fa.sizes"
+            "REFLEN": "/data/OpenOmics/references/cfChIP-seek/hg19_basic/indexes/hg19.fa.sizes",
+            "FRAC": "0.8970265870106838"
         },
         "hg38": {
             "ALIAS": "hg38",
@@ -26,12 +27,13 @@
             "GENOME": "/data/OpenOmics/references/chrom-seek/hg38_basic/ref.fa",
             "GENOMECHR": "/data/OpenOmics/references/chrom-seek/hg38_basic/Chromsomes/",
             "GTFFILE": "/data/OpenOmics/references/chrom-seek/hg38_basic/genes.gtf",
-            "REFLEN": "/data/OpenOmics/references/chrom-seek/hg38_basic/indexes/hg38.fa.sizes"
+            "REFLEN": "/data/OpenOmics/references/chrom-seek/hg38_basic/indexes/hg38.fa.sizes",
+            "FRAC": "0.9084767300375779"
         },
         "mm10": {
             "ALIAS": "mm10",
             "SUPPORTED_PIPELINES": ["chip", "atac"],
-            "BLACKLISTBWAINDEX": "/data/OpenOmics/references/chrom-seek/mm10_basic/indexes/mm10.blacklist.chrM",
+            "BLACKLISTBWAINDEX": "/data/OpenOmics/references/chrom-seek/mm10_basic/indexes/mm10.blacklist.chrM.chr_rDNA",
             "BLACKLISTGENRICH": "/data/OpenOmics/references/chrom-seek/mm10_basic/indexes/mm10.blacklist.bed.gz",
             "BWA": "/data/OpenOmics/references/chrom-seek/mm10_basic/indexes/mm10",
             "cfChIP_TOOLS_SRC": "",
@@ -40,7 +42,8 @@
             "GENOME": "/data/OpenOmics/references/chrom-seek/mm10_basic/ref.fa",
             "GENOMECHR": "/data/OpenOmics/references/chrom-seek/mm10_basic/Chromsomes/",
             "GTFFILE": "/data/OpenOmics/references/chrom-seek/mm10_basic/genes.gtf",
-            "REFLEN": "/data/OpenOmics/references/chrom-seek/mm10_basic/indexes/mm10.fa.sizes"
+            "REFLEN": "/data/OpenOmics/references/chrom-seek/mm10_basic/indexes/mm10.fa.sizes",
+            "FRAC": "0.9053190260640642"
         },
         "rheMac10": {
             "ALIAS": "rheMac10",
@@ -54,7 +57,8 @@
             "GENOME": "/data/OpenOmics/references/chrom-seek/rheMac10/Macaca_mulatta.Mmul_10.dna.chr.fa.gz",
             "GENOMECHR": "",
             "GTFFILE": "/data/OpenOmics/references/chrom-seek/rheMac10/Macaca_mulatta.Mmul_10.110.chr.gtf",
-            "REFLEN": "/data/OpenOmics/references/chrom-seek/rheMac10/Macaca_mulatta.Mmul_10.dna.chr.sizes"
+            "REFLEN": "/data/OpenOmics/references/chrom-seek/rheMac10/Macaca_mulatta.Mmul_10.dna.chr.sizes",
+            "FRAC": "0.9643910116868353"
         }
     }
 }

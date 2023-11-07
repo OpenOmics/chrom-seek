@@ -10,7 +10,7 @@
         "mem": "64g",
         "threads": "32"
     },
-    "kraken_pe": {
+    "kraken": {
         "cpus-per-task": "24",
         "gres": "lscratch:256",
         "mem": "110g"
