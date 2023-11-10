@@ -13,6 +13,24 @@ def get_input_bam(wildcards):
         # Runs in ChIP-only mode
         return []
 
+def get_control_input(wildcards):
+    if paired_end and chip2input[wildcards.name] != "":
+        i = [
+            join(workpath, bam_dir, "{0}.Q5DD.bam".format(chip2input[wildcards.name]))
+        ]
+        return i 
+    elif paired_end and chip2input[wildcards.name] == "":
+        i = []
+        return i 
+    elif not paired_end and chip2input[wildcards.name] != "":
+        i = [
+            join(workpath, bam_dir, "{0}.Q5DD_tagAlign.gz".format(chip2input[wildcards.name]))
+        ]
+        return i
+    else:
+        i = []
+        return i
+
 rule sortByRead:
     """
     Bam files(extension: sorted.bam) need to be sorted by read name
@@ -78,12 +96,7 @@ rule MACS2_narrow:
         if paired_end else join(workpath,bam_dir, w.name+".Q5DD_tagAlign.gz"),
         txt = lambda w: join(workpath,bam_dir, ppqt_dir, w.name+".Q5DD.ppqt.txt") \
         if paired_end else join(workpath,bam_dir, ppqt_dir, w.name+".Q5DD_tagAlign.ppqt.txt"),
-        c_option_pe = provided( lambda w: "{0}.Q5DD.bam".format(
-            join(workpath, bam_dir, chip2input[w.name])
-        ) if chip2input[w.name] else "", paired_end == True),
-        c_option_se = provided(lambda w: "{0}.Q5DD_tagAlign.gz".format(
-            join(workpath, bam_dir, chip2input[w.name])
-        ) if chip2input[w.name] else "", paired_end == False) # Building optional argument for paired input option, input: '-c /path/to/input.Q5DD.bam', No input: ''
+        c_option = get_control_input
     output:
         join(workpath,macsN_dir,"{name}","{name}_peaks.narrowPeak"),
     params:
@@ -96,7 +109,7 @@ rule MACS2_narrow:
     module load {params.macsver};
     if [ '{params.paired_end}' == True ]; then
         macs2 callpeak \\
-            -t {input.chip} {params.flag} {input.c_option_pe} \\
+            -t {input.chip} {params.flag} {input.c_option} \\
             -g {params.gsize} \\
             -n {wildcards.name} \\
             --outdir {workpath}/{macsN_dir}/{wildcards.name} \\
@@ -106,7 +119,7 @@ rule MACS2_narrow:
     else
         ppqt_len=$(awk '{{print $1}}' {input.txt})
         macs2 callpeak \\
-            -t {input.chip} {params.flag} {input.c_option_se} \\
+            -t {input.chip} {params.flag} {input.c_option} \\
             -g {params.gsize} \\
             -n {wildcards.name} \\
             --outdir {workpath}/{macsN_dir}/{wildcards.name} \\
@@ -123,12 +136,7 @@ rule MACS2_broad:
         if paired_end else join(workpath,bam_dir, w.name+".Q5DD_tagAlign.gz"),
         txt = lambda w: join(workpath,bam_dir, ppqt_dir, w.name+".Q5DD.ppqt.txt") \
         if paired_end else join(workpath,bam_dir, ppqt_dir, w.name+".Q5DD_tagAlign.ppqt.txt"),
-        c_option_pe = provided(lambda w: "{0}.Q5DD.bam".format(
-            join(workpath, bam_dir, chip2input[w.name])
-        ) if chip2input[w.name] else "", paired_end == True),
-        c_option_se = provided(lambda w: "{0}.Q5DD_tagAlign.gz".format(
-            join(workpath, bam_dir, chip2input[w.name])
-        ) if chip2input[w.name] else "", paired_end ==False)
+        c_option = get_control_input
     output:
         join(workpath,macsB_dir,"{name}","{name}_peaks.broadPeak"),
     params:
@@ -141,7 +149,7 @@ rule MACS2_broad:
     module load {params.macsver};
     if [ '{params.paired_end}' == True ]; then
         macs2 callpeak \\
-            -t {input.chip} {params.flag} {input.c_option_pe} \\
+            -t {input.chip} {params.flag} {input.c_option} \\
             -g {params.gsize} \\
             -n {wildcards.name} \\
             --outdir {workpath}/{macsB_dir}/{wildcards.name} \\
@@ -152,7 +160,7 @@ rule MACS2_broad:
     else 
         ppqt_len=$(awk '{{print $1}}' {input.txt})
         macs2 callpeak \\
-            -t {input.chip} {params.flag} {input.c_option_se} \\
+            -t {input.chip} {params.flag} {input.c_option} \\
             -g {params.gsize} \\
             -n {wildcards.name} \\
             --outdir {workpath}/{macsB_dir}/{wildcards.name} \\
@@ -170,12 +178,7 @@ rule SICER:
         if paired_end else join(workpath,bam_dir, w.name+".Q5DD_tagAlign.gz"),
         fragLen =lambda w: join(workpath,bam_dir, ppqt_dir, w.name+".Q5DD_tagAlign.ppqt.txt") if \
             not paired_end else join(workpath,"QC", w.name+".Q5DD.insert_size_metrics.txt"),
-        c_option_pe = provided(lambda w: "{0}.Q5DD.bam".format(
-            join(workpath, bam_dir, chip2input[w.name])
-        ) if chip2input[w.name] else "", paired_end==True),
-        c_option_se = provided(lambda w: "{0}.Q5DD_tagAlign.gz".format(
-            join(workpath, bam_dir, chip2input[w.name])
-        ) if chip2input[w.name] else "", paired_end==False)
+        c_option = get_control_input
     output:
         bed = join(workpath,sicer_dir,"{name}","{name}_broadpeaks.bed"),
     params:
@@ -203,16 +206,16 @@ rule SICER:
         mean_insert_size=$(awk '{{print $1}}' {input.fragLen})
     fi
     echo "printing out value of mean-insert-size ${{mean_insert_size}}"
-    a={input.c_option_se}
-    echo "Printing input.c_option_se ${{a}}"
+    a={input.c_option}
+    echo "Printing input.c_option ${{a}}"
     if [ '{params.paired_end}' == True ]; then
         echo "praired-end with input"
-        if [ -f "{input.c_option_pe}" ]; 
+        if [ -f "{input.c_option}" ]; 
         then
             echo "praired-end with input"
             sicer \\
             -t {input.chip} \\
-            -c {input.c_option_pe} \\
+            -c {input.c_option} \\
             -s {params.genomever} \\
             -rt 100 \\
             -w 300 \\
@@ -242,13 +245,13 @@ rule SICER:
             mv ${{tmp}}/{params.name}.Q5DD-W300-G600.scoreisland {params.sicer_dir}
         fi
     else
-        if [ -f "{input.c_option_se}" ]; 
+        if [ -f "{input.c_option}" ]; 
         then
             echo "single-end with input"
             cp {input.chip} ${{tmp}}/chip.bed.gz; gzip -d ${{tmp}}/chip.bed.gz;
             awk 'BEGIN{{FS=OFS="\\t"}} {{gsub(/\./, 0, $5)}} 1' ${{tmp}}/chip.bed > ${{tmp}}/{params.name}.bed;
 
-            cp {input.c_option_se} ${{tmp}}/input.bed.gz; gzip -d ${{tmp}}/input.bed.gz;
+            cp {input.c_option} ${{tmp}}/input.bed.gz; gzip -d ${{tmp}}/input.bed.gz;
             awk 'BEGIN{{FS=OFS="\\t"}} {{gsub(/\./, 0, $5)}} 1' ${{tmp}}/input.bed > ${{tmp}}/inputV2.bed;
             
             sicer \\
