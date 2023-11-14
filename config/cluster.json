@@ -94,7 +94,7 @@
         "mem": "50g"
     },
     "MEME": {
-        "threads": "56",
+        "threads": "2",
         "mem": "32g",
         "time": "1-00:00:00",
         "ntasks": "--ntasks=28",
