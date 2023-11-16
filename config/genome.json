@@ -13,7 +13,10 @@
             "GENOMECHR": "/data/OpenOmics/references/cfChIP-seek/hg19_basic/Chromsomes/",
             "GTFFILE": "/data/OpenOmics/references/cfChIP-seek/hg19_basic/genes.gtf",
             "REFLEN": "/data/OpenOmics/references/cfChIP-seek/hg19_basic/indexes/hg19.fa.sizes",
-            "FRAC": "0.8970265870106838"
+            "FRAC": "0.8970265870106838",
+            "MEME_VERTEBRATES_DB": "/fdb/meme/motif_databases/JASPAR/JASPAR2018_CORE_vertebrates_non-redundant.meme",
+            "MEME_EUKARYOTE_DB": "/fdb/meme/motif_databases/EUKARYOTE/jolma2013.meme",
+            "MEME_GENOME_DB": "/fdb/meme/motif_databases/HUMAN/HOCOMOCOv11_full_HUMAN_mono_meme_format.meme"
         },
         "hg38": {
             "ALIAS": "hg38",
@@ -28,7 +31,10 @@
             "GENOMECHR": "/data/OpenOmics/references/chrom-seek/hg38_basic/Chromsomes/",
             "GTFFILE": "/data/OpenOmics/references/chrom-seek/hg38_basic/genes.gtf",
             "REFLEN": "/data/OpenOmics/references/chrom-seek/hg38_basic/indexes/hg38.fa.sizes",
-            "FRAC": "0.9084767300375779"
+            "FRAC": "0.9084767300375779",
+            "MEME_VERTEBRATES_DB": "/fdb/meme/motif_databases/JASPAR/JASPAR2018_CORE_vertebrates_non-redundant.meme",
+            "MEME_EUKARYOTE_DB": "/fdb/meme/motif_databases/EUKARYOTE/jolma2013.meme",
+            "MEME_GENOME_DB": "/fdb/meme/motif_databases/HUMAN/HOCOMOCOv11_full_HUMAN_mono_meme_format.meme"
         },
         "mm10": {
             "ALIAS": "mm10",
@@ -43,7 +49,10 @@
             "GENOMECHR": "/data/OpenOmics/references/chrom-seek/mm10_basic/Chromsomes/",
             "GTFFILE": "/data/OpenOmics/references/chrom-seek/mm10_basic/genes.gtf",
             "REFLEN": "/data/OpenOmics/references/chrom-seek/mm10_basic/indexes/mm10.fa.sizes",
-            "FRAC": "0.9053190260640642"
+            "FRAC": "0.9053190260640642",
+            "MEME_VERTEBRATES_DB": "/fdb/meme/motif_databases/JASPAR/JASPAR2018_CORE_vertebrates_non-redundant.meme",
+            "MEME_EUKARYOTE_DB": "/fdb/meme/motif_databases/EUKARYOTE/jolma2013.meme",
+            "MEME_GENOME_DB": "/fdb/meme/motif_databases/MOUSE/HOCOMOCOv11_full_MOUSE_mono_meme_format.meme"
         },
         "rheMac10": {
             "ALIAS": "rheMac10",
@@ -58,7 +67,10 @@
             "GENOMECHR": "",
             "GTFFILE": "/data/OpenOmics/references/chrom-seek/rheMac10/Macaca_mulatta.Mmul_10.110.chr.gtf",
             "REFLEN": "/data/OpenOmics/references/chrom-seek/rheMac10/Macaca_mulatta.Mmul_10.dna.chr.sizes",
-            "FRAC": "0.9643910116868353"
+            "FRAC": "0.9643910116868353",
+            "MEME_VERTEBRATES_DB": "/fdb/meme/motif_databases/JASPAR/JASPAR2018_CORE_vertebrates_non-redundant.meme",
+            "MEME_EUKARYOTE_DB": "/fdb/meme/motif_databases/EUKARYOTE/jolma2013.meme",
+            "MEME_GENOME_DB": ""
         }
     }
 }

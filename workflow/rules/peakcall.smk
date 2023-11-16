@@ -287,3 +287,39 @@ rule SICER:
         fi
     fi
     """
+
+rule MEME:
+    input:
+        bed = lambda w: join(workpath, w.PeakTool, w.name, w.name + PeakExtensions[w.PeakTool])
+    output:
+        meme_out = join(workpath, "MEME", "{PeakTool}", "{name}_meme", "meme-chip.html"),
+        ame_out = join(workpath, "MEME", "{PeakTool}", "{name}_ame", "ame.html")
+    params:
+        rname='MEME',
+        ref_fa=config['references'][genome]['GENOME'],
+        meme_vertebrates_db=config['references'][genome]['MEME_VERTEBRATES_DB'],
+        meme_euk_db=config['references'][genome]['MEME_EUKARYOTE_DB'],
+        meme_genome_db=config['references'][genome]['MEME_GENOME_DB'],
+        oc=join(workpath, "MEME", "{PeakTool}", "{name}"),
+        tmpdir=tmpdir,
+        outfa="{name}.fa",
+        ntasks=int(28)
+    shell: """
+    module load meme
+    module load bedtools
+    if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
+    tmp=$(mktemp -d -p "{params.tmpdir}")
+    trap 'rm -rf "${{tmp}}"' EXIT
+
+    bedtools getfasta -fi {params.ref_fa} -bed {input.bed} -fo ${{tmp}}/{params.outfa}
+    meme-chip \\
+      --oc {params.oc}_meme \\
+      -db {params.meme_vertebrates_db} \\
+      -meme-searchsize 34000000 \\
+      -meme-p {params.ntasks} \\
+      ${{tmp}}/{params.outfa}
+
+    ame \\
+    --oc {params.oc}_ame ${{tmp}}/{params.outfa} \\
+    {params.meme_euk_db} {params.meme_vertebrates_db} {params.meme_genome_db}
+    """
