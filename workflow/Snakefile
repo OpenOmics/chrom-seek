@@ -206,7 +206,9 @@ if assay == "cfchip":
             provided(expand(join(workpath,uropa_dir,diffbind_dir,'{name}_{PeakTool}_uropa_{type}_allhits.txt'), 
                 PeakTool=['DiffbindEdgeR','DiffbindDeseq2'],name=contrasts,type=["protTSS"]), reps == "yes"),
             provided(expand(join(workpath,uropa_dir,"promoterTable2",'DiffbindDeseq2_{PeakTool}_promoter_overlap_summaryTable.txt'), 
-                PeakTool=PeakTools),reps == "yes" and contrast)
+                PeakTool=PeakTools),reps == "yes" and contrast),
+            expand(join(workpath, "MEME", "{PeakTool}", "{name}_meme", "meme-chip.html"), PeakTool=PeakTools, name=chips),
+            expand(join(workpath, "MEME", "{PeakTool}", "{name}_ame", "ame.html"), PeakTool=PeakTools, name=chips)
 
 elif assay in ["atac", "chip"]:
     rule all:
@@ -239,6 +241,8 @@ elif assay in ["atac", "chip"]:
             provided(expand(join(workpath,bam_dir,ppqt_dir,"{name}.{ext}.ppqt"), name=samples, ext=["sorted", "Q5DD_tagAlign"]), paired_end == False and assay=="chip"),
             provided(expand(join(workpath,bam_dir,ppqt_dir,"{name}.{ext}.pdf"), name=samples, ext=["sorted", "Q5DD_tagAlign"]), paired_end == False and assay=="chip"),
             provided(expand(join(workpath,bam_dir,ppqt_dir,"{name}.{ext}.ppqt.txt"),name=samples, ext=["sorted", "Q5DD_tagAlign"]), paired_end == False and assay=="chip"),
+            expand(join(workpath, "MEME", "{PeakTool}", "{name}_meme", "meme-chip.html"), PeakTool=PeakTools, name=chips),
+            expand(join(workpath, "MEME", "{PeakTool}", "{name}_ame", "ame.html"), PeakTool=PeakTools, name=chips)
 
             
 #############################
