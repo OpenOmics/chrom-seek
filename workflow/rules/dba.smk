@@ -164,9 +164,7 @@ rule diffbind:
         Deseq2_txt = join(workpath,diffbind_dir,"{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind_Deseq2.txt"),
         EdgeR_ftxt = join(workpath,diffbind_dir,"{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind_EdgeR_fullList.txt"),
         Deseq2_ftxt = join(workpath,diffbind_dir,"{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind_Deseq2_fullList.txt"),
-        Deseq2_block = provided(join(workpath, diffbind_dir_block,"{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind_Deseq2_block.bed"), blocking),
-        EdgeR_block = provided(join(workpath, diffbind_dir_block,"{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind_EdgeR_block.bed"), blocking),
-        html_block = provided(join(workpath,diffbind_dir_block,"{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind_blocking.html"), blocking)  
+        html_block = provided(join(workpath,diffbind_dir_block,"{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind_blocking.html"), blocking)
     params:
         rname="diffbind",
         rscript = join(workpath,"workflow","scripts","DiffBind_v2_ChIPseq.Rmd"),
@@ -182,6 +180,8 @@ rule diffbind:
         blocking=blocking,
         blocking_rscript = join(workpath,"workflow","scripts","DiffBind_v2_ChIPseq_block.Rmd"),
         outdir_block= join(workpath,diffbind_dir_block,"{group1}_vs_{group2}-{PeakTool}"),
+        Deseq2_block = provided(join(workpath, diffbind_dir_block,"{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind_Deseq2_block.bed"), blocking),
+        EdgeR_block = provided(join(workpath, diffbind_dir_block,"{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind_EdgeR_block.bed"), blocking),
     container:
         config['images']['cfchip']
     shell: """
@@ -199,8 +199,8 @@ rule diffbind:
         echo "DiffBind with Blocking"
         Rscript -e 'rmarkdown::render("{params.blocking_rscript}", output_file= "{output.html_block}", 
         params=list(csvfile= "{params.csvfile}", contrasts= "{params.contrast}", peakcaller= "{params.PeakTool}", dir= "{params.outdir_block}"))'
-        if [ ! -f {output.Deseq2_block} ]; then touch {output.Deseq2_block}; fi
-        if [ ! -f {output.EdgeR_block} ]; then touch {output.EdgeR_block}; fi
+        if [ ! -f {params.Deseq2_block} ]; then touch {params.Deseq2_block}; fi
+        if [ ! -f {params.EdgeR_block} ]; then touch {params.EdgeR_block}; fi
     fi
     """
 if assay == "cfchip":
