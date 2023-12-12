@@ -26,6 +26,13 @@ workpath = config['project']['workpath']
 tmpdir = config['options']['tmp_dir']
 genome   = config['options']['genome']         # Reference genome of a set of samples
 assay   = config['options']['assay']
+blocks = config['project']['blocks']
+
+
+if None in list(blocks.values()):
+    blocking = False
+else:
+    blocking = True
 
 # Check for SE or PE FastQ files:
 convert = {1: False, 2: True}                     # 1 = SE, 2 = PE, -1 = Unknown
@@ -157,6 +164,7 @@ sicer_dir="sicer"
 
 uropa_dir = "UROPA_annotations"
 diffbind_dir = "DiffBind"
+diffbind_dir_block = "DiffBindBlock"
 
 if assay == "atac": 
     PeakTools = ["macsNarrow", "Genrich"] 
