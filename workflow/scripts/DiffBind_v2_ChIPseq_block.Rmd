@@ -13,6 +13,7 @@ params:
     csvfile: samplesheet.csv
     contrasts: "group1_vs_group2"
     peakcaller: "macs"
+    dir: "/path/to/DiffBindBlock/directory"
 ---
 
 <style type="text/css">
@@ -39,8 +40,10 @@ peakcaller <- params$peakcaller
 
 ```{r setup, echo=FALSE, warning=FALSE,message=FALSE}
 knitr::opts_chunk$set(echo = FALSE, include=TRUE, message=FALSE, warning=FALSE, error=FALSE)
+knitr::opts_knit$set(root.dir=params$dir)
 suppressMessages(library(DT))
 suppressMessages(library(DiffBind))
+suppressMessages(library(parallel))
 ```
 
 # Peak Data
