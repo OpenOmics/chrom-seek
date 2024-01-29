@@ -679,6 +679,12 @@ def runner(mode, outdir, alt_cache, logger, additional_bind_paths = None,
     my_env = {}; my_env.update(os.environ)
     cache = os.path.join(outdir, ".singularity")
     my_env['SINGULARITY_CACHEDIR'] = cache
+    # Adding  -C, --containall option
+    # for singularity/apptainer exections,
+    # here is a list of env variables:
+    # https://docs.sylabs.io/guides/3.7/user-guide/appendix.html
+    my_env['SINGULARITY_CONTAINALL'] = 'true'
+    my_env['APPTAINER_CONTAINALL'] = 'true'
     if alt_cache:
         # Override the pipeline's default 
         # cache location
