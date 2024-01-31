@@ -96,7 +96,7 @@
     "MEME": {
         "threads": "2",
         "mem": "32g",
-        "time": "1-00:00:00",
+        "time": "3-00:00:00",
         "ntasks": "--ntasks=28",
         "ntasks_per_core": "--ntasks-per-core=1",
         "exclusive": "--exclusive"
