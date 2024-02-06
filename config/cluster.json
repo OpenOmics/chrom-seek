@@ -54,12 +54,14 @@
         "mem": "24g"
     },
     "rawfastqc": {
-        "threads": "8"
+        "threads": "8",
+        "gres": "lscratch:64"
     },
     "fastqc": {
         "mem": "24g",
         "threads": "32",
-        "time": "18:00:00"
+        "time": "18:00:00",
+        "gres": "lscratch:64"
     },
     "fastq_screen": {
         "mem": "24g",

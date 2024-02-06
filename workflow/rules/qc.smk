@@ -95,15 +95,35 @@ rule rawfastqc:
     params:
         rname='rawfastqc',
         outdir=join(workpath,"rawfastQC"),
+        tmpdir=tmpdir,
     envmodules: 
         config['tools']['FASTQCVER']
     threads:
         int(allocated("threads", "rawfastqc", cluster))
     shell: """
+    # Setups temporary directory for
+    # intermediate files with built-in 
+    # mechanism for deletion on exit
+    if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
+    tmp=$(mktemp -d -p "{params.tmpdir}")
+    trap 'rm -rf "${{tmp}}"' EXIT
+
+    # Running fastqc with local
+    # disk or a tmpdir, fastqc
+    # has been observed to lock
+    # up gpfs filesystems, adding
+    # this on request by HPC staff
     fastqc \\
         {input} \\
         -t {threads} \\
-        -o {params.outdir}
+        -o "${{tmp}}"
+    
+    # Copy output files from tmpdir
+    # to output directory
+    find "${{tmp}}" \\
+        -type f \\
+        \\( -name '*.html' -o -name '*.zip' \\) \\
+        -exec cp {{}} {params.outdir} \\; 
     """
 
 
@@ -126,15 +146,35 @@ rule fastqc:
     params:
         rname='fastqc',
         outdir=join(workpath,"fastQC"),
+        tmpdir=tmpdir,
     envmodules: 
         config['tools']['FASTQCVER']
     threads:
         int(allocated("threads", "fastqc", cluster))
     shell: """
+    # Setups temporary directory for
+    # intermediate files with built-in 
+    # mechanism for deletion on exit
+    if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
+    tmp=$(mktemp -d -p "{params.tmpdir}")
+    trap 'rm -rf "${{tmp}}"' EXIT
+
+    # Running fastqc with local
+    # disk or a tmpdir, fastqc
+    # has been observed to lock
+    # up gpfs filesystems, adding
+    # this on request by HPC staff
     fastqc \\
         {input} \\
         -t {threads} \\
-        -o {params.outdir}
+        -o "${{tmp}}"
+    
+    # Copy output files from tmpdir
+    # to output directory
+    find "${{tmp}}" \\
+        -type f \\
+        \\( -name '*.html' -o -name '*.zip' \\) \\
+        -exec cp {{}} {params.outdir} \\;
     """
 
 rule fastq_screen:
