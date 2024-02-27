@@ -679,16 +679,22 @@ def runner(mode, outdir, alt_cache, logger, additional_bind_paths = None,
     my_env = {}; my_env.update(os.environ)
     cache = os.path.join(outdir, ".singularity")
     my_env['SINGULARITY_CACHEDIR'] = cache
-    # Adding  -C, --containall option
-    # for singularity/apptainer exections,
-    # here is a list of env variables:
-    # https://docs.sylabs.io/guides/3.7/user-guide/appendix.html
-    my_env['SINGULARITY_CONTAINALL'] = 'true'
-    my_env['APPTAINER_CONTAINALL'] = 'true'
+    my_env['APPTAINER_CACHEDIR'] = cache
+    # Removing R_SITE_LIB environment variable
+    # due to issue: https://github.com/OpenOmics/chrom-seek/issues/28
+    # Using SINGULARITY_CONTAINALL or APPTAINER_CONTAINALL
+    # causes downstream using where $SLURM_JOBID is 
+    # NOT exported within a container.
+    if 'R_LIBS_SITE' in my_env:
+        # functionally equivalent:
+        # unset R_LIBS_SITE
+        del my_env['R_LIBS_SITE']
+
     if alt_cache:
         # Override the pipeline's default 
         # cache location
         my_env['SINGULARITY_CACHEDIR'] = alt_cache
+        my_env['APPTAINER_CACHEDIR'] = alt_cache
         cache = alt_cache
 
     if additional_bind_paths:
