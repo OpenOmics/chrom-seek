@@ -20,9 +20,16 @@ with open("config.json","r") as read_file:
    
 chip2input = config['project']['peaks']['inputs']
 groupdata = config['project']['groups']
+blocks = config['project']['blocks']
 
-samplesheet = [",".join(["SampleID","Condition", "Replicate", "bamReads", 
-      "ControlID", "bamControl", "Peaks", "PeakCaller"])]
+if None in list(blocks.values()):
+    samplesheet = [",".join(["SampleID","Condition", "Replicate", "bamReads", 
+         "ControlID", "bamControl", "Peaks", "PeakCaller"])]
+else:
+    samplesheet = [",".join(["SampleID","Condition","Treatment","Replicate", "bamReads", 
+         "ControlID", "bamControl", "Peaks", "PeakCaller"])]
+   
+
 for condition in args.group1, args.group2:
     for chip in groupdata[condition]:
         replicate = str([ i + 1 for i in range(len(groupdata[condition])) if groupdata[condition][i]== chip ][0])
@@ -33,8 +40,14 @@ for condition in args.group1, args.group2:
         else:
             bamControl = ""
         peaks = args.workpath + "/" + args.peaktool + "/" + chip + "/" + chip + args.peakextension
-        samplesheet.append(",".join([chip, condition, replicate, bamReads, 
+        if None in list(blocks.values()):
+            samplesheet.append(",".join([chip, condition, replicate, bamReads, 
                    controlID, bamControl, peaks, args.peakcaller]))
+        else:
+            block = blocks[chip]
+            samplesheet.append(",".join([chip, condition, block, replicate, bamReads, 
+                   controlID, bamControl, peaks, args.peakcaller]))
+            
 
 f = open(args.csvfile, 'w')
 f.write ("\n".join(samplesheet))
