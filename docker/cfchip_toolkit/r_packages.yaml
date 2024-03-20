@@ -1,0 +1,54 @@
+v0.2.0:
+  CRAN:
+    - Bioconductor
+    - argparse
+    - cba
+    - circlize
+    - cowplot
+    - DT
+    - enrichR
+    - ggforce
+    - ggplot2
+    - ggprism
+    - ggpubr
+    - ggrepel
+    - MASS
+    - Matrix
+    - NMF
+    - optparse
+    - RColorBrewer
+    - reshape2
+    - VennDiagram
+    - locfit
+    - gplots
+    - NMF
+  Bioconductor:
+    - Biobase
+    - clusterProfiler
+    - ComplexHeatmap
+    - ctc
+    - enrichplot
+    - GenomicAlignments
+    - GenomicRanges
+    - org.Hs.eg.db
+    - preprocessCore
+    - ReactomePA
+    - rtracklayer
+    - edgeR
+    - limma
+    - systemPipeR
+    - DESeq2
+  Bioconductor Archive (3.11):
+    - DiffBind (2.15.2)
+
+v0.3.0:
+  CRAN:
+    - rmarkdown
+
+v0.4.0:
+  Bioconductor Archive (3.11):
+    - KEGG.db (3.2.4)
+
+v0.5.0:
+  CRAN:
+    - umap
