@@ -57,7 +57,7 @@ print(samples)
 ## Correlation heatmap: Only peaks
 Pearson correlation of peak positions: all samples versus all samples  
 ```{r heatmap1}
-try(dba.plotHeatmap(samples,main="",margin=20,cexRow=1,cexCol=1),silent=TRUE)
+try(dba.plotHeatmap(samples,main="",cexRow=1,cexCol=1),silent=TRUE)
 ```
 
 ## PCA: Only peaks
@@ -116,13 +116,13 @@ consensus2$name <- paste0("Peak",1:length(consensus2))
 ## Correlation heatmap: Peaks and reads
 Pearson correlation of library-size normalized counts of consensus peaks: all samples versus all samples
 ```{r heatmap2}
-try(dba.plotHeatmap(DBdataCounts,main="",margin=20,cexRow=1,cexCol=1),silent=TRUE)
+try(dba.plotHeatmap(DBdataCounts,main="",cexRow=1,cexCol=1),silent=TRUE)
 ```
 
 ## Heatmap: Average signal across each peak
 1000 most variable consensus peaks (library-size normalized counts)
 ```{r heatmap3}
-try(dba.plotHeatmap(DBdataCounts,correlations=FALSE,margin=20,cexRow=1,cexCol=1),silent=TRUE)
+try(dba.plotHeatmap(DBdataCounts,correlations=FALSE,cexRow=1,cexCol=1),silent=TRUE)
 ```
 
 ## PCA: Peaks and reads
