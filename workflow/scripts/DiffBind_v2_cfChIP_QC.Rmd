@@ -1,0 +1,199 @@
+---
+title: "DiffBind: cfChIP-seq QC"
+output: 
+    html_document:
+        toc: true
+        toc_float:
+           collapsed: false
+        number_sections: true
+        toc_depth: 3
+        fig_width: 7
+        fig_height: 6
+params:
+    csvfile: samplesheet.csv
+    contrasts: "group1_vs_group2"
+    peakcaller: "macs"
+---
+
+<style type="text/css">
+  body{
+  font-size: 12pt;
+}
+</style>
+
+```{r, include=FALSE, warning=FALSE, message=FALSE}
+## grab args
+dateandtime<-format(Sys.time(), "%a %b %d %Y - %X")
+
+csvfile <- params$csvfile
+contrasts <- params$contrasts
+peakcaller <- params$peakcaller
+```
+
+**Peak sources:**
+    *`r peakcaller`*  
+**Report generated:** 
+    *`r dateandtime`*  
+
+```{r setup, echo=FALSE, warning=FALSE,message=FALSE}
+knitr::opts_chunk$set(echo = FALSE, include=TRUE, message=FALSE, warning=FALSE, error=FALSE)
+suppressMessages(library(DiffBind))
+suppressMessages(library(parallel))
+suppressMessages(library(dplyr))
+suppressMessages(library(tidyr))
+suppressMessages(library(umap))
+suppressMessages(library(ggplot2))
+suppressMessages(library(ggrepel))
+```
+
+# Peak Data
+Read in sample sheet information and peak information
+```{r samples} 
+samples <- dba(sampleSheet=csvfile)
+
+# if samples have Condition values
+if ( sum(samples$class["Condition",] != "") == ncol(samples$class) ) {
+  consensus <- dba.peakset(samples,consensus=DBA_CONDITION, minOverlap = min(table(samples$samples$Condition)))
+}
+print(samples)
+```
+
+## Correlation heatmap: Only peaks
+Pearson correlation of peak positions: all samples versus all samples  
+```{r heatmap1}
+try(dba.plotHeatmap(samples,main="",cexRow=1,cexCol=1),silent=TRUE)
+```
+
+## PCA: Only peaks
+Variance of peak positions  
+```{r PCA1, fig.height=5,fig.width=5}
+try(dba.plotPCA(samples),silent=TRUE)
+```
+
+## Overlapping peak counts
+Number of overlapping peaks.  
+If the number of samples is greater than 4, a "consensus" peak Venn diagram is created, where
+the consensus peak set are the peaks identified in at least 2 samples for that condition. This is different
+from the consensus peak set used for differential analyses.
+```{r Venn, fig_height=4}
+if (nrow(samples$samples) < 5) {
+   dba.plotVenn(samples,1:nrow(samples$samples)) 
+} else {
+   if ( sum(samples$class["Condition",] != "") == ncol(samples$class) ) {
+      dba.plotVenn(consensus,consensus$masks$Consensus,main="Binding Site Overlaps: 'consensus', comparing between groups")
+   } else {
+      print("Consensus peaks were not called")
+   }
+}
+```
+
+# Consensus peaks and counts
+Consensus peaks are peaks found in at least two samples, independent of condition.
+FRiP is of consensus peaks and will not match FRiP values calculated outside of this tool.
+```{r peaksORsummits}
+if ( grepl("narrow",samples$samples$Peaks[1]) ) {
+   summits <- TRUE
+   print ("Narrow peak calling tool.")
+   print ("Differential peaks are 250bp upstream and downstream of the summits.")
+} else if ( grepl("broad",samples$samples$Peaks[1]) ) {
+  summits <- FALSE
+  print ("Broad peak calling tool.")
+  print ("Differential peaks are consensus peaks.")
+} else {
+  summits <- FALSE
+  print ("Indeterminate peak calling tool.")
+  print ("Differential peaks are consensus peaks.")
+}
+```
+
+```{r DBcount}
+
+if ( sum(samples$class["Condition",] != "") == ncol(samples$class) ) {
+  minOv <- min(table(samples$samples$Condition))
+} else {
+  minOv <- floor(ncol(samples$class)/3)
+}
+
+if (summits == TRUE) {
+  DBdataCounts <- dba.count(samples, summits=250, minOverlap = minOv)
+} else {
+  DBdataCounts <- dba.count(samples, minOverlap = minOv)
+}
+print(DBdataCounts)
+
+```
+
+## Correlation heatmap: Peaks and reads
+Pearson correlation of library-size normalized counts of consensus peaks: all samples versus all samples
+```{r heatmap2}
+try(dba.plotHeatmap(DBdataCounts,main="",cexRow=1,cexCol=1),silent=TRUE)
+```
+
+## Heatmap: Average signal across each peak
+1000 most variable consensus peaks (library-size normalized counts)
+```{r heatmap3}
+try(dba.plotHeatmap(DBdataCounts,correlations=FALSE,cexRow=1,cexCol=1),silent=TRUE)
+```
+
+## PCA: Peaks and reads
+Variation of library-size normalized counts of consensus peaks
+```{r PCA2, fig.height=5,fig.width=5}
+try(dba.plotPCA(DBdataCounts),silent=TRUE)
+```
+
+```{r TMM}
+vec <- c("seqnames", "start", "end", "width", "strand", samples$samples$SampleID)
+consensus2 <- dba.peakset(DBdataCounts, bRetrieve=TRUE) %>% ##extracts TMM-normalized  counts
+  as.data.frame() %>% setNames(vec) %>% arrange(start, end) %>% mutate(Peaks = paste0("Peak",1:nrow(.))) %>% 
+  dplyr::select(1:4, Peaks, samples$samples$SampleID)
+
+outfile <- paste0("Count", "_", contrasts, "_", "TMM_min",  minOv, ".csv")
+write.csv(consensus2, outfile, row.names = F)
+
+
+counts_TMM_ALL <- consensus2
+rownames(counts_TMM_ALL) <- counts_TMM_ALL$Peaks
+counts_TMM_ALL$Peaks <- NULL
+
+counts_TMM_ALL <- counts_TMM_ALL %>% dplyr::select(5:ncol(.)) %>%
+  t() %>% log10() %>% as.data.frame(.)
+##UMAP coordinates
+set.seed(123)
+if (nrow(samples$samples) < 16) {
+  umap_coord <- umap(counts_TMM_ALL, n_neighbors= nrow(samples$samples)-1)
+} else {
+  umap_coord <- umap(counts_TMM_ALL)
+}
+umap_coord <-as.data.frame(umap_coord$layout) %>% setNames(c("UMAP1", "UMAP2"))
+
+outfile <- paste0("UMAP", "_", contrasts, "_", "TMM_min",  minOv, ".csv")
+write.csv(umap_coord, outfile, row.names = F)
+```
+
+## UMAP: peaks and reads 
+```{r UMAP_plot}
+p <- ggplot(umap_coord,aes(x = UMAP1, y = UMAP2, label = samples$samples$SampleID))+ ##With labels
+  geom_point(aes(color=samples$samples$Condition), size = 3) +
+  theme_bw()+ ggtitle(paste0("log-transformed counts:", "n = ", nrow(umap_coord))) +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  labs(color = "Phenotypes") + theme(text=element_text(size=15))+
+  geom_text_repel(point.size = NA, size = 2.5)
+q <- ggplot(umap_coord,aes(x = UMAP1, y = UMAP2)) + ##No labels
+  geom_point(aes(color=samples$samples$Condition), size = 3) +
+  theme_bw()+ ggtitle(paste0("log-transformed counts:", "n = ", nrow(umap_coord))) +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  labs(color ="Phenotypes") +  theme(text=element_text(size=15))
+  ##geom_text_repel(point.size = NA, size = 2.5)
+p
+
+if ( sum(samples$class["Condition",] != "") == ncol(samples$class) ) {
+q
+}
+```
+
+## R tool version information
+```{r Info}
+sessionInfo()
+```
+
+<div class="tocify-extend-page" data-unique="tocify-extend-page" style="height: 0;"></div>

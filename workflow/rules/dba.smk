@@ -153,6 +153,7 @@ def test_for_block(contrast, blocks):
 contrastBlock = test_for_block(contrast,blocks)
 zipGroup1B, zipGroup2B, zipToolCB, contrastsB = zip_contrasts(contrastBlock, PeakTools)
 
+
 rule diffbind:
     input:
         lambda w: [ join(workpath, w.PeakTool, chip, chip + PeakExtensions[w.PeakTool]) for chip in chips ]
@@ -203,6 +204,8 @@ rule diffbind:
         if [ ! -f {params.EdgeR_block} ]; then touch {params.EdgeR_block}; fi
     fi
     """
+
+
 if assay == "cfchip":
     rule UROPA:
         input:
