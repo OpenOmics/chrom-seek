@@ -16,7 +16,7 @@ rule cfChIPtool:
         rver="R/4.1.0",
         toolkit = config['references'][genome]['cfChIP_TOOLS_SRC'],
         tmpfile = lambda w: join(workpath,cfTool_subdir2, w.name + ".Q5DD.tagAlign"),
-        tag=lambda w: temp(join(workpath,bam_dir, w.name+".Q5DD.tagAlign"))
+        tag=lambda w: temp(join(workpath,bam_dir, w.name+".Q5DD_tagAlign"))
     container:
         config['images']['cfchip']
     shell: """
@@ -83,3 +83,30 @@ rule promoterTable2:
     Rscript -e "source('{params.script2}'); promoterAnnotationWrapper('{output.txt}','{params.gtf}','Reactome')";
     """
 
+rule diffbindQC:
+    input:
+       lambda w: [ join(workpath, w.PeakTool, chip, chip + PeakExtensions[w.PeakTool]) for chip in chips ]
+    output:
+       html = join(workpath, "QC", "AllSamples-{PeakTool}", "AllSamples-{PeakTool}_DiffBindQC.html"),
+       bed = join(workpath, "QC", "AllSamples-{PeakTool}", "AllSamples-{PeakTool}_DiffBindQC_TMMcounts.bed"),
+    params:
+       rname="diffbindQC",
+       rscript=join(workpath,"workflow","scripts","DiffBind_v2_cfChIP_QC.Rmd"),
+       outdir = join(workpath, "QC", "AllSamples-{PeakTool}"),
+       contrast = "AllSamples",
+       csvfile = join(workpath, "QC", "AllSamples-{PeakTool}", "AllSamples-{PeakTool}_DiffBind_prep.csv"),
+       pythonscript = join(workpath,"workflow","scripts","prep_diffbindQC.py"),
+       PeakExtension= lambda w: PeakExtensions[w.PeakTool],
+       PeakTool="{PeakTool}",
+       peakcaller= lambda w: FileTypesDiffBind[w.PeakTool],
+    container:
+       config['images']['cfchip']
+    shell: """
+       python {params.pythonscript} --wp {workpath} \
+         --pt {params.PeakTool} --pe {params.PeakExtension} --bd {bam_dir} \
+         --pc {params.peakcaller} --csv {params.csvfile}
+       cp {params.rscript} {params.outdir}
+       cd {params.outdir}
+       Rscript -e 'rmarkdown::render("DiffBind_v2_cfChIP_QC.Rmd", output_file= "{output.html}", 
+           params=list(csvfile= "{params.csvfile}", contrasts= "{params.contrast}", peakcaller= "{params.PeakTool}"))'
+    """

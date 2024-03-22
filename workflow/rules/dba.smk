@@ -77,7 +77,8 @@ PeakExtensions = {
     'DiffbindDeseq2': '_Diffbind_Deseq2.bed', 
     'DiffbindEdgeRBlock': '_Diffbind_EdgeR_block.bed',
     'DiffbindDeseq2Block': '_Diffbind_Deseq2_block.bed',
-    'Genrich': '.narrowPeak'
+    'Genrich': '.narrowPeak',
+    'DiffBindQC': '_DiffBindQC_TMMcounts.bed'
 }
 
 FileTypesDiffBind = { 
@@ -211,7 +212,9 @@ if assay == "cfchip":
         input:
             lambda w: [ join(workpath, w.PeakTool1, w.name, w.name + PeakExtensions[w.PeakTool2]) ]
         output:
-            join(workpath, uropa_dir, '{PeakTool1}', '{name}_{PeakTool2}_uropa_{type}_allhits.txt')
+            txt=join(workpath, uropa_dir, '{PeakTool1}', '{name}_{PeakTool2}_uropa_{type}_allhits.txt'),
+            bed1=temp(join(workpath, uropa_dir, '{PeakTool1}', '{name}_{PeakTool2}_uropa_{type}_allhits.bed')),
+            bed2=temp(join(workpath, uropa_dir, '{PeakTool1}', '{name}_{PeakTool2}_uropa_{type}_finalhits.bed')),
         params:
             rname="uropa",
             uropaver = config['tools']['UROPAVER'],
@@ -241,7 +244,9 @@ else:
         input:
             lambda w: [ join(workpath, w.PeakTool1, w.name, w.name + PeakExtensions[w.PeakTool2]) ]
         output:
-            join(workpath, uropa_dir, '{PeakTool1}', '{name}_{PeakTool2}_uropa_{type}_allhits.txt')
+            txt=join(workpath, uropa_dir, '{PeakTool1}', '{name}_{PeakTool2}_uropa_{type}_allhits.txt'),
+            bed1=temp(join(workpath, uropa_dir, '{PeakTool1}', '{name}_{PeakTool2}_uropa_{type}_allhits.bed')),
+            bed2=temp(join(workpath, uropa_dir, '{PeakTool1}', '{name}_{PeakTool2}_uropa_{type}_finalhits.bed')),
         params:
             rname="uropa",
             uropaver = config['tools']['UROPAVER'],
