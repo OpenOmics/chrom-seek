@@ -14,7 +14,7 @@ extra_css:
   - css/extra.css
 
 # Copyright
-copyright: Copyright &copy; 2023 OpenOmics
+copyright: Copyright &copy; 2024 OpenOmics
 
 # Configuration
 theme:
@@ -103,5 +103,6 @@ nav:
     - chrom-seek install: usage/install.md
     - chrom-seek cache: usage/cache.md
   - FAQ:
+    - Glossary of terms: faq/glossary.md
     - General Questions: faq/questions.md
   - License: license.md
