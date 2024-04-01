@@ -255,6 +255,9 @@ elif assay in ["atac", "chip"]:
 
             
 #############################
+# Pipeline hooks for Onstart,
+# onsucess, and onerror
+include: join("rules", "hooks.smk")
 
 # QC/alignment rules: trim_pe,
 # BWA_PE, picard_dedup, bam2bw,
