@@ -95,6 +95,12 @@
         "threads": "4",
         "mem": "50g"
     },
+    "diffbindQC": {
+        "mem": "150g"
+    },
+    "diffbind": {
+        "mem": "150g"
+    },
     "MEME": {
         "threads": "2",
         "mem": "32g",
