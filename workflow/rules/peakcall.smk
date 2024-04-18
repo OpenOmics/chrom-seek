@@ -191,7 +191,7 @@ rule SICER:
         tmpdir=tmpdir,
         paired_end = paired_end,
         frac=config['references'][genome]['FRAC'],
-        flag= lambda w: "-c" if chip2input[w.name] else ""
+        flag= lambda w: "-c" if chip2input[w.name] else "",
     shell: """
     module load {params.sicerver}
     module load {params.bedtoolsver}
@@ -209,13 +209,20 @@ rule SICER:
     a={input.c_option}
     echo "Printing input.c_option ${{a}}"
     if [ '{params.paired_end}' == True ]; then
-        echo "praired-end with input"
-        if [ -f "{input.c_option}" ]; 
-        then
-            echo "praired-end with input"
+        if [ -f "{input.c_option}" ]; then
+            # Copying input to tmpdir due to SICER2
+            # bam2bed file conversion, if more than
+            # one sample shares the same IP sample
+            # than a race condition can occur where 
+            # two jobs can concurrent try to write 
+            # to the same BED file (during bedtools
+            # bam2bed that sicer calls).
+            input_bam="$(basename "{input.c_option}")"
+            cp {input.c_option} ${{tmp}}
+            echo "paired-end with input... ${{tmp}}/${{input_bam}}"
             sicer \\
             -t {input.chip} \\
-            -c {input.c_option} \\
+            -c "${{tmp}}/${{input_bam}}" \\
             -s {params.genomever} \\
             -rt 100 \\
             -w 300 \\
@@ -229,7 +236,7 @@ rule SICER:
             mv ${{tmp}}/{params.name}.Q5DD-W300-G600-FDR0.01-island.bed {output.bed};
             mv ${{tmp}}/{params.name}.Q5DD-W300-G600-islands-summary {params.sicer_dir}
         else
-            echo "praired-end without input"
+            echo "paired-end without input"
             sicer \\
             -t {input.chip} \\
             -s {params.genomever} \\
@@ -245,8 +252,7 @@ rule SICER:
             mv ${{tmp}}/{params.name}.Q5DD-W300-G600.scoreisland {params.sicer_dir}
         fi
     else
-        if [ -f "{input.c_option}" ]; 
-        then
+        if [ -f "{input.c_option}" ]; then
             echo "single-end with input"
             cp {input.chip} ${{tmp}}/chip.bed.gz; gzip -d ${{tmp}}/chip.bed.gz;
             awk 'BEGIN{{FS=OFS="\\t"}} {{gsub(/\./, 0, $5)}} 1' ${{tmp}}/chip.bed > ${{tmp}}/{params.name}.bed;

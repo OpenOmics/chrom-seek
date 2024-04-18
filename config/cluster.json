@@ -84,6 +84,7 @@
         "mem": "100g"
     },
     "SICER": {
+        "gres": "lscratch:300",
         "threads": "30",
         "mem": "100g"
     },
