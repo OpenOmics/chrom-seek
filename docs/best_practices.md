@@ -105,7 +105,7 @@ _Here is why:_
 
 Here are a set of useful links for learning more about ChIP-seq and ATAC-seq.
 
-### ENCODE standards and recommendations:**  
+### ENCODE standards and recommendations
 
 - [Transcription factors](https://www.encodeproject.org/chip-seq/transcription_factor/)
 - [Histone marks](https://www.encodeproject.org/chip-seq/histone/)
