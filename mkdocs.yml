@@ -102,6 +102,7 @@ nav:
     - chrom-seek unlock: usage/unlock.md
     - chrom-seek install: usage/install.md
     - chrom-seek cache: usage/cache.md
+  - Best Practices: best_practices.md
   - FAQ:
     - Glossary of terms: faq/glossary.md
     - General Questions: faq/questions.md
