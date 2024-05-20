@@ -111,7 +111,7 @@ binding analysis of ChIP-Seq peak data.
 http://bioconductor.org/packages/release/bioc/vignettes/DiffBind/inst/doc/DiffBind.pdf</sup>  
 
 
-## Annotations, motifs, and QC metrics**
+## Annotations, motifs, and QC metrics
 
 The pipeline includes tools for peak annotation, motif calling, and quality-control metrics. The tools used in the pipeline are listed below, along with their versions and a brief description of their purpose.
 
@@ -135,3 +135,16 @@ required for macrophage and B cell identities. Mol Cell 38(4): 576--589.</sup>
 43(W1):W39-W49.</sup>  
 <sup>4. **IDR:** Li Q., et al. (2011). Measuring reproducibility of
 high-throughput experiments. Ann Appl Stat 5(3): 1752-1779.</sup>  
+
+
+## Acknowledgements
+
+### Biowulf
+
+If you [utilized NIH's Biowulf cluster](https://hpc.nih.gov/Research/) to run `chrom-seek`, *please do not forget to provide an acknowlegement*! The continued growth and support of NIH's Biowulf cluster is dependent upon its demonstrable value to the NIH Intramural Research Program. If you publish research that involved significant use of Biowulf, please cite the cluster.
+
+**Suggested citation text**
+
+```
+This work utilized the computational resources of the NIH HPC Biowulf cluster. (http://hpc.nih.gov)
+```
