@@ -1,35 +1,26 @@
 
-# Helper functions
-def get_input_bam(wildcards):
-    """
-    Returns a ChIP samples input BAM file,
-    see chip2input for ChIP, Input pairs.
-    """
-    input_sample = chip2input[wildcards.name]
-    if input_sample:
-        # Runs in a ChIP, input mode
-        return join(workpath, bam_dir, "{0}.Q5DD.bam".format(input_sample))
-    else:
-        # Runs in ChIP-only mode
-        return []
+# Quality control rules
+# ~~~~
+# Common quality-control rules: preseq, NRF, rawfastqc,
+#   fastqc, fastq_screen, multiQC
+from os.path import join
+from scripts.peakcall import get_control_input, getMacTXT, getMacChip
 
-def get_control_input(wildcards):
-    if paired_end and chip2input[wildcards.name] != "":
-        i = [
-            join(workpath, bam_dir, "{0}.Q5DD.bam".format(chip2input[wildcards.name]))
-        ]
-        return i 
-    elif paired_end and chip2input[wildcards.name] == "":
-        i = []
-        return i 
-    elif not paired_end and chip2input[wildcards.name] != "":
-        i = [
-            join(workpath, bam_dir, "{0}.Q5DD_tagAlign.gz".format(chip2input[wildcards.name]))
-        ]
-        return i
-    else:
-        i = []
-        return i
+
+# ~~ workflow configuration
+workpath                        = config['project']['workpath']
+genome                          = config['options']['genome']
+paired_end                      = False if config['project']['nends'] == 1 else True
+chip2input                      = config['project']['peaks']['inputs']
+
+# Directory end points
+bam_dir                         = join(workpath, "bam")
+ppqt_dir                        = join(bam_dir, "ppqt")
+genrich_dir                     = join(workpath, "Genrich")
+macsN_dir                       = join(workpath, "macsNarrow")
+macsB_dir                       = join(workpath, "macsBroad")
+sicer_dir                       = join(workpath, "sicer")
+
 
 rule sortByRead:
     """
@@ -41,9 +32,9 @@ rule sortByRead:
         Bam file sorted by read name (extension: sortByRead.bam)
     """
     input:
-        join(workpath,bam_dir,"{name}.sorted.bam")
+        join(bam_dir, "{name}.sorted.bam")
     output:
-        temp(join(workpath,bam_dir,"{name}.sortedByRead.bam"))
+        temp(join(bam_dir, "{name}.sortedByRead.bam"))
     params:
         rname="sortByRead",
         samtools=config['tools']['SAMTOOLSVER'],
@@ -69,9 +60,9 @@ rule genrich:
         summit -log(q-value), and summit position.
     """
     input: 
-        join(workpath,bam_dir,"{name}.sortedByRead.bam")
+        join(bam_dir, "{name}.sortedByRead.bam")
     output: 
-        join(workpath,"Genrich","{name}","{name}.narrowPeak")
+        join(genrich_dir, "{name}", "{name}.narrowPeak")
     params:
         rname="genrich",
         genrich_ver=config['tools']['GENRICHVER']
@@ -92,13 +83,11 @@ rule genrich:
 # INDIVIDUAL RULES
 rule MACS2_narrow:
     input:
-        chip = lambda w: join(workpath,bam_dir, w.name+".Q5DD.bam") \
-        if paired_end else join(workpath,bam_dir, w.name+".Q5DD_tagAlign.gz"),
-        txt = lambda w: join(workpath,bam_dir, ppqt_dir, w.name+".Q5DD.ppqt.txt") \
-        if paired_end else join(workpath,bam_dir, ppqt_dir, w.name+".Q5DD_tagAlign.ppqt.txt"),
-        c_option = get_control_input
+        chip = lambda w: getMacChip(bam_dir, w.name, paired_end),
+        txt = lambda w: getMacTXT(ppqt_dir, w.name, paired_end),
+        c_option = lambda w: get_control_input(chip2input[w.name], paired_end, bam_dir),
     output:
-        join(workpath,macsN_dir,"{name}","{name}_peaks.narrowPeak"),
+        join(macsN_dir, "{name}", "{name}_peaks.narrowPeak"),
     params:
         rname='MACS2_narrow',
         gsize=config['references'][genome]['EFFECTIVEGENOMESIZE'],
@@ -112,7 +101,7 @@ rule MACS2_narrow:
             -t {input.chip} {params.flag} {input.c_option} \\
             -g {params.gsize} \\
             -n {wildcards.name} \\
-            --outdir {workpath}/{macsN_dir}/{wildcards.name} \\
+            --outdir {macsN_dir}/{wildcards.name} \\
             -q 0.01 \\
             --keep-dup="all" \\
             -f "BAMPE"
@@ -122,7 +111,7 @@ rule MACS2_narrow:
             -t {input.chip} {params.flag} {input.c_option} \\
             -g {params.gsize} \\
             -n {wildcards.name} \\
-            --outdir {workpath}/{macsN_dir}/{wildcards.name} \\
+            --outdir {macsN_dir}/{wildcards.name} \\
             -q 0.01 \\
             --keep-dup="all" \\
             --nomodel \\
@@ -132,13 +121,11 @@ rule MACS2_narrow:
 
 rule MACS2_broad:
     input:
-        chip = lambda w: join(workpath,bam_dir, w.name+".Q5DD.bam") \
-        if paired_end else join(workpath,bam_dir, w.name+".Q5DD_tagAlign.gz"),
-        txt = lambda w: join(workpath,bam_dir, ppqt_dir, w.name+".Q5DD.ppqt.txt") \
-        if paired_end else join(workpath,bam_dir, ppqt_dir, w.name+".Q5DD_tagAlign.ppqt.txt"),
-        c_option = get_control_input
+        chip = lambda w: getMacChip(bam_dir, w.name, paired_end),
+        txt = lambda w: getMacTXT(ppqt_dir, w.name, paired_end),
+        c_option = lambda w: get_control_input(chip2input[w.name], paired_end, bam_dir),
     output:
-        join(workpath,macsB_dir,"{name}","{name}_peaks.broadPeak"),
+        join(macsB_dir, "{name}", "{name}_peaks.broadPeak"),
     params:
         rname='MACS2_broad',
         gsize=config['references'][genome]['EFFECTIVEGENOMESIZE'],
@@ -152,7 +139,7 @@ rule MACS2_broad:
             -t {input.chip} {params.flag} {input.c_option} \\
             -g {params.gsize} \\
             -n {wildcards.name} \\
-            --outdir {workpath}/{macsB_dir}/{wildcards.name} \\
+            --outdir {macsB_dir}/{wildcards.name} \\
             --broad \\
             --broad-cutoff 0.01 \\
             --keep-dup="all" \\
@@ -163,7 +150,7 @@ rule MACS2_broad:
             -t {input.chip} {params.flag} {input.c_option} \\
             -g {params.gsize} \\
             -n {wildcards.name} \\
-            --outdir {workpath}/{macsB_dir}/{wildcards.name} \\
+            --outdir {macsB_dir}/{wildcards.name} \\
             --broad \\
             --broad-cutoff 0.01 \\
             --keep-dup="all" \\
@@ -174,20 +161,18 @@ rule MACS2_broad:
 
 rule SICER:
     input: 
-        chip = lambda w: join(workpath,bam_dir, w.name+".Q5DD.bam") \
-        if paired_end else join(workpath,bam_dir, w.name+".Q5DD_tagAlign.gz"),
-        fragLen =lambda w: join(workpath,bam_dir, ppqt_dir, w.name+".Q5DD_tagAlign.ppqt.txt") if \
-            not paired_end else join(workpath,"QC", w.name+".Q5DD.insert_size_metrics.txt"),
-        c_option = get_control_input
+        chip = lambda w: getSicerChips(bam_dir, w.name, paired_end),
+        fragLen = lambda w: getSicerFragLen(ppqt_dir, qc_dir, w.name, paired_end),
+        c_option = lambda w: get_control_input(chip2input[w.name], paired_end, bam_dir),
     output:
-        bed = join(workpath,sicer_dir,"{name}","{name}_broadpeaks.bed"),
+        bed = join(sicer_dir, "{name}", "{name}_broadpeaks.bed"),
     params:
         rname='SICER',
         sicerver=config['tools']['SICERVER'],
         bedtoolsver=config['tools']['BEDTOOLSVER'],
         genomever = config['options']['genome'],
         name="{name}",
-        sicer_dir=join(workpath,sicer_dir,"{name}"),
+        sicer_dir=join(sicer_dir,"{name}"),
         tmpdir=tmpdir,
         paired_end = paired_end,
         frac=config['references'][genome]['FRAC'],
@@ -298,15 +283,15 @@ rule MEME:
     input:
         bed = lambda w: join(workpath, w.PeakTool, w.name, w.name + PeakExtensions[w.PeakTool])
     output:
-        meme_out = join(workpath, "MEME", "{PeakTool}", "{name}_meme", "meme-chip.html"),
-        ame_out = join(workpath, "MEME", "{PeakTool}", "{name}_ame", "ame.html")
+        meme_out = join(MEME_dir, "{PeakTool}", "{name}_meme", "meme-chip.html"),
+        ame_out = join(MEME_dir, "{PeakTool}", "{name}_ame", "ame.html")
     params:
         rname='MEME',
         ref_fa=config['references'][genome]['GENOME'],
         meme_vertebrates_db=config['references'][genome]['MEME_VERTEBRATES_DB'],
         meme_euk_db=config['references'][genome]['MEME_EUKARYOTE_DB'],
         meme_genome_db=config['references'][genome]['MEME_GENOME_DB'],
-        oc=join(workpath, "MEME", "{PeakTool}", "{name}"),
+        oc=join(MEME_dir, "{PeakTool}", "{name}"),
         tmpdir=tmpdir,
         outfa="{name}.fa",
         ntasks=int(28)

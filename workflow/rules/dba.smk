@@ -1,72 +1,46 @@
-# TODO: This Snakefile needs to be completely refactored.
-# Python standard library
+# Differential binding analysis rules
+# ~~~~
 from os.path import join
 import os
-
-# Local imports
-from scripts.common import (
-    allocated
-)
-
-def outputIDR(groupswreps, groupdata, chip2input, tools):
-    """
-    Produces the correct output files for IDR. All supposed replicates
-    should be directly compared when possible using IDR. IDR malfunctions
-    with bed files and GEM so it will not run with either of those.
-    Because there is no q-value calculated for SICER when there is no 
-    input file, those samples are also ignored.
-    """
-    IDRgroup, IDRsample1, IDRsample2, IDRpeaktool = [], [], [], []
-    for group in groupswreps:
-        nsamples = len(groupdata[group])
-        for i in range(nsamples):
-            ctrlTF = chip2input[groupdata[group][i]] != ""
-            for j in range(i+1,nsamples):
-                if ctrlTF == (chip2input[groupdata[group][j]] != ""):
-                    if ctrlTF == False:
-                        tooltmp = [ tool for tool in tools if tool != "sicer" ]
-                    else:
-                        tooltmp = tools			           
-                    IDRgroup.extend([group] * len(tooltmp))
-                    IDRsample1.extend([groupdata[group][i]] * len(tooltmp))
-                    IDRsample2.extend([groupdata[group][j]] * len(tooltmp))
-                    IDRpeaktool.extend(tooltmp)
-    return( IDRgroup, IDRsample1, IDRsample2, IDRpeaktool )
+from scripts.common import allocated, mk_dir_if_not_exist
+from scripts.peakcall import outputIDR, zip_peak_files, calc_effective_genome_fraction
+from scripts.blocking import test_for_block
 
 
-def zip_peak_files(chips, PeakTools, PeakExtensions):
-    """Making input file names for FRiP"""
-    zipSample, zipTool, zipExt = [], [], []
-    for chip in chips:
-        for PeakTool in PeakTools:
-            zipSample.append(chip)
-            zipTool.append(PeakTool)
-            zipExt.append(PeakExtensions[PeakTool])
-    return(zipSample, zipTool, zipExt)
+# ~~ workflow configuration
+workpath                        = config['project']['workpath']
+genome                          = config['options']['genome']
+blocks                          = config['project']['blocks']
+groupdata                       = config['project']['groups']
 
 
-def calc_effective_genome_fraction(effectivesize, genomefile):
-    """
-    calculate the effective genome fraction by calculating the
-    actual genome size from a .genome-like file and then dividing
-    the effective genome size by that number
-    """
-    lines=list(map(lambda x:x.strip().split("\t"),open(genomefile).readlines()))
-    genomelen=0
-    for chrom,l in lines:
-        if not "_" in chrom and chrom!="chrX" and chrom!="chrM" and chrom!="chrY":
-            genomelen+=int(l)
-    return(str(float(effectivesize)/ genomelen))
+# ~~ directories
+bin_path                        = join(workpath, "workflow", "bin")
+diffbind_dir_block              = join(workpath, "DiffBindBlock")
+diffbind_dir2                   = join(workpath, "DiffBind_block")
+diffbind_dir                    = join(workpath, "DiffBind")
+bam_dir                         = join(workpath, "bam")
+qc_dir                          = join(workpath, "PeakQC")
+idr_dir                         = join(workpath, "IDR")
+memechip_dir                    = join(workpath, "MEME")
+homer_dir                       = join(workpath, "HOMER_motifs")
+uropa_dir                       = join(workpath, "UROPA_annotations")
+manorm_dir                      = join(workpath, "MANorm")
+downstream_dir                  = join(workpath, "Downstream")
+otherDirs                       = [qc_dir, homer_dir, uropa_dir]
+cfTool_dir                      = join(workpath, "cfChIPtool")
+cfTool_subdir2                  = join(cfTool_dir, "BED", "H3K4me3")
 
 
 
-# PREPARING TO DEAL WITH A VARIED SET OF PEAKCALL TOOLS
-gem_dir = "gem"
-macsB_dir = "macsBroad"
-sicer_dir = "sicer"
+# ~~ workflow switches
+blocking                        = False if None in list(blocks.values()) else True
+if reps == "yes": otherDirs.append(diffbind_dir)
+mk_dir_if_not_exist(PeakTools + otherDirs)
 
+
+# ~~ peak calling configuration and outputs
 PeakToolsNG = [ tool for tool in PeakTools if tool != "gem" ]
-
 PeakExtensions = {
     'macsNarrow': '_peaks.narrowPeak',
     'macsBroad': '_peaks.broadPeak',
@@ -106,71 +80,29 @@ RankColIDR = {
     'macsBroad': 'q.value',
     'sicer': 'q.value'
 }
-
-
 IDRgroup, IDRsample1, IDRsample2, IDRpeaktool =	outputIDR(groupswreps, groupdata, chip2input, PeakToolsNG)
-
 zipSample, zipTool, zipExt = zip_peak_files(chips, PeakTools, PeakExtensions)
-
-
-# CREATING DIRECTORIES
-bam_dir='bam'
-qc_dir='PeakQC'
-idr_dir = 'IDR'
-memechip_dir = "MEME"
-homer_dir = "HOMER_motifs"
-manorm_dir = "MANorm"
-downstream_dir = "Downstream"
-
-otherDirs = [qc_dir, homer_dir, uropa_dir]
-if reps == "yes":
-    # otherDirs.append(idr_dir)
-    otherDirs.append(diffbind_dir)
-
-for d in PeakTools + otherDirs:
-        if not os.path.exists(join(workpath,d)):
-                os.mkdir(join(workpath,d))
-
-
-# Blocking code
-diffbind_dir2 = "DiffBind_block"
-blocks=config['project']['blocks']
-
-def test_for_block(contrast, blocks):
-   """ only want to run blocking on contrasts where all
-   individuals are on both sides of the contrast """
-   contrastBlock = [ ]
-   for con in contrast:
-       group1 = con[0]
-       group2 = con[1]
-       block1 = [ blocks[sample] for sample in groupdata[group1] ]
-       block2 = [ blocks[sample] for sample in groupdata[group2] ]
-       if len(block1) == len(block2):
-           if len(set(block1).intersection(block2)) == len(block1):
-                contrastBlock.append(con)
-   return contrastBlock  
-
-
-contrastBlock = test_for_block(contrast,blocks)
+contrastBlock = test_for_block(groupdata, contrast, blocks)
 zipGroup1B, zipGroup2B, zipToolCB, contrastsB = zip_contrasts(contrastBlock, PeakTools)
 
+# ~~ rules 
 
 rule diffbind:
     input:
         lambda w: [ join(workpath, w.PeakTool, chip, chip + PeakExtensions[w.PeakTool]) for chip in chips ]
     output:
-        html = join(workpath,diffbind_dir,"{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind.html"),
-        Deseq2 = join(workpath,diffbind_dir,"{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind_Deseq2.bed"),
-        EdgeR = join(workpath,diffbind_dir,"{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind_EdgeR.bed"),
-        EdgeR_txt = join(workpath,diffbind_dir,"{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind_EdgeR.txt"),
-        Deseq2_txt = join(workpath,diffbind_dir,"{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind_Deseq2.txt"),
-        EdgeR_ftxt = join(workpath,diffbind_dir,"{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind_EdgeR_fullList.txt"),
-        Deseq2_ftxt = join(workpath,diffbind_dir,"{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind_Deseq2_fullList.txt"),
-        html_block = provided(join(workpath,diffbind_dir_block,"{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind_blocking.html"), blocking)
+        html = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind.html"),
+        Deseq2 = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind_Deseq2.bed"),
+        EdgeR = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind_EdgeR.bed"),
+        EdgeR_txt = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind_EdgeR.txt"),
+        Deseq2_txt = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind_Deseq2.txt"),
+        EdgeR_ftxt = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind_EdgeR_fullList.txt"),
+        Deseq2_ftxt = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind_Deseq2_fullList.txt"),
+        html_block = provided(join(diffbind_dir_block, "{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind_blocking.html"), blocking)
     params:
-        rname="diffbind",
-        rscript = join(workpath,"workflow","scripts","DiffBind_v2_ChIPseq.Rmd"),
-        outdir    = join(workpath,diffbind_dir,"{group1}_vs_{group2}-{PeakTool}"),
+        rname = "diffbind",
+        rscript = join(workpath, "workflow", "scripts","DiffBind_v2_ChIPseq.Rmd"),
+        outdir    = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}"),
         contrast  = "{group1}_vs_{group2}",
         csvfile   = join(workpath,diffbind_dir,"{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind_prep.csv"),
         pythonscript = join(workpath,"workflow","scripts","prep_diffbind.py"),
@@ -212,15 +144,15 @@ if assay == "cfchip":
         input:
             lambda w: [ join(workpath, w.PeakTool1, w.name, w.name + PeakExtensions[w.PeakTool2]) ]
         output:
-            txt=join(workpath, uropa_dir, '{PeakTool1}', '{name}_{PeakTool2}_uropa_{type}_allhits.txt'),
-            bed1=temp(join(workpath, uropa_dir, '{PeakTool1}', '{name}_{PeakTool2}_uropa_{type}_allhits.bed')),
-            bed2=temp(join(workpath, uropa_dir, '{PeakTool1}', '{name}_{PeakTool2}_uropa_{type}_finalhits.bed')),
+            txt=join(uropa_dir, '{PeakTool1}', '{name}_{PeakTool2}_uropa_{type}_allhits.txt'),
+            bed1=temp(join(uropa_dir, '{PeakTool1}', '{name}_{PeakTool2}_uropa_{type}_allhits.bed')),
+            bed2=temp(join(uropa_dir, '{PeakTool1}', '{name}_{PeakTool2}_uropa_{type}_finalhits.bed')),
         params:
             rname="uropa",
             uropaver = config['tools']['UROPAVER'],
-            fldr = join(workpath, uropa_dir, '{PeakTool1}'),
-            json = join(workpath, uropa_dir, '{PeakTool1}','{name}.{PeakTool2}.{type}.json'),
-            outroot = join(workpath, uropa_dir, '{PeakTool1}','{name}_{PeakTool2}_uropa_{type}'),
+            fldr = join(uropa_dir, '{PeakTool1}'),
+            json = join(uropa_dir, '{PeakTool1}','{name}.{PeakTool2}.{type}.json'),
+            outroot = join(uropa_dir, '{PeakTool1}','{name}_{PeakTool2}_uropa_{type}'),
             gtf = config['references'][genome]['GTFFILE'],
             threads = 4,
         shell: """
@@ -244,15 +176,15 @@ else:
         input:
             lambda w: [ join(workpath, w.PeakTool1, w.name, w.name + PeakExtensions[w.PeakTool2]) ]
         output:
-            txt=join(workpath, uropa_dir, '{PeakTool1}', '{name}_{PeakTool2}_uropa_{type}_allhits.txt'),
-            bed1=temp(join(workpath, uropa_dir, '{PeakTool1}', '{name}_{PeakTool2}_uropa_{type}_allhits.bed')),
-            bed2=temp(join(workpath, uropa_dir, '{PeakTool1}', '{name}_{PeakTool2}_uropa_{type}_finalhits.bed')),
+            txt=join(uropa_dir, '{PeakTool1}', '{name}_{PeakTool2}_uropa_{type}_allhits.txt'),
+            bed1=temp(join(uropa_dir, '{PeakTool1}', '{name}_{PeakTool2}_uropa_{type}_allhits.bed')),
+            bed2=temp(join(uropa_dir, '{PeakTool1}', '{name}_{PeakTool2}_uropa_{type}_finalhits.bed')),
         params:
             rname="uropa",
             uropaver = config['tools']['UROPAVER'],
-            fldr = join(workpath, uropa_dir, '{PeakTool1}'),
-            json = join(workpath, uropa_dir, '{PeakTool1}','{name}.{PeakTool2}.{type}.json'),
-            outroot = join(workpath, uropa_dir, '{PeakTool1}','{name}_{PeakTool2}_uropa_{type}'),
+            fldr = join(uropa_dir, '{PeakTool1}'),
+            json = join(uropa_dir, '{PeakTool1}','{name}.{PeakTool2}.{type}.json'),
+            outroot = join(uropa_dir, '{PeakTool1}','{name}_{PeakTool2}_uropa_{type}'),
             gtf = config['references'][genome]['GTFFILE'],
             threads = 4,
         shell: """

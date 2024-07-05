@@ -1,7 +1,16 @@
-# cell-free DNA ChIP-seq rules:
-#   - picard_dedup 
-#   - cfChIPtool
-#   - cfChIPcompile
+# cell-free ChIP-seq
+# ~~~~
+# rules: picard_dedup, cfChIPtool, cfChIPcompile
+
+
+# ~~ workflow configuration
+workpath                        = config['project']['workpath']
+genome                          = config['options']['genome']
+blocks                          = config['project']['blocks']
+groupdata                       = config['project']['groups']
+
+
+# ~~ directories
 
 
 rule cfChIPtool:
@@ -34,7 +43,7 @@ rule cfChIPtool:
 
 rule cfChIPcompile:
     input:
-        expand(join(workpath,cfTool_dir,"Output","H3K4me3","Signatures","{name}.Q5DD.csv"),name=chip)
+        expand(join(cfTool_dir, "Output", "H3K4me3", "Signatures", "{name}.Q5DD.csv"), name=chips)
     output:
         txt=join(workpath,"QC","H3K4me3_cfChIP_signature.txt"),
         pdf=join(workpath,"QC","H3K4me3_cfChIP_signature.pdf")

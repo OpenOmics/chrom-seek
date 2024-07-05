@@ -1,4 +1,11 @@
-# Common helper functions shared across the entire workflow
+
+#!/usr/bin/env python3
+# ~~~ Common helper functions shared across the entire workflow
+import os
+from os.path import join
+from snakemake.io import expand
+
+
 def provided(samplelist, condition):
     """
     Determines if optional rules should run. If an empty list is provided to rule all,
@@ -202,3 +209,53 @@ def joint_option(prefix, valueslist):
         s += "{} {} ".format(prefix, v)
     s = s.rstrip()
     return s
+
+
+def mk_dir_if_not_exist(dirs):
+    if isinstance(dirs, str):
+        dirs = [dirs]
+    assert isinstance(dirs, list), 'Supplied directories should be in a list'
+    for _dir in dirs:
+        if not os.path.exists(_dir):
+            os.mkdir(_dir, mode=0o775)
+    return True
+
+
+def get_file_components(pair_ended):
+    alnexts = []
+    if pair_ended:
+        alnexts.extend(['sorted.bam', 'Q5DD.bam'])
+    else:
+        alnexts.extend(['sorted.bam', 'Q5DD_tagAlign.gz'])
+    stems = list(map(lambda x: x.split('.')[0], alnexts))
+    rpgc_exts = list(map(lambda x: x.split('.')[0] + '.RPGC', alnexts))
+    return stems, rpgc_exts, alnexts
+        
+
+def get_bam_ext(ext, pair_ended):
+    if pair_ended:
+        if ext.lower() == 'sorted':
+            return "bam"
+        elif ext == 'Q5DD':
+            return "bam"
+    else:
+        if ext.lower() == 'sorted':
+            return "bam"
+        elif ext == "Q5DD_tagAlign":
+            return "gz"
+    raise ValueError(f'Unknown file component. Pair ended: {str(pair_ended)}. Ext: {str(ext)}')
+
+
+def get_fqscreen_outputs(paired_end, samples, qc_dir):
+    outs = []
+    if paired_end:
+        outs.extend(expand(join(qc_dir, "FQscreen", "{name}.R{rn}.trim_screen.txt"), name=samples, rn=[1, 2])),
+        outs.extend(expand(join(qc_dir, "FQscreen", "{name}.R{rn}.trim_screen.png"), name=samples, rn=[1, 2])),
+        outs.extend(expand(join(qc_dir, "FQscreen2", "{name}.R{rn}.trim_screen.txt"), name=samples, rn=[1, 2])),
+        outs.extend(expand(join(qc_dir, "FQscreen2", "{name}.R{rn}.trim_screen.png"), name=samples, rn=[1, 2])),
+    else:
+        outs.extend(expand(join(qc_dir, "FQscreen", "{name}.R1.trim_screen.txt"), name=samples)),
+        outs.extend(expand(join(qc_dir, "FQscreen", "{name}.R1.trim_screen.png"), name=samples)),
+        outs.extend(expand(join(qc_dir, "FQscreen2", "{name}.R1.trim_screen.txt"), name=samples)),
+        outs.extend(expand(join(qc_dir, "FQscreen2", "{name}.R1.trim_screen.png"), name=samples)),
+    return outs
