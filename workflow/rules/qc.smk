@@ -8,6 +8,7 @@ from scripts.common import get_bam_ext, get_fqscreen_outputs
 
 # ~~ workflow configuration
 workpath                        = config['project']['workpath']
+bin_path                        = config['project']['binpath']
 genome                          = config['options']['genome']
 paired_end                      = False if config['project']['nends'] == 1 else True
 samples                         = config['samples']
@@ -17,6 +18,7 @@ ends                            = [1] if not paired_end else [1, 2]
 qc_dir                          = join(workpath, "QC")
 kraken_dir                      = join(workpath, 'kraken')
 deeptools_dir                   = join(workpath, 'deeptools')
+peakqc_dir                      = join(workpath, "PeakQC")
 extra_fingerprint_dir           = join(deeptools_dir, 'sorted_fingerprint')
 
 
@@ -387,26 +389,28 @@ rule FRiP:
     output:
         join(workpath,"PeakQC","{PeakTool}.{name}.Q5DD.FRiP_table.txt"),
     params:
-        rname="frip",
-        outroot = lambda w: join(workpath,"PeakQC",w.PeakTool),
-        script=join(workpath,"workflow","scripts","frip.py"),
-        genome = config['references'][genome]['REFLEN'],
-        tmpdir = tmpdir,
-    container: config['images']['python']
-    shell: """
-    # Setups temporary directory for
-    # intermediate files with built-in 
-    # mechanism for deletion on exit
-    if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
-    tmp=$(mktemp -d -p "{params.tmpdir}")
-    trap 'rm -rf "${{tmp}}"' EXIT
+        rname                   = "frip",
+        outroot                 = lambda w: join(peakqc_dir, w.PeakTool),
+        script                  = join(bin_path, "frip.py"),
+        genome                  = config['references'][genome]['REFLEN'],
+        tmpdir                  = tmpdir,
+    container: 
+        config['images']['python']
+    shell: 
+        """
+        # Setups temporary directory for
+        # intermediate files with built-in 
+        # mechanism for deletion on exit
+        if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
+        tmp=$(mktemp -d -p "{params.tmpdir}")
+        trap 'rm -rf "${{tmp}}"' EXIT
 
-    python {params.script} \\
-        -p {input.bed} \\
-        -b {input.bam} \\
-        -g {params.genome} \\
-        -o {params.outroot}
-    """
+        python {params.script} \\
+            -p {input.bed} \\
+            -b {input.bam} \\
+            -g {params.genome} \\
+            -o {params.outroot}
+        """
 
 rule jaccard:
     input:
@@ -414,15 +418,17 @@ rule jaccard:
     output:
         join(qc_dir, '{PeakTool}_jaccard.txt'),
     params:
-        rname="jaccard",
-        outroot = lambda w: join(qc_dir, w.PeakTool),
-        script=join(workpath,"workflow","scripts","jaccard_score.py"),
-        genome = config['references'][genome]['REFLEN']
+        rname                   = "frip",
+        rname                   = "jaccard",
+        outroot                 = lambda w: join(qc_dir, w.PeakTool),
+        script                  = join(bin_path, "jaccard_score.py"),
+        genome                  = config['references'][genome]['REFLEN']
     envmodules:
         config['tools']['BEDTOOLSVER']
-    shell: """
-    python {params.script} \\
-        -i "{input}" \\
-        -o "{params.outroot}" \\
-        -g {params.genome}
-    """
+    shell: 
+        """
+        python {params.script} \\
+            -i "{input}" \\
+            -o "{params.outroot}" \\
+            -g {params.genome}
+        """

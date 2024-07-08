@@ -259,13 +259,3 @@ def get_fqscreen_outputs(paired_end, samples, qc_dir):
         outs.extend(expand(join(qc_dir, "FQscreen2", "{name}.R1.trim_screen.txt"), name=samples)),
         outs.extend(expand(join(qc_dir, "FQscreen2", "{name}.R1.trim_screen.png"), name=samples)),
     return outs
-
-
-def test_combine(one, two):
-    try:
-        three = one + two
-    except:
-        print(one)
-        print(two)
-        exit()
-    return three

@@ -14,6 +14,7 @@ configfile: "config.json"
 # Global workflow variables
 today                           = str(datetime.datetime.today()).split()[0].replace('-', '') # YYYYMMDD
 samples                         = config['samples']
+bin_path                        = config['project']['binpath']
 workpath                        = config['project']['workpath']
 assay                           = config['options']['assay']
 paired_end                      = False if config['project']['nends'] == 1 else True
