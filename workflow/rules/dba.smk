@@ -23,6 +23,8 @@ bin_path                        = join(workpath, "workflow", "bin")
 diffbind_dir_block              = join(workpath, "DiffBindBlock")
 diffbind_dir2                   = join(workpath, "DiffBind_block")
 diffbind_dir                    = join(workpath, "DiffBind")
+uropa_dir                       = join(workpath, "UROPA_annotations")
+uropa_diffbind_dir              = join(uropa_dir, "DiffBind")
 bam_dir                         = join(workpath, "bam")
 qc_dir                          = join(workpath, "PeakQC")
 idr_dir                         = join(workpath, "IDR")
@@ -93,11 +95,11 @@ rule diffbind:
         lambda w: [ join(workpath, w.PeakTool, chip, chip + PeakExtensions[w.PeakTool]) for chip in chips ]
     output:
         html                            = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind.html"),
-        Deseq2                          = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind_Deseq2.bed"),
-        EdgeR                           = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind_EdgeR.bed"),
-        EdgeR_txt                       = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind_EdgeR.txt"),
-        Deseq2_txt                      = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind_Deseq2.txt"),
-        EdgeR_ftxt                      = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind_EdgeR_fullList.txt"),
+        Deseq2                          = join(diffbind_dir, "DiffbindDeseq2", "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind_Deseq2.bed"),
+        EdgeR                           = join(diffbind_dir, "DiffbindEdgeR", "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind_EdgeR.bed"),
+        EdgeR_txt                       = join(diffbind_dir, "DiffbindEdgeR", "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind_EdgeR.txt"),
+        Deseq2_txt                      = join(diffbind_dir, "DiffbindDeseq2", "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind_Deseq2.txt"),
+        EdgeR_ftxt                      = join(diffbind_dir, "DiffbindEdgeR", "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind_EdgeR_fullList.txt"),
         Deseq2_ftxt                     = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind_Deseq2_fullList.txt"),
         html_block                      = provided(join(diffbind_dir_block, "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind_blocking.html"), blocking)
     params:
@@ -141,11 +143,11 @@ rule diffbind:
         cp {params.rscript} {params.outdir}
         cd {params.outdir}
         Rscript -e 'rmarkdown::render("DiffBind_v2_ChIPseq.Rmd", output_file= "{output.html}", 
-        params=list(csvfile= "{params.csvfile}", contrasts= "{params.contrast}", peakcaller= "{params.this_peaktool}"))'
+        params=list(csvfile= "{params.csvfile}", contrasts= "{params.this_contrast}", peakcaller= "{params.this_peaktool}"))'
         if [ ! -f {output.Deseq2} ]; then touch {output.Deseq2}; fi
         if [ ! -f {output.EdgeR} ]; then touch {output.EdgeR}; fi
 
-        if [ '{params.blocking}' == True ]; then
+        if [ '"""+str(blocking)+"""' == True ]; then
             echo "DiffBind with Blocking"
             Rscript -e 'rmarkdown::render("{params.blocking_rscript}", output_file= "{output.html_block}", 
             params=list(csvfile= "{params.csvfile}", contrasts= "{params.this_contrast}", peakcaller= "{params.this_peaktool}", dir= "{params.outdir_block}"))'

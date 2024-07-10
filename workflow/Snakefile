@@ -49,6 +49,7 @@ macsB_dir                       = join(workpath, "macsBroad")
 sicer_dir                       = join(workpath, "sicer")
 peakqc_dir                      = join(workpath, "PeakQC")
 uropa_dir                       = join(workpath, "UROPA_annotations")
+uropa_diffbind_dir              = join(uropa_dir, "DiffBind")
 diffbind_dir                    = join(workpath, "DiffBind")
 cfTool_dir                      = join(workpath, "cfChIPtool")
 genrich_dir                     = join(workpath, "Genrich")
@@ -94,10 +95,11 @@ if assay == "cfchip":
             group1=zipGroup1, group2=zipGroup2, PeakTool=zipToolC
         ))
         rule_all_ins.extend(expand(
-            join(uropa_dir, "{name}_{PeakTool}_uropa_{_type}_allhits.txt"), PeakTool=['DiffbindEdgeR','DiffbindDeseq2'], 
-            name=contrasts, _type=["protTSS"]
+            join(uropa_diffbind_dir, "{PeakTool}", "{name}_{PeakTool}_uropa_{_type}_allhits.txt"), 
+            PeakTool=['DiffbindEdgeR','DiffbindDeseq2'], 
+            name=contrasts,
+             _type=["protTSS"]
         ))
-
     elif assay in ["atac", "chip"]:
         peak_types.extend(["prot", "protSEC", "genes"])
         rule_all_ins.extend(expand(join(MEME_dir, "{PeakTool}", "{name}_meme", "meme-chip.html"), PeakTool=PeakTools, name=chips))
