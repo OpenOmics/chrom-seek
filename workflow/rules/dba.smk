@@ -3,7 +3,7 @@
 import os
 import json
 from os.path import join
-from scripts.common import allocated, mk_dir_if_not_exist, test_combine
+from scripts.common import allocated, mk_dir_if_not_exist
 from scripts.peakcall import outputIDR, zip_peak_files, calc_effective_genome_fraction
 from scripts.blocking import test_for_block
 

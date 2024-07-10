@@ -366,21 +366,23 @@ rule deeptools_QC:
     input:
         [ join(workpath, bw_dir, name + ".Q5DD.RPGC.bw") for name in samples ] # this should be all bigwigs
     output:
-        heatmap=join(deeptools_dir, "spearman_heatmap.Q5DD.pdf"),
-        pca=join(deeptools_dir, "pca.Q5DD.pdf"),
-	    npz=temp(join(deeptools_dir, "Q5DD.npz")),
-	    png=join(deeptools_dir, "spearman_heatmap.Q5DD_mqc.png")
+        javaram                 = '16g',
+        heatmap                 = join(deeptools_dir, "spearman_heatmap.Q5DD.pdf"),
+        pca                     = join(deeptools_dir, "pca.Q5DD.pdf"),
+	    npz                     = temp(join(deeptools_dir, "Q5DD.npz")),
+	    png                     = join(deeptools_dir, "spearman_heatmap.Q5DD_mqc.png")
     params:
-        rname="deeptools_QC",
-        deeptoolsver=config['tools']['DEEPTOOLSVER'],
+        rname                   = "deeptools_QC",
+        deeptoolsver            = config['tools']['DEEPTOOLSVER'],
         labels=samples # this should be the sample names to match the bigwigs in the same order
-    shell: """    
-    module load {params.deeptoolsver}
-    multiBigwigSummary bins -b {input} -l {params.labels} -out {output.npz}
-    plotCorrelation -in {output.npz} -o {output.heatmap} -c 'spearman' -p 'heatmap' --skipZeros --removeOutliers
-    plotCorrelation -in {output.npz} -o {output.png} -c 'spearman' -p 'heatmap' --skipZeros --removeOutliers
-    plotPCA -in {output.npz} -o {output.pca}
-    """
+    shell: 
+        """    
+        module load {params.deeptoolsver}
+        multiBigwigSummary bins -b {input} -l {params.labels} -out {output.npz}
+        plotCorrelation -in {output.npz} -o {output.heatmap} -c 'spearman' -p 'heatmap' --skipZeros --removeOutliers
+        plotCorrelation -in {output.npz} -o {output.png} -c 'spearman' -p 'heatmap' --skipZeros --removeOutliers
+        plotPCA -in {output.npz} -o {output.pca}
+        """
 
 rule FRiP:
     input:
@@ -418,7 +420,6 @@ rule jaccard:
     output:
         join(qc_dir, '{PeakTool}_jaccard.txt'),
     params:
-        rname                   = "frip",
         rname                   = "jaccard",
         outroot                 = lambda w: join(qc_dir, w.PeakTool),
         script                  = join(bin_path, "jaccard_score.py"),
