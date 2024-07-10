@@ -94,7 +94,7 @@ if assay == "cfchip":
             group1=zipGroup1, group2=zipGroup2, PeakTool=zipToolC
         ))
         rule_all_ins.extend(expand(
-            join(uropa_dir, "{name}_{PeakTool}_uropa_{type}_allhits.txt"), PeakTool=['DiffbindEdgeR','DiffbindDeseq2'], 
+            join(uropa_dir, "{name}_{PeakTool}_uropa_{_type}_allhits.txt"), PeakTool=['DiffbindEdgeR','DiffbindDeseq2'], 
             name=contrasts, _type=["protTSS"]
         ))
 
@@ -121,7 +121,7 @@ if assay == "cfchip":
             ))
         if reps:
             rule_all_ins.extend(expand(
-                join(uropa_dir, "{PeakTool}", "{name}_{PeakTool}_uropa_{type}_allhits.txt"),
+                join(uropa_dir, "{PeakTool}", "{name}_{PeakTool}_uropa_{_type}_allhits.txt"),
                 PeakTool=PeakTools, name=chips, _type=peak_types
             ))
             rule_all_ins.extend(expand(
@@ -129,7 +129,7 @@ if assay == "cfchip":
                 group1=zipGroup1, group2=zipGroup2, PeakTool=zipToolC
             ))
             rule_all_ins.extend(expand(
-                join(uropa_dir, "{name}_{PeakTool}_uropa_{type}_allhits.txt"), 
+                join(uropa_dir, "{name}_{PeakTool}_uropa_{_type}_allhits.txt"), 
                 PeakTool=["DiffbindEdgeR", "DiffbindDeseq2"], 
                 name=contrasts, 
                 _type=peak_types
