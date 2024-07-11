@@ -30,7 +30,7 @@ zipGroup1, zipGroup2, zipToolC, contrasts \
                                 = zip_contrasts(contrast, PeakTools)
 file_stems, extRPGC, extaln     = get_file_components(paired_end)
 groups                          = list(groupdatawinput.keys())
-reps                            = False if len(groupswreps) > 0 else True
+reps                            = True if len(groupswreps) > 0 else False
 uniq_inputs                     = list(sorted(set([v for v in chip2input.values() if v])))
 sampleswinput                   = [
     chip_value for input_id, chip_value in chip2input.items() \
