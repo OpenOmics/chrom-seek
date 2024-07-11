@@ -103,3 +103,10 @@ def getSicerFragLen(ppqt_dir, qc_dir, name, paired_end):
     else:
         fragLen = join(ppqt_dir, name + ".Q5DD_tagAlign.ppqt.txt")
     return fragLen
+
+
+def get_manorm_sizes(g1, g2, group_data, ppqt_in):
+    file = lambda w, _in: list(map(lambda z: z.strip().split(), open(ppqt_in, 'r').readlines()))
+    extsize1 = [ppqt[1] for ppqt in file if ppqt[0] == group_data[g1]][0]
+    extsize2 = [ppqt[1] for ppqt in file if ppqt[0] == group_data[g2]][0]
+    return f"--s1 {extsize1} --s2 {extsize2}"

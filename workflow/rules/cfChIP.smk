@@ -10,6 +10,7 @@ genome                          = config['options']['genome']
 blocks                          = config['project']['blocks']
 groupdata                       = config['project']['groups']
 
+
 # Directory end points
 bam_dir                         = join(workpath, "bam")
 cfTool_dir                      = join(workpath, "cfChIPtool")
@@ -101,6 +102,7 @@ rule promoterTable2:
         Rscript -e "source('{params.script2}'); promoterAnnotationWrapper('{output.txt}','{params.gtf}','KEGG')";
         Rscript -e "source('{params.script2}'); promoterAnnotationWrapper('{output.txt}','{params.gtf}','Reactome')";
         """
+
 
 rule diffbindQC:
     input:

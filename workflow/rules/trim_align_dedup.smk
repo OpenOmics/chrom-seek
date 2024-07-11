@@ -187,7 +187,8 @@ rule BWA:
         idxstat1                            = join(bam_dir, "{name}.sorted.bam.idxstat"),
         flagstat2                           = join(bam_dir, "{name}.Q5.bam.flagstat"),
         idxstat2                            = join(bam_dir, "{name}.Q5.bam.idxstat"),
-    threads: 32
+    threads: 
+        32
     shell: 
         """
         module load {params.bwaver};
@@ -218,6 +219,7 @@ rule BWA:
             samtools idxstats {output.outbam2} > {output.idxstat2}
         fi
         """
+
 
 rule dedup:
     """
@@ -311,6 +313,7 @@ rule dedup:
         fi
         """
 
+
 rule ppqt:
     input:
         bam                                 = lambda w : join(bam_dir, w.name + "." + w.ext + "." + get_bam_ext(w.ext, paired_end))
@@ -325,7 +328,8 @@ rule ppqt:
         scriptPy                            = join(workpath, "bin", "ppqt_process.py"),
         tmpdir                              = tmpdir,
         file_name                           = "{name}"
-    container: config['images']['ppqt']
+    container: 
+        config['images']['ppqt']
     shell: 
         """
         if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
@@ -354,6 +358,7 @@ rule ppqt:
         fi
         python {params.scriptPy} -i {output.ppqt} -o {output.txt}
         """
+
 
 rule bam2bw:
     """
@@ -419,7 +424,7 @@ rule inputnorm:
        bigWig file of treatmment sample normalizes with its input control
     """
     input:
-        bws = lambda w: ctrl_test(chip2input, w.name, bw_dir)
+        bws                                 = lambda w: ctrl_test(chip2input, w.name, bw_dir)
     output:
         join(bw_dir, "{name}.Q5DD.RPGC.inputnorm.bw")
     params:

@@ -14,6 +14,7 @@ paired_end                      = False if config['project']['nends'] == 1 else 
 samples                         = config['samples']
 ends                            = [1] if not paired_end else [1, 2]
  
+
 # ~~ directories
 qc_dir                          = join(workpath, "QC")
 kraken_dir                      = join(workpath, 'kraken')
@@ -157,31 +158,32 @@ rule fastqc:
         config['tools']['FASTQCVER']
     threads:
         int(allocated("threads", "fastqc", cluster))
-    shell: """
-    # Setups temporary directory for
-    # intermediate files with built-in 
-    # mechanism for deletion on exit
-    if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
-    tmp=$(mktemp -d -p "{params.tmpdir}")
-    trap 'rm -rf "${{tmp}}"' EXIT
+    shell: 
+        """
+        # Setups temporary directory for
+        # intermediate files with built-in 
+        # mechanism for deletion on exit
+        if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
+        tmp=$(mktemp -d -p "{params.tmpdir}")
+        trap 'rm -rf "${{tmp}}"' EXIT
 
-    # Running fastqc with local
-    # disk or a tmpdir, fastqc
-    # has been observed to lock
-    # up gpfs filesystems, adding
-    # this on request by HPC staff
-    fastqc \\
-        {input} \\
-        -t {threads} \\
-        -o "${{tmp}}"
-    
-    # Copy output files from tmpdir
-    # to output directory
-    find "${{tmp}}" \\
-        -type f \\
-        \\( -name '*.html' -o -name '*.zip' \\) \\
-        -exec cp {{}} {params.outdir} \\;
-    """
+        # Running fastqc with local
+        # disk or a tmpdir, fastqc
+        # has been observed to lock
+        # up gpfs filesystems, adding
+        # this on request by HPC staff
+        fastqc \\
+            {input} \\
+            -t {threads} \\
+            -o "${{tmp}}"
+        
+        # Copy output files from tmpdir
+        # to output directory
+        find "${{tmp}}" \\
+            -type f \\
+            \\( -name '*.html' -o -name '*.zip' \\) \\
+            -exec cp {{}} {params.outdir} \\;
+        """
 
 rule fastq_screen:
     """
@@ -231,6 +233,7 @@ rule fastq_screen:
             --force \\
             {input}
         """
+
 
 rule kraken:
     """
@@ -293,6 +296,7 @@ rule kraken:
             ktImportTaxonomy - -o {output.kronahtml}
         """
 
+
 rule multiqc:
     """
     Reporting step to aggregate sample statistics and quality-control information
@@ -321,16 +325,17 @@ rule multiqc:
         multiqc                 = config['tools']['MULTIQCVER'],
 	    qcconfig                = join(workpath, config['shared_resources']['MULTIQC_CONFIG']),
 	    excludedir              = join(workpath, extra_fingerprint_dir),
-    shell: """
-    module load {params.multiqc}
-    multiqc \\
-        -f \\
-        -c {params.qcconfig} \\
-        --interactive \\
-        -e cutadapt \\
-        --ignore {params.excludedir} \\
-        -d """ + workpath + """
-    """
+    shell: 
+        """
+        module load {params.multiqc}
+        multiqc \\
+            -f \\
+            -c {params.qcconfig} \\
+            --interactive \\
+            -e cutadapt \\
+            --ignore {params.excludedir} \\
+            -d """ + workpath + """
+        """
 
 
 rule insert_size:
@@ -362,9 +367,11 @@ rule insert_size:
             -H {output.pdf}
         """
 
+
 rule deeptools_QC:
     input:
-        [ join(workpath, bw_dir, name + ".Q5DD.RPGC.bw") for name in samples ] # this should be all bigwigs
+        # this should be all bigwigs
+        [ join(workpath, bw_dir, name + ".Q5DD.RPGC.bw") for name in samples ] 
     output:
         javaram                 = '16g',
         heatmap                 = join(deeptools_dir, "spearman_heatmap.Q5DD.pdf"),
@@ -374,7 +381,8 @@ rule deeptools_QC:
     params:
         rname                   = "deeptools_QC",
         deeptoolsver            = config['tools']['DEEPTOOLSVER'],
-        labels=samples # this should be the sample names to match the bigwigs in the same order
+        # this should be the sample names to match the bigwigs in the same order
+        labels                  = samples 
     shell: 
         """    
         module load {params.deeptoolsver}
@@ -384,10 +392,11 @@ rule deeptools_QC:
         plotPCA -in {output.npz} -o {output.pca}
         """
 
+
 rule FRiP:
     input:
-        bed = lambda w: [ join(workpath, w.PeakTool, chip, chip + PeakExtensions[w.PeakTool]) for chip in chips ],
-        bam = join(bam_dir, "{name}.Q5DD.bam"),
+        bed                     = lambda w: [ join(workpath, w.PeakTool, chip, chip + PeakExtensions[w.PeakTool]) for chip in chips ],
+        bam                     = join(bam_dir, "{name}.Q5DD.bam"),
     output:
         join(workpath,"PeakQC","{PeakTool}.{name}.Q5DD.FRiP_table.txt"),
     params:
@@ -413,6 +422,7 @@ rule FRiP:
             -g {params.genome} \\
             -o {params.outroot}
         """
+
 
 rule jaccard:
     input:

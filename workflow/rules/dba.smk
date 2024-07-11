@@ -4,7 +4,7 @@ import os
 import json
 from os.path import join
 from scripts.common import allocated, mk_dir_if_not_exist
-from scripts.peakcall import outputIDR, zip_peak_files, calc_effective_genome_fraction
+from scripts.peakcall import outputIDR, zip_peak_files, calc_effective_genome_fraction, get_manorm_sizes
 from scripts.blocking import test_for_block
 
 
@@ -214,7 +214,7 @@ rule UROPA:
                     this_q['distance'] = _d
                     json_construct['queries'].append(this_q)
             elif '{type}' == 'protSEC':
-                #   distance, feature.anchor
+                # distance, feature.anchor
                 query_values = (
                     ([3000, 1000], "start"), 
                     (3000,         "end"), 
@@ -239,39 +239,46 @@ rule UROPA:
 
 
 rule manorm:
-    input: 
-        bam1 = lambda w: join(workpath,bam_dir, groupdata[w.group1][0] + ".Q5DD.bam"),
-        bam2 = lambda w: join(workpath,bam_dir, groupdata[w.group2][0] + ".Q5DD.bam"),
-        ppqt = join(workpath,bam_dir, "Q5DD.ppqt.txt"),
-        peak1 = lambda w: join(workpath, w.tool, groupdata[w.group1][0], groupdata[w.group1][0] + PeakExtensions[w.tool]),
-        peak2 = lambda w: join(workpath, w.tool, groupdata[w.group2][0], groupdata[w.group2][0] + PeakExtensions[w.tool]),
+    input:
+        bam1                            = lambda w: join(bam_dir, groupdata[w.group1][0] + ".Q5DD.bam"),
+        bam2                            = lambda w: join(bam_dir, groupdata[w.group2][0] + ".Q5DD.bam"),
+        ppqt                            = join(bam_dir, "Q5DD.ppqt.txt"),
+        peak1                           = lambda w: join(workpath, w.tool, groupdata[w.group1][0], groupdata[w.group1][0] + PeakExtensions[w.tool]),
+        peak2                           = lambda w: join(workpath, w.tool, groupdata[w.group2][0], groupdata[w.group2][0] + PeakExtensions[w.tool]),
     output:
-        xls = join(workpath,manorm_dir,"{group1}_vs_{group2}-{tool}","{group1}_vs_{group2}-{tool}_all_MAvalues.xls"),
-        bed = temp(join(workpath,manorm_dir,"{group1}_vs_{group2}-{tool}","{group1}_vs_{group2}-{tool}_all_MA.bed")),
-        wigA = join(workpath,manorm_dir,"{group1}_vs_{group2}-{tool}","output_tracks","{group1}_vs_{group2}_A_values.wig.gz"),
-        wigM = join(workpath,manorm_dir,"{group1}_vs_{group2}-{tool}","output_tracks","{group1}_vs_{group2}_M_values.wig.gz"),
-        wigP = join(workpath,manorm_dir,"{group1}_vs_{group2}-{tool}","output_tracks","{group1}_vs_{group2}_P_values.wig.gz"),
+        xls                             = join(manorm_dir, "{group1}_vs_{group2}-{tool}","{group1}_vs_{group2}-{tool}_all_MAvalues.xls"),
+        bed                             = temp(join(manorm_dir, "{group1}_vs_{group2}-{tool}","{group1}_vs_{group2}-{tool}_all_MA.bed")),
+        wigA                            = join(manorm_dir, "{group1}_vs_{group2}-{tool}","output_tracks","{group1}_vs_{group2}_A_values.wig.gz"),
+        wigM                            = join(manorm_dir, "{group1}_vs_{group2}-{tool}","output_tracks","{group1}_vs_{group2}_M_values.wig.gz"),
+        wigP                            = join(manorm_dir, "{group1}_vs_{group2}-{tool}","output_tracks","{group1}_vs_{group2}_P_values.wig.gz"),
     params:
-        rname='manorm',
-        fldr = join(workpath,manorm_dir,"{group1}_vs_{group2}-{tool}"),
-        bedtoolsver=config['tools']['BEDTOOLSVER'],
-        sample1= lambda w: groupdata[w.group1][0],
-        sample2= lambda w: groupdata[w.group2][0],
-        manormver="manorm/1.1.4"
-    run:
-        commoncmd1 = "if [ ! -e /lscratch/$SLURM_JOBID ]; then mkdir /lscratch/$SLURM_JOBID; fi "
-        commoncmd2 = "cd /lscratch/$SLURM_JOBID; "
-        commoncmd3 = "module load {params.manormver}; module load {params.bedtoolsver}; "
-        cmd1 = "bamToBed -i {input.bam1} > bam1.bed; "
-        cmd2 = "bamToBed -i {input.bam2} > bam2.bed; "
-        cmd3 = "cut -f 1,2,3 {input.peak1} > peak1.bed; "
-        cmd4 = "cut -f 1,2,3 {input.peak2} > peak2.bed; "
-        file=list(map(lambda z:z.strip().split(),open(input.ppqt,'r').readlines()))
-        extsize1 = [ ppqt[1] for ppqt in file if ppqt[0] == params.sample1 ][0]
-        extsize2 = [ ppqt[1] for ppqt in file if ppqt[0] == params.sample2 ][0]
-        cmd5 = "manorm --p1 peak1.bed --p2 peak2.bed --r1 bam1.bed --r2 bam2.bed --s1 " + extsize1  + " --s2 " + extsize2 + " -o {params.fldr} --name1 '" + wildcards.group1 + "' --name2 '" + wildcards.group2 + "'; "
-        cmd6 = "gzip {params.fldr}/output_tracks/*wig; "
-        cmd7 = "mv {params.fldr}/" + wildcards.group1 + "_vs_" + wildcards.group2 + "_all_MAvalues.xls {output.xls}; "
-        cmd8 = "tail -n +2 {output.xls} | nl -w2 | awk -v OFS='\t' '{{print $2,$3,$4,$9$1,$6}}' > {output.bed}"
-        shell(commoncmd1)
-        shell( commoncmd2 + commoncmd3 + cmd1 + cmd2 + cmd3 + cmd4 + cmd5 + cmd6 + cmd7 + cmd8 )
+        rname                           = 'manorm',
+        fldr                            = join(manorm_dir, "{group1}_vs_{group2}-{tool}"),
+        bedtoolsver                     = config['tools']['BEDTOOLSVER'],
+        manormver                       = "manorm/1.1.4"
+        extsizes                        = lambda w, _in: get_manorm_sizes(w.group1, w.group2, groupdata, _in.ppqt)
+    shell:
+        """
+        if [ ! -e /lscratch/$SLURM_JOBID ]; then 
+            mkdir /lscratch/$SLURM_JOBID
+        fi
+        cd /lscratch/$SLURM_JOBID
+        module load {params.manormver}
+        module load {params.bedtoolsver}
+        bamToBed -i {input.bam1} > bam1.bed
+        bamToBed -i {input.bam2} > bam2.bed
+        cut -f 1,2,3 {input.peak1} > peak1.bed
+        cut -f 1,2,3 {input.peak2} > peak2.bed
+        manorm \
+            --p1 peak1.bed \
+            --p2 peak2.bed \
+            --r1 bam1.bed \
+            --r2 bam2.bed \
+            {params.extsizes} \
+            -o {params.fldr} \
+            --name1 {wildcards.group1} \
+            --name2 {wildcards.group2}
+        gzip {params.fldr}/output_tracks/*wig
+        mv {params.fldr}/{wildcards.group1}_vs_{wildcards.group2}_all_MAvalues.xls {output.xls}
+        tail -n +2 {output.xls} | nl -w2 | awk -v OFS='\t' '{{print $2,$3,$4,$9$1,$6}}' > {output.bed}
+        """
