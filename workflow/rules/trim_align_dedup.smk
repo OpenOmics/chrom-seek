@@ -42,7 +42,7 @@ rule trim:
     """
     input:
         file1                               = join(workpath, "{name}.R1.fastq.gz"),
-        file2                               = provided(join(workpath,"{name}.R2.fastq.gz"), paired_end)
+        file2                               = provided(join(workpath, "{name}.R2.fastq.gz"), paired_end)
     output:
         outfq1                              = temp(join(trim_dir, "{name}.R1.trim.fastq.gz")),
         outfq2                              = provided(temp(join(trim_dir, "{name}.R2.trim.fastq.gz")), paired_end)
@@ -171,7 +171,7 @@ rule BWA:
     """
     input:
         infq1                               = join(trim_dir, "{name}.R1.trim.fastq.gz"),
-        infq2                               = join(trim_dir, "{name}.R2.trim.fastq.gz"),
+        infq2                               = join(trim_dir, "{name}.R2.trim.fastq.gz") if paired_end else [],
     params:
         d                                   = join(bam_dir),
         rname                               = 'bwa',
