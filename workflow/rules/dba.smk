@@ -242,15 +242,15 @@ rule manorm:
     input:
         bam1                            = lambda w: join(bam_dir, groupdata[w.group1][0] + ".Q5DD.bam"),
         bam2                            = lambda w: join(bam_dir, groupdata[w.group2][0] + ".Q5DD.bam"),
-        ppqt                            = join(bam_dir, "Q5DD.ppqt.txt"),
+        ppqt                            = join(ppqt_dir, "Q5DD.ppqt.txt"),
         peak1                           = lambda w: join(workpath, w.tool, groupdata[w.group1][0], groupdata[w.group1][0] + PeakExtensions[w.tool]),
         peak2                           = lambda w: join(workpath, w.tool, groupdata[w.group2][0], groupdata[w.group2][0] + PeakExtensions[w.tool]),
     output:
-        xls                             = join(manorm_dir, "{group1}_vs_{group2}-{tool}","{group1}_vs_{group2}-{tool}_all_MAvalues.xls"),
-        bed                             = temp(join(manorm_dir, "{group1}_vs_{group2}-{tool}","{group1}_vs_{group2}-{tool}_all_MA.bed")),
-        wigA                            = join(manorm_dir, "{group1}_vs_{group2}-{tool}","output_tracks","{group1}_vs_{group2}_A_values.wig.gz"),
-        wigM                            = join(manorm_dir, "{group1}_vs_{group2}-{tool}","output_tracks","{group1}_vs_{group2}_M_values.wig.gz"),
-        wigP                            = join(manorm_dir, "{group1}_vs_{group2}-{tool}","output_tracks","{group1}_vs_{group2}_P_values.wig.gz"),
+        xls                             = join(manorm_dir, "{group1}_vs_{group2}-{tool}", "{group1}_vs_{group2}-{tool}_all_MAvalues.xls"),
+        bed                             = temp(join(manorm_dir, "{group1}_vs_{group2}-{tool}", "{group1}_vs_{group2}-{tool}_all_MA.bed")),
+        wigA                            = join(manorm_dir, "{group1}_vs_{group2}-{tool}", "output_tracks", "{group1}_vs_{group2}_A_values.wig.gz"),
+        wigM                            = join(manorm_dir, "{group1}_vs_{group2}-{tool}", "output_tracks", "{group1}_vs_{group2}_M_values.wig.gz"),
+        wigP                            = join(manorm_dir, "{group1}_vs_{group2}-{tool}", "output_tracks", "{group1}_vs_{group2}_P_values.wig.gz"),
     params:
         rname                           = 'manorm',
         fldr                            = join(manorm_dir, "{group1}_vs_{group2}-{tool}"),

@@ -60,8 +60,6 @@ rule trim:
         trailingquality                     = 10,
         javaram                             = "64g",
         sample                              = "{name}",
-        tmpdir                              = tmpdir,
-        paired_end                          = paired_end
     threads: 
         16
     shell: 
@@ -70,11 +68,11 @@ rule trim:
         module load {params.bwaver};
         module load {params.samtoolsver};
         module load {params.picardver};
-        if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
-        tmp=$(mktemp -d -p "{params.tmpdir}")
+        if [ ! -d \"""" + tmpdir + """\" ]; then mkdir -p \"""" + tmpdir + """\"; fi
+        tmp=$(mktemp -d -p \"""" + tmpdir + """\")
         trap 'rm -rf "${{tmp}}"' EXIT
 
-        if [ '{params.paired_end}' == True ]; then
+        if [ \"""" + str(paired_end) + """\" == True ]; then
             cutadapt \\
                 --pair-filter=any \\
                 --nextseq-trim=2 \\
@@ -241,11 +239,11 @@ rule dedup:
     input:
         bam2                                = join(bam_dir,"{name}.Q5.bam")
     output:
-        out5                                = join(workpath,bam_dir,"{name}.Q5DD.bam"),
-        out5f                               = join(workpath,bam_dir,"{name}.Q5DD.bam.flagstat"),
-        out5i                               = join(workpath,bam_dir,"{name}.Q5DD.bam.idxstat"),
-        out6                                = provided(join(workpath,bam_dir,"{name}.bwa.Q5.duplic"), paired_end),
-        out7                                = dedup_out7(join(workpath,bam_dir,"{name}"), assay, paired_end)
+        out5                                = join(bam_dir, "{name}.Q5DD.bam"),
+        out5f                               = join(bam_dir, "{name}.Q5DD.bam.flagstat"),
+        out5i                               = join(bam_dir, "{name}.Q5DD.bam.idxstat"),
+        out6                                = provided(join(bam_dir, "{name}.bwa.Q5.duplic"), paired_end),
+        out7                                = dedup_out7(join(bam_dir, "{name}"), assay, paired_end)
     params:
         rname                               = 'dedup',
         picardver                           = config['tools']['PICARDVER'],
@@ -253,7 +251,6 @@ rule dedup:
         bedtoolsver                         = config['tools']['BEDTOOLSVER'],
         macsver                             = config['tools']['MACSVER'],
         gsize                               = config['references'][genome]['EFFECTIVEGENOMESIZE'],
-        folder                              = join(workpath,bam_dir),
         genomefile                          = config['references'][genome]['REFLEN'],
         rver                                = config['tools']['RVER'],
         javaram                             = '16g',
@@ -267,49 +264,49 @@ rule dedup:
         module load {params.bedtoolsver};
         module load {params.macsver};
         module load {params.rver}; 
-        if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
-        tmp=$(mktemp -d -p "{params.tmpdir}")
+        if [ ! -d \"""" + tmpdir + """\" ]; then mkdir -p \"""" + tmpdir + """\"; fi
+        tmp=$(mktemp -d -p \"""" + tmpdir + """\")
         trap 'rm -rf "${{tmp}}"' EXIT
         
         if [ "{assay}" == "cfchip" ];then
-        java -Xmx{params.javaram} \\
-            -jar $PICARDJARPATH/picard.jar MarkDuplicates \\
-            -I {input.bam2} \\
-            -O {params.tmpBam} \\
-            -TMP_DIR ${{tmp}} \\
-            -VALIDATION_STRINGENCY SILENT \\
-            -REMOVE_DUPLICATES true \\
-            -METRICS_FILE {output.out6};
-        samtools index {params.tmpBam};
-        samtools view -b {params.tmpBam} chr{{1..22}} > {output.out5};
-        Rscript {params.rscript} {params.tmpBam} {output.out7};
-        rm {params.tmpBam} {params.tmpBam}.bai;
-        samtools index {output.out5};
-        samtools flagstat {output.out5} > {output.out5f};
-        samtools idxstats {output.out5} > {output.out5i}; 
+            java -Xmx{params.javaram} \\
+                -jar $PICARDJARPATH/picard.jar MarkDuplicates \\
+                -I {input.bam2} \\
+                -O {params.tmpBam} \\
+                -TMP_DIR ${{tmp}} \\
+                -VALIDATION_STRINGENCY SILENT \\
+                -REMOVE_DUPLICATES true \\
+                -METRICS_FILE {output.out6};
+            samtools index {params.tmpBam};
+            samtools view -b {params.tmpBam} chr{{1..22}} > {output.out5};
+            Rscript {params.rscript} {params.tmpBam} {output.out7};
+            rm {params.tmpBam} {params.tmpBam}.bai;
+            samtools index {output.out5};
+            samtools flagstat {output.out5} > {output.out5f};
+            samtools idxstats {output.out5} > {output.out5i}; 
         elif [ '""" + str(paired_end) + """' == False ];then
-        macs2 filterdup -i {input} -g {params.gsize} --keep-dup="auto" -o ${{tmp}}/TmpTagAlign;
-        awk -F"\\t" -v OFS="\\t" '{{if ($2>0 && $3>0) {{print}}}}' ${{tmp}}/TmpTagAlign > ${{tmp}}/TmpTagAlign2;
-        awk -F"\\t" -v OFS="\\t" '{{print $1,1,$2}}' {params.genomefile} | sort -k1,1 -k2,2n > ${{tmp}}/GenomeFileBed;
-        bedtools intersect -wa -f 1.0 -a ${{tmp}}/TmpTagAlign2 -b ${{tmp}}/GenomeFileBed > ${{tmp}}/TmpTagAlign3;
-        bedtools bedtobam -i ${{tmp}}/TmpTagAlign3 -g {params.genomefile} | samtools sort -@4 -o {output.out5};
-        gzip ${{tmp}}/TmpTagAlign3;
-        mv ${{tmp}}/TmpTagAlign3.gz {output.out7};
-        samtools index {output.out5};
-        samtools flagstat {output.out5} > {output.out5f}
-        samtools idxstats {output.out5} > {output.out5i}
+            macs2 filterdup -i {input} -g {params.gsize} --keep-dup="auto" -o ${{tmp}}/TmpTagAlign;
+            awk -F"\\t" -v OFS="\\t" '{{if ($2>0 && $3>0) {{print}}}}' ${{tmp}}/TmpTagAlign > ${{tmp}}/TmpTagAlign2;
+            awk -F"\\t" -v OFS="\\t" '{{print $1,1,$2}}' {params.genomefile} | sort -k1,1 -k2,2n > ${{tmp}}/GenomeFileBed;
+            bedtools intersect -wa -f 1.0 -a ${{tmp}}/TmpTagAlign2 -b ${{tmp}}/GenomeFileBed > ${{tmp}}/TmpTagAlign3;
+            bedtools bedtobam -i ${{tmp}}/TmpTagAlign3 -g {params.genomefile} | samtools sort -@4 -o {output.out5};
+            gzip ${{tmp}}/TmpTagAlign3;
+            mv ${{tmp}}/TmpTagAlign3.gz {output.out7};
+            samtools index {output.out5};
+            samtools flagstat {output.out5} > {output.out5f}
+            samtools idxstats {output.out5} > {output.out5i}
         else
-        java -Xmx{params.javaram} \\
-            -jar $PICARDJARPATH/picard.jar MarkDuplicates \\
-            -I {input.bam2} \\
-            -O {output.out5} \\
-            -TMP_DIR ${{tmp}} \\
-            -VALIDATION_STRINGENCY SILENT \\
-            -REMOVE_DUPLICATES true \\
-            -METRICS_FILE {output.out6};
-        samtools index {output.out5};
-        samtools flagstat {output.out5} > {output.out5f};
-        samtools idxstats {output.out5} > {output.out5i}; 
+            java -Xmx{params.javaram} \\
+                -jar $PICARDJARPATH/picard.jar MarkDuplicates \\
+                -I {input.bam2} \\
+                -O {output.out5} \\
+                -TMP_DIR ${{tmp}} \\
+                -VALIDATION_STRINGENCY SILENT \\
+                -REMOVE_DUPLICATES true \\
+                -METRICS_FILE {output.out6};
+            samtools index {output.out5};
+            samtools flagstat {output.out5} > {output.out5f};
+            samtools idxstats {output.out5} > {output.out5i}; 
         fi
         """
 
@@ -326,14 +323,13 @@ rule ppqt:
         samtoolsver                         = config['tools']['SAMTOOLSVER'],
         rver                                = config['tools']['RVER'],
         scriptPy                            = join(workpath, "bin", "ppqt_process.py"),
-        tmpdir                              = tmpdir,
         file_name                           = "{name}"
     container: 
         config['images']['ppqt']
     shell: 
         """
-        if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
-        tmp=$(mktemp -d -p "{params.tmpdir}")
+        if [ ! -d \"""" + tmpdir + """\" ]; then mkdir -p \"""" + tmpdir + """\"; fi
+        tmp=$(mktemp -d -p \"""" + tmpdir + """\")
         trap 'rm -rf "${{tmp}}"' EXIT
 
         if [ '""" + str(paired_end) + """' == True ]; then
@@ -380,20 +376,18 @@ rule bam2bw:
         rname                               = "bam2bw",
         name                                = "{name}",
         effectivegenomesize                 = config['references'][genome]['EFFECTIVEGENOMESIZE'],
-        paired_end                          = paired_end,
-        tmpdir                              = tmpdir,
     threads: 
         int(allocated("threads", "bam2bw", cluster)),
     envmodules: 
         config['tools']['DEEPTOOLSVER'],
     shell: 
         """
-        if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
-        tmp=$(mktemp -d -p "{params.tmpdir}")
+        if [ ! -d \"""" + tmpdir + """\" ]; then mkdir -p \"""" + tmpdir + """\"; fi
+        tmp=$(mktemp -d -p """ + tmpdir + """)
         trap 'rm -rf "${{tmp}}"' EXIT
 
         bam_cov_option={input.ppqt}
-        if [ '{params.paired_end}' == False ]; then
+        if [ \"""" + str(paired_end) + """\" == False ]; then
             ppqt_len=$(awk '{{print $1}}' {input.ppqt})
             bam_cov_option="-e ${{ppqt_len}}"
         else 
