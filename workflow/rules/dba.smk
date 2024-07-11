@@ -255,7 +255,7 @@ rule manorm:
         rname                           = 'manorm',
         fldr                            = join(manorm_dir, "{group1}_vs_{group2}-{tool}"),
         bedtoolsver                     = config['tools']['BEDTOOLSVER'],
-        manormver                       = "manorm/1.1.4"
+        manormver                       = "manorm/1.1.4",
         extsizes                        = lambda w, _in: get_manorm_sizes(w.group1, w.group2, groupdata, _in.ppqt)
     shell:
         """

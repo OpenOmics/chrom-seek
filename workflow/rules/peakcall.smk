@@ -102,7 +102,7 @@ rule MACS2_narrow:
     shell: 
         """
         module load {params.macsver};
-        if [ '{params.paired_end}' == True ]; then
+        if [ '""" + str(paired_end) + """' == True ]; then
             macs2 callpeak \\
                 -t {input.chip} {params.flag} {input.c_option} \\
                 -g {params.gsize} \\
@@ -141,7 +141,7 @@ rule MACS2_broad:
     shell: 
         """
         module load {params.macsver};
-        if [ '{params.paired_end}' == True ]; then
+        if [ '""" + str(paired_end) + """' == True ]; then
             macs2 callpeak \\
                 -t {input.chip} {params.flag} {input.c_option} \\
                 -g {params.gsize} \\
@@ -187,11 +187,11 @@ rule SICER:
         """
         module load {params.sicerver}
         module load {params.bedtoolsver}
-        if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
-        tmp=$(mktemp -d -p "{params.tmpdir}")
+        if [ ! -d \"""" + str(tmpdir) + """\" ]; then mkdir -p \"""" + str(tmpdir) + """\"; fi
+        tmp=$(mktemp -d -p \"""" + str(tmpdir) + """\")
         trap 'rm -rf "${{tmp}}"' EXIT
 
-        if [ '{params.paired_end}' == True ]; then
+        if [ '""" + str(paired_end) + """' == True ]; then
             MEAN_INSERT_SIZE=$(cat {input.fragLen} | awk '/MEDIAN_INSERT_SIZE/{{f=1;next}} /## HISTOGRAM/{{f=0}} f' | cut -f 6)
             mean_insert_size=$(printf "%.0f" $MEAN_INSERT_SIZE)
         else
@@ -200,7 +200,7 @@ rule SICER:
         echo "printing out value of mean-insert-size ${{mean_insert_size}}"
         a={input.c_option}
         echo "Printing input.c_option ${{a}}"
-        if [ '{params.paired_end}' == True ]; then
+        if [ '""" + str(paired_end) + """' == True ]; then
             if [ -f "{input.c_option}" ]; then
                 # Copying input to tmpdir due to SICER2
                 # bam2bed file conversion, if more than
@@ -294,7 +294,6 @@ rule MEME:
         meme_out                        = join(MEME_dir, "{PeakTool}", "{name}_meme", "meme-chip.html"),
         ame_out                         = join(MEME_dir, "{PeakTool}", "{name}_ame", "ame.html")
     params:
-        rname                           = 'SICER',
         rname                           = 'MEME',
         ref_fa                          = config['references'][genome]['GENOME'],
         meme_vertebrates_db             = config['references'][genome]['MEME_VERTEBRATES_DB'],
@@ -307,8 +306,8 @@ rule MEME:
         """
         module load meme
         module load bedtools
-        if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
-        tmp=$(mktemp -d -p "{params.tmpdir}")
+        if [ ! -d \"""" + str(tmpdir) + """\" ]; then mkdir -p \"""" + str(tmpdir) + """\"; fi
+        tmp=$(mktemp -d -p \"""" + str(tmpdir) + """\")
         trap 'rm -rf "${{tmp}}"' EXIT
 
         bedtools getfasta -fi {params.ref_fa} -bed {input.bed} -fo ${{tmp}}/{params.outfa}
