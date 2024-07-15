@@ -164,10 +164,10 @@ rule UROPA:
         txt                             = join(uropa_dir, '{PeakTool1}', '{name}_{PeakTool2}_uropa_{type}_allhits.txt'),
         bed1                            = temp(join(uropa_dir, '{PeakTool1}', '{name}_{PeakTool2}_uropa_{type}_allhits.bed')),
         bed2                            = temp(join(uropa_dir, '{PeakTool1}', '{name}_{PeakTool2}_uropa_{type}_finalhits.bed')),
+        json                            = join(uropa_dir, '{PeakTool1}', '{name}.{PeakTool2}.{type}.json'),
     params:
         rname                           = "uropa",
         fldr                            = join(uropa_dir, '{PeakTool1}'),
-        json                            = join(uropa_dir, '{PeakTool1}', '{name}.{PeakTool2}.{type}.json'),
         outroot                         = join(uropa_dir, '{PeakTool1}', '{name}_{PeakTool2}_uropa_{type}'),
     threads: 4,
     run:
@@ -233,8 +233,13 @@ rule UROPA:
                     this_q = base_query.copy()
                     this_q['distance'] = _d
                     json_construct['queries'].append(this_q)
-        with open('{params.json}', 'w') as jo:
+
+        with open('{output.json}', 'w') as jo:
             json.dump(json_construct, jo, indent=4)
+            jo.close()
+
+        if not os.path.exists('{output.json}'):
+            raise FileNotFoundError('{output.json} does not exist!')
         shell("uropa -i {params.json} -p {params.outroot} -t {threads} -s")
 
 

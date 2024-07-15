@@ -207,7 +207,7 @@ def setup(sub_args, ifiles, repo_path, output_path):
     # Add other runtime info for debugging
     config['project']['version'] = __version__
     config['project']['workpath'] = os.path.abspath(sub_args.output)
-    config['project']['binpath'] = os.path.abspath(os.path.join(config['project']['workpath'], '..', 'bin'))
+    config['project']['binpath'] = os.path.abspath(os.path.join(config['project']['workpath'], 'bin'))
     git_hash = git_commit_hash(repo_path)
     config['project']['git_commit_hash'] = git_hash   # Add latest git commit hash
     config['project']['pipeline_path'] = repo_path    # Add path to installation

@@ -74,7 +74,7 @@ rule NRF:
         samtoolsver             = config['tools']['SAMTOOLSVER'],
         rver                    = config['tools']['RVER'],
         preseqver               = config['tools']['PRESEQVER'],
-        nrfscript               = join(workpath, "workflow", "scripts", "atac_nrf.py"),
+        nrfscript               = join(bin_path, "atac_nrf.py"),
     threads: 16
     shell: 
         """

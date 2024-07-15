@@ -122,11 +122,12 @@ elif assay in ["atac", "chip"]:
     if assay == "chip":
         rule_all_ins.extend(expand(join(macsB_dir, "{name}", "{name}_peaks.broadPeak"), name=chips))
         rule_all_ins.extend(expand(join(sicer_dir, "{name}", "{name}_broadpeaks.bed"), name=chips))
+        short_ext, tag_ext = ["sorted", "Q5DD"], ["sorted", "Q5DD_tagAlign"]
         if paired_end:
-            short_ext, tag_ext = ["sorted", "Q5DD"], ["sorted", "Q5DD_tagAlign"]
             rule_all_ins.extend(expand(join(ppqt_dir, "{name}.{ext}.ppqt"), name=samples, ext=short_ext))
             rule_all_ins.extend(expand(join(ppqt_dir, "{name}.{ext}.pdf"), name=samples, ext=short_ext))
             rule_all_ins.extend(expand(join(ppqt_dir, "{name}.{ext}.ppqt.txt"), name=samples, ext=short_ext))
+        else:
             rule_all_ins.extend(expand(join(ppqt_dir, "{name}.{ext}.ppqt"), name=samples, ext=tag_ext))
             rule_all_ins.extend(expand(join(ppqt_dir, "{name}.{ext}.pdf"), name=samples, ext=tag_ext))
             rule_all_ins.extend(expand(join(ppqt_dir, "{name}.{ext}.ppqt.txt"), name=samples, ext=tag_ext))

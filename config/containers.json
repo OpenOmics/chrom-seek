@@ -1,7 +1,7 @@
 {
     "images": {
-        "cfchip": "docker://skchronicles/cfchip_toolkit_v0.5.0",
-        "python": "docker://asyakhleborodova/chrom_seek_python_v0.1.0",
+        "cfchip": "docker://skchronicles/cfchip_toolkit:v0.5.0",
+        "python": "docker://asyakhleborodova/chrom_seek_python:v0.1.0",
         "ppqt": "docker://asyakhleborodova/ppqt:v0.2.0"
     }
 }
