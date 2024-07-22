@@ -172,16 +172,15 @@ rule UROPA:
     threads: 4,
     run:
         # Dynamically creates UROPA config file
-        shell(f"module load {uropaver}")
-        if not os.path.exists("{params.fldr}"): 
-            os.mkdir("{params.fldr}", mode=0o775)
+        if not os.path.exists(params.fldr): 
+            os.mkdir(params.fldr, mode=0o775)
 
         json_construct = dict()
         json_construct['queries'] = []
         json_construct['show_attributes'] = ["gene_id", "gene_name", "gene_type"]
         json_construct["priority"] = "Yes"
         json_construct['gtf'] = gtf
-        json_construct['bed'] = "{input}"
+        json_construct['bed'] = input[0]
 
         base_query = {
             "feature": "gene",
@@ -191,19 +190,19 @@ rule UROPA:
         }
 
         if assay == 'cfchip':
-            if '{type}' == 'protTSS':
+            if wildcards.type == 'protTSS':
                 for _d in (3000, 10000, 100000):
                     this_q = base_query.copy()
                     this_q['distance'] = _d
                     json_construct['queries'].append(this_q)
         else:
-            if '{type}' == 'prot':
+            if wildcards.type == 'prot':
                 for _d in (5000, 100000):
                     this_q = base_query.copy()
                     del this_q["feature.anchor"]
                     this_q['distance'] = _d
                     json_construct['queries'].append(this_q)
-            elif '{type}' == 'genes':
+            elif wildcards.type == 'genes':
                 this_query = {}
                 this_query['feature'] = 'gene'
                 for _d in (5000, 100000):
@@ -213,7 +212,7 @@ rule UROPA:
                     del this_q["attribute.value"]
                     this_q['distance'] = _d
                     json_construct['queries'].append(this_q)
-            elif '{type}' == 'protSEC':
+            elif wildcards.type == 'protSEC':
                 # distance, feature.anchor
                 query_values = (
                     ([3000, 1000], "start"), 
@@ -226,21 +225,22 @@ rule UROPA:
                     del this_q["feature.anchor"]
                     if feature_anchor: 
                         this_q["feature.anchor"] = feature_anchor
-                    this_q['distance'] = _d
+                    this_q['distance'] = _distance
                     json_construct['queries'].append(this_q)
-            elif '{type}' == 'protTSS':
+            elif wildcards.type == 'protTSS':
                 for _d in ([3000, 1000], 10000, 100000):
                     this_q = base_query.copy()
                     this_q['distance'] = _d
                     json_construct['queries'].append(this_q)
 
-        with open('{output.json}', 'w') as jo:
+        with open(output.json, 'w') as jo:
             json.dump(json_construct, jo, indent=4)
             jo.close()
 
-        if not os.path.exists('{output.json}'):
-            raise FileNotFoundError('{output.json} does not exist!')
-        shell("uropa -i {params.json} -p {params.outroot} -t {threads} -s")
+        if not os.path.exists(output.json):
+            raise FileNotFoundError(output.json + " does not exist!")
+        shell.prefix(f"module load {uropaver};")
+        shell("uropa -i " + output.json + " -p " + params.outroot + " -t " + str(threads) + " -s")
 
 
 rule manorm:

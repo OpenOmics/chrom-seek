@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
+import os
 from os.path import join
+from collections import defaultdict
 
 
 # ~~~ Common helper functions for blocking or controls
-
-
 def test_for_block(groupdata, contrast, blocks):
     """ only want to run blocking on contrasts where all
     individuals are on both sides of the contrast """
@@ -20,9 +20,15 @@ def test_for_block(groupdata, contrast, blocks):
     return contrastBlock
 
 
-def ctrl_test(ctrl_dict, input_name, in_dir):
+def ctrl_test(ctrl_dict, input_name, in_dir, mode=None):
     sample = join(in_dir, f"{input_name}.Q5DD.RPGC.bw")
+    assert mode in ('chip', 'ctrl'), 'Unrecognized input file mode.'
+    # assert os.path.exists(sample), f'{sample} sample does not exist!'
+    
     if input_name in ctrl_dict:
         norm = join(in_dir, ctrl_dict[input_name] + ".Q5DD.RPGC.bw")
-        return [sample, norm]
-    return [sample]
+        # assert os.path.exists(norm), f'{norm} control does not exist!'
+    else:
+        raise ValueError(f'ChIP sample {input_name} missing from input lookup: \n{str(ctrl_dict)}')
+    outs = {'chip': sample, 'ctrl': norm}
+    return outs[mode]

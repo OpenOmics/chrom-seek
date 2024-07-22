@@ -23,20 +23,20 @@ groupdata = config['project']['groups']
 blocks = config['project']['blocks']
 
 if None in list(blocks.values()):
-    samplesheet = [",".join(["SampleID","Condition", "Replicate", "bamReads", 
+    samplesheet = [",".join(["SampleID", "Condition", "Replicate", "bamReads", 
          "ControlID", "bamControl", "Peaks", "PeakCaller"])]
 else:
-    samplesheet = [",".join(["SampleID","Condition","Treatment","Replicate", "bamReads", 
+    samplesheet = [",".join(["SampleID", "Condition", "Treatment", "Replicate", "bamReads", 
          "ControlID", "bamControl", "Peaks", "PeakCaller"])]
    
 
 for condition in args.group1, args.group2:
     for chip in groupdata[condition]:
         replicate = str([ i + 1 for i in range(len(groupdata[condition])) if groupdata[condition][i]== chip ][0])
-        bamReads = args.workpath + "/" + args.bamdir + "/" + chip + ".Q5DD.bam"
+        bamReads = args.bamdir + "/" + chip + ".Q5DD.bam"
         controlID = chip2input[chip]
         if controlID != "":
-            bamControl = args.workpath + "/" + args.bamdir + "/" +  controlID + ".Q5DD.bam"
+            bamControl = args.bamdir + "/" +  controlID + ".Q5DD.bam"
         else:
             bamControl = ""
         peaks = args.workpath + "/" + args.peaktool + "/" + chip + "/" + chip + args.peakextension

@@ -33,7 +33,7 @@ groups                          = list(groupdatawinput.keys())
 reps                            = True if len(groupswreps) > 0 else False
 uniq_inputs                     = list(sorted(set([v for v in chip2input.values() if v])))
 sampleswinput                   = [
-    chip_value for input_id, chip_value in chip2input.items() \
+    chip_value for chip_value, input_id in chip2input.items() \
     if chip_value != 'NA' and chip_value != ''
 ]
 inputnorm                       = [""] if len(sampleswinput) == 0 else ["", ".inputnorm"]

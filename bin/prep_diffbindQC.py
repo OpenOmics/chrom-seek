@@ -36,10 +36,10 @@ for chip in chip2input.keys():
       condition = ""
       replicate = str(count)
       count = count +1
-   bamReads = args.workpath + "/" + args.bamdir + "/" + chip + ".Q5DD.bam"
+   bamReads = args.bamdir + "/" + chip + ".Q5DD.bam"
    controlID = chip2input[chip]
    if controlID != "":
-      bamControl = args.workpath + "/" + args.bamdir + "/" +  controlID + ".Q5DD.bam"
+      bamControl = args.bamdir + "/" +  controlID + ".Q5DD.bam"
    else:
       bamControl = ""
    peaks = args.workpath + "/" + args.peaktool + "/" + chip + "/" + chip + args.peakextension

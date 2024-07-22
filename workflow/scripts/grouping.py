@@ -107,3 +107,4 @@ def get_bam_input(bam_dir, wildcards, paired_end):
         elif wildcards.ext == "sorted":
             bams.append(join(bam_dir, "{0}.sorted.bam".format(wildcards.name)))
     return bams
+

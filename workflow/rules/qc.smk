@@ -370,8 +370,7 @@ rule insert_size:
 
 rule deeptools_QC:
     input:
-        # this should be all bigwigs
-        [ join(workpath, bw_dir, name + ".Q5DD.RPGC.bw") for name in samples ] 
+        [ join(bw_dir, name + ".Q5DD.RPGC.bw") for name in samples ] 
     output:
         javaram                 = '16g',
         heatmap                 = join(deeptools_dir, "spearman_heatmap.Q5DD.pdf"),
@@ -380,13 +379,16 @@ rule deeptools_QC:
 	    png                     = join(deeptools_dir, "spearman_heatmap.Q5DD_mqc.png")
     params:
         rname                   = "deeptools_QC",
+        parent_dir              = deeptools_dir,
         deeptoolsver            = config['tools']['DEEPTOOLSVER'],
         # this should be the sample names to match the bigwigs in the same order
-        labels                  = samples 
+        labels                  = samples
+    threads: 24
     shell: 
         """    
         module load {params.deeptoolsver}
-        multiBigwigSummary bins -b {input} -l {params.labels} -out {output.npz}
+        if [ ! -d "{params.parent_dir}" ]; then mkdir "{params.parent_dir}"; fi
+        multiBigwigSummary bins -b {input} -p {threads} -l {params.labels} -out {output.npz}
         plotCorrelation -in {output.npz} -o {output.heatmap} -c 'spearman' -p 'heatmap' --skipZeros --removeOutliers
         plotCorrelation -in {output.npz} -o {output.png} -c 'spearman' -p 'heatmap' --skipZeros --removeOutliers
         plotPCA -in {output.npz} -o {output.pca}

@@ -418,20 +418,19 @@ rule inputnorm:
        bigWig file of treatmment sample normalizes with its input control
     """
     input:
-        bws                                 = lambda w: ctrl_test(chip2input, w.name, bw_dir)
+        chip                                = lambda wc: ctrl_test(chip2input, wc.name, bw_dir, 'chip'),
+        ctrl                                = lambda wc: ctrl_test(chip2input, wc.name, bw_dir, 'ctrl')
     output:
         join(bw_dir, "{name}.Q5DD.RPGC.inputnorm.bw")
     params:
         rname                               = "inputnorm",
-        bigwig_declare                      = lambda w, input: f"--bigwig1 {input.bws[0]}" if len(input.bws) == 1 \
-                                                else f"--bigwig1 {input.bws[0]} --bigwig2 {input.bws[1]}"
+        bigwig_declare                      = lambda wc, input: f"--bigwig1 {input.chip} --bigwig2 {input.ctrl}",
     threads: 
         int(allocated("threads", "inputnorm", cluster)),
     envmodules: 
         config['tools']['DEEPTOOLSVER'],
     shell: 
         """
-        echo {input}
         bigwigCompare \\
             --binSize 25 \\
             --outFileName {output} \\
