@@ -173,7 +173,7 @@ rule SICER:
         fragLen                         = lambda w: getSicerFragLen(ppqt_dir, qc_dir, w.name, paired_end),
         c_option                        = lambda w: get_control_input(chip2input[w.name], paired_end, bam_dir),
     output:
-        bed                             = join(sicer_dir, "{name}", "{name}_broadpeaks.bed"),
+        bed                             = join(sicer_dir, "{name}", "{name}_broadpeaks.bed") if has_inputs else [],
     params:
         rname                           = 'SICER',
         name                            = "{name}",

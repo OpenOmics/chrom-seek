@@ -13,6 +13,7 @@ genome                          = config['options']['genome']
 paired_end                      = False if config['project']['nends'] == 1 else True
 ends                            = [1] if not paired_end else [1, 2]
 chip2input                      = config['project']['peaks']['inputs']
+has_inputs                      = False if set(chip2input.values()) == {''} else True
 
 # ~~ directories
 trim_dir                        = join(workpath, 'trim')

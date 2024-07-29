@@ -372,7 +372,6 @@ rule deeptools_QC:
     input:
         [ join(bw_dir, name + ".Q5DD.RPGC.bw") for name in samples ] 
     output:
-        javaram                 = '16g',
         heatmap                 = join(deeptools_dir, "spearman_heatmap.Q5DD.pdf"),
         pca                     = join(deeptools_dir, "pca.Q5DD.pdf"),
 	    npz                     = temp(join(deeptools_dir, "Q5DD.npz")),
