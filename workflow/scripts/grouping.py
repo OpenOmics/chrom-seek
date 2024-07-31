@@ -70,7 +70,9 @@ def get_peaktools(assay_type):
     if assay_type == "atac": 
         tools.append("Genrich") 
     elif assay_type == "chip":
-        tools.extend(["macsBroad", "sicer"])
+        tools.extend(["macsBroad"])
+        # turn sicer off for now
+        # tools.extend(["macsBroad", "sicer"])
     return tools
 
 
