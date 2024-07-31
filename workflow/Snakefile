@@ -96,8 +96,8 @@ if assay == "cfchip":
             group1=zipGroup1, group2=zipGroup2, PeakTool=zipToolC
         ))
         rule_all_ins.extend(expand(
-            join(uropa_diffbind_dir, "{PeakTool}", "{name}_{PeakTool}_uropa_{_type}_allhits.txt"), 
-            PeakTool=['DiffbindEdgeR','DiffbindDeseq2'], 
+            join(uropa_diffbind_dir, "{name}_{PeakTool}_uropa_{_type}_allhits.txt"), 
+            PeakTool=['DiffbindEdgeR', 'DiffbindDeseq2'], 
             name=contrasts,
              _type=["protTSS"]
         ))

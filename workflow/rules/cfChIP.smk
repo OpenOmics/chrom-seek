@@ -86,7 +86,7 @@ rule promoterTable1:
 
 rule promoterTable2:
     input:
-        expand(join(diffbind_dir, '{name}_DiffbindDeseq2_uropa_protTSS_allhits.txt'), name=contrasts),
+        expand(join(uropa_diffbind_dir, '{name}_DiffbindDeseq2_uropa_protTSS_allhits.txt'), name=contrasts),
     output:
         txt                     = join(uropa_dir, "promoterTable2", 'DiffbindDeseq2_{PeakTool}_promoter_overlap_summaryTable.txt'),
     params:
