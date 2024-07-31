@@ -16,6 +16,7 @@ bam_dir                         = join(workpath, "bam")
 cfTool_dir                      = join(workpath, "cfChIPtool")
 cfTool_subdir2                  = join(cfTool_dir, "BED", "H3K4me3")
 qc_dir                          = join(workpath, "QC")
+diffbind_dir                    = join(workpath, "DiffBind")
 
 
 rule cfChIPtool:
@@ -87,7 +88,7 @@ rule promoterTable2:
     input:
         expand(join(diffbind_dir, '{name}_DiffbindDeseq2_uropa_protTSS_allhits.txt'), name=contrasts),
     output:
-        txt                     = join(workpath,uropa_dir,"promoterTable2",'DiffbindDeseq2_{PeakTool}_promoter_overlap_summaryTable.txt'),
+        txt                     = join(uropa_dir, "promoterTable2", 'DiffbindDeseq2_{PeakTool}_promoter_overlap_summaryTable.txt'),
     params:
         rname                   = "promoter2",
         script1                 = join(bin_path, "promoterAnnotation_by_Gene.R"),

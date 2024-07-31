@@ -101,6 +101,11 @@ if assay == "cfchip":
             name=contrasts,
              _type=["protTSS"]
         ))
+        if contrast:
+            rule_all_ins.extend(expand(
+                join(uropa_dir, "promoterTable2", "DiffbindDeseq2_{PeakTool}_promoter_overlap_summaryTable.txt"), 
+                PeakTool=PeakTools
+            ))
     else:
         rule_all_ins.extend(expand(
             join(uropa_dir, '{PeakTool}', '{name}_{PeakTool}_uropa_{_type}_allhits.txt'), 
@@ -108,13 +113,13 @@ if assay == "cfchip":
             name=contrasts, 
             _type=UropaCats
         ))
-        # manorm commented turned off now
-        # rule_all_ins.extend(expand(
-        #     join(manorm_dir, "{group1}_vs_{group2}-{tool}", "{group1}_vs_{group2}-{tool}_all_MAvalues.xls"), 
-        #     group1=zipGroup1, 
-        #     group2=zipGroup2, 
-        #     tool=zipToolC
-        # ))
+        rule_all_ins.extend(expand(
+            join(manorm_dir, "{group1}_vs_{group2}-{tool}", "{group1}_vs_{group2}-{tool}_all_MAvalues.xls"), 
+            group1=zipGroup1, 
+            group2=zipGroup2, 
+            tool=zipToolC
+        ))
+
 elif assay in ["atac", "chip"]:
     peak_types.extend(["prot", "protSEC", "genes"])
     # meme outputs turned off for now
@@ -151,16 +156,12 @@ elif assay in ["atac", "chip"]:
                 join(uropa_dir, "{PeakTool}", "{name}_{PeakTool}_uropa_{_type}_allhits.txt"),
                 PeakTool=PeakTools, name=chips, _type=peak_types
             ))
-            rule_all_ins.extend(expand(
-                join(uropa_dir, "{name}_{PeakTool}_uropa_{_type}_allhits.txt"), 
-                PeakTool=["DiffbindEdgeR", "DiffbindDeseq2"], 
-                name=contrasts, 
-                _type=peak_types
-            ))
         if contrast:
             rule_all_ins.extend(expand(
-                join(uropa_dir, "promoterTable2", "DiffbindDeseq2_{PeakTool}_promoter_overlap_summaryTable.txt"), 
-                PeakTool=PeakTools
+                join(uropa_diffbind_dir, "{name}_{PeakTool}_uropa_{_type}_allhits.txt"), 
+                PeakTool=["DiffbindEdgeR", "DiffbindDeseq2"], 
+                name=contrasts,
+                _type=["protTSS", "prot", "protSEC", "genes"],
             ))
     else:
         rule_all_ins.extend(expand(
@@ -169,13 +170,12 @@ elif assay in ["atac", "chip"]:
             name=contrasts, 
             _type=UropaCats
         ))
-        # manorm commented turned off now
-        # rule_all_ins.extend(expand(
-        #     join(manorm_dir, "{group1}_vs_{group2}-{tool}", "{group1}_vs_{group2}-{tool}_all_MAvalues.xls"), 
-        #     group1=zipGroup1, 
-        #     group2=zipGroup2, 
-        #     tool=zipToolC
-        # ))
+        rule_all_ins.extend(expand(
+            join(manorm_dir, "{group1}_vs_{group2}-{tool}", "{group1}_vs_{group2}-{tool}_all_MAvalues.xls"), 
+            group1=zipGroup1, 
+            group2=zipGroup2, 
+            tool=zipToolC
+        ))
 rule_all_ins.append(join(workpath, "multiqc_report.html"))
 rule_all_ins.extend(expand(join(qc_dir, "{name}.preseq.dat"), name=samples))
 if has_inputs:

@@ -31,7 +31,6 @@ qc_dir                          = join(workpath, "PeakQC")
 idr_dir                         = join(workpath, "IDR")
 memechip_dir                    = join(workpath, "MEME")
 homer_dir                       = join(workpath, "HOMER_motifs")
-uropa_dir                       = join(workpath, "UROPA_annotations")
 manorm_dir                      = join(workpath, "MANorm")
 downstream_dir                  = join(workpath, "Downstream")
 otherDirs                       = [qc_dir, homer_dir, uropa_dir]
@@ -96,13 +95,13 @@ rule diffbind:
         lambda w: [ join(workpath, w.PeakTool, chip, chip + PeakExtensions[w.PeakTool]) for chip in chips ]
     output:
         html                            = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind.html"),
-        Deseq2                          = join(diffbind_dir, "DiffbindDeseq2", "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind_Deseq2.bed"),
-        EdgeR                           = join(diffbind_dir, "DiffbindEdgeR", "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind_EdgeR.bed"),
-        EdgeR_txt                       = join(diffbind_dir, "DiffbindEdgeR", "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind_EdgeR.txt"),
-        Deseq2_txt                      = join(diffbind_dir, "DiffbindDeseq2", "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind_Deseq2.txt"),
-        EdgeR_ftxt                      = join(diffbind_dir, "DiffbindEdgeR", "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind_EdgeR_fullList.txt"),
+        Deseq2                          = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind_Deseq2.bed"),
+        EdgeR                           = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind_EdgeR.bed"),
+        EdgeR_txt                       = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind_EdgeR.txt"),
+        Deseq2_txt                      = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind_Deseq2.txt"),
+        EdgeR_ftxt                      = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind_EdgeR_fullList.txt"),
         Deseq2_ftxt                     = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind_Deseq2_fullList.txt"),
-        html_block                      = provided(join(diffbind_dir_block, "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind_blocking.html"), blocking)
+        html_block                      = provided(join(uropa_diffbind_dir, "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind_blocking.html"), blocking)
     params:
         # variables and wildcards used in the shell directive
         rname                           = "diffbind",
@@ -160,7 +159,7 @@ rule diffbind:
 
 rule UROPA:
     input:
-        lambda w: [ join(workpath, w.PeakTool1, w.name, w.name + PeakExtensions[w.PeakTool2]) ],
+        lambda w: join(workpath, w.PeakTool1, w.name, w.name + PeakExtensions[w.PeakTool2]),
     output:
         txt                             = join(uropa_dir, '{PeakTool1}', '{name}_{PeakTool2}_uropa_{type}_allhits.txt'),
         bed1                            = temp(join(uropa_dir, '{PeakTool1}', '{name}_{PeakTool2}_uropa_{type}_allhits.bed')),
