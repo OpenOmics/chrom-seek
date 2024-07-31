@@ -9,6 +9,7 @@ from scripts.blocking import ctrl_test
 
 # ~~ workflow configuration
 workpath                        = config['project']['workpath']
+bin_path                        = config['project']['binpath']
 genome                          = config['options']['genome']
 paired_end                      = False if config['project']['nends'] == 1 else True
 ends                            = [1] if not paired_end else [1, 2]
@@ -323,7 +324,7 @@ rule ppqt:
         rname                               = "ppqt",
         samtoolsver                         = config['tools']['SAMTOOLSVER'],
         rver                                = config['tools']['RVER'],
-        scriptPy                            = join(workpath, "bin", "ppqt_process.py"),
+        scriptPy                            = join(bin_path, "ppqt_process.py"),
         file_name                           = "{name}"
     container: 
         config['images']['ppqt']

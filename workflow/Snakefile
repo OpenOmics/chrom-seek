@@ -108,12 +108,13 @@ if assay == "cfchip":
             name=contrasts, 
             _type=UropaCats
         ))
-        rule_all_ins.extend(expand(
-            join(manorm_dir, "{group1}_vs_{group2}-{tool}", "{group1}_vs_{group2}-{tool}_all_MAvalues.xls"), 
-            group1=zipGroup1, 
-            group2=zipGroup2, 
-            tool=zipToolC
-        ))
+        # manorm commented turned off now
+        # rule_all_ins.extend(expand(
+        #     join(manorm_dir, "{group1}_vs_{group2}-{tool}", "{group1}_vs_{group2}-{tool}_all_MAvalues.xls"), 
+        #     group1=zipGroup1, 
+        #     group2=zipGroup2, 
+        #     tool=zipToolC
+        # ))
 elif assay in ["atac", "chip"]:
     peak_types.extend(["prot", "protSEC", "genes"])
     # meme outputs turned off for now
@@ -168,12 +169,13 @@ elif assay in ["atac", "chip"]:
             name=contrasts, 
             _type=UropaCats
         ))
-        rule_all_ins.extend(expand(
-            join(manorm_dir, "{group1}_vs_{group2}-{tool}", "{group1}_vs_{group2}-{tool}_all_MAvalues.xls"), 
-            group1=zipGroup1, 
-            group2=zipGroup2, 
-            tool=zipToolC
-        ))
+        # manorm commented turned off now
+        # rule_all_ins.extend(expand(
+        #     join(manorm_dir, "{group1}_vs_{group2}-{tool}", "{group1}_vs_{group2}-{tool}_all_MAvalues.xls"), 
+        #     group1=zipGroup1, 
+        #     group2=zipGroup2, 
+        #     tool=zipToolC
+        # ))
 rule_all_ins.append(join(workpath, "multiqc_report.html"))
 rule_all_ins.extend(expand(join(qc_dir, "{name}.preseq.dat"), name=samples))
 if has_inputs:

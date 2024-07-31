@@ -26,6 +26,7 @@ diffbind_dir                    = join(workpath, "DiffBind")
 uropa_dir                       = join(workpath, "UROPA_annotations")
 uropa_diffbind_dir              = join(uropa_dir, "DiffBind")
 bam_dir                         = join(workpath, "bam")
+ppqt_dir                        = join(bam_dir, "ppqt")
 qc_dir                          = join(workpath, "PeakQC")
 idr_dir                         = join(workpath, "IDR")
 memechip_dir                    = join(workpath, "MEME")
@@ -247,7 +248,7 @@ rule manorm:
     input:
         bam1                            = lambda w: join(bam_dir, groupdata[w.group1][0] + ".Q5DD.bam"),
         bam2                            = lambda w: join(bam_dir, groupdata[w.group2][0] + ".Q5DD.bam"),
-        ppqt                            = join(ppqt_dir, "Q5DD.ppqt.txt"),
+        # ppqt                            = join(ppqt_dir, "Q5DD.ppqt.txt"), # ppqt input into manorm TODO
         peak1                           = lambda w: join(workpath, w.tool, groupdata[w.group1][0], groupdata[w.group1][0] + PeakExtensions[w.tool]),
         peak2                           = lambda w: join(workpath, w.tool, groupdata[w.group2][0], groupdata[w.group2][0] + PeakExtensions[w.tool]),
     output:
@@ -261,7 +262,7 @@ rule manorm:
         fldr                            = join(manorm_dir, "{group1}_vs_{group2}-{tool}"),
         bedtoolsver                     = config['tools']['BEDTOOLSVER'],
         manormver                       = "manorm/1.1.4",
-        extsizes                        = lambda w, _in: get_manorm_sizes(w.group1, w.group2, groupdata, _in.ppqt)
+        extsizes                        = lambda w, input: get_manorm_sizes(w.group1, w.group2, groupdata, "")
     shell:
         """
         if [ ! -e /lscratch/$SLURM_JOBID ]; then 
