@@ -385,7 +385,7 @@ rule bam2bw:
     shell: 
         """
         if [ ! -d \"""" + tmpdir + """\" ]; then mkdir -p \"""" + tmpdir + """\"; fi
-        tmp=$(mktemp -d -p """ + tmpdir + """)
+        tmp=$(mktemp -d -p \"""" + tmpdir + """\")
         trap 'rm -rf "${{tmp}}"' EXIT
 
         bam_cov_option={input.ppqt}
