@@ -146,7 +146,10 @@ try(dba.plotPCA(DBdataCounts),silent=TRUE)
 ```{r TMM}
 vec <- c("seqnames", "start", "end", "width", "strand", samples$samples$SampleID)
 consensus2 <- dba.peakset(DBdataCounts, bRetrieve=TRUE) %>% ##extracts TMM-normalized  counts
-  as.data.frame() %>% setNames(vec) %>% arrange(start, end) %>% mutate(Peaks = paste0("Peak",1:nrow(.))) %>% 
+  as.data.frame() %>% 
+  setNames(vec) %>% 
+  arrange(start, end) %>% 
+  mutate(Peaks = paste0("Peak",1:nrow(.))) %>% 
   dplyr::select(1:4, Peaks, samples$samples$SampleID)
 
 outfile1 <- paste0(contrasts, "-", peakcaller, "_DiffBindQC_TMMcounts.csv")
@@ -164,12 +167,19 @@ counts_TMM_ALL <- counts_TMM_ALL %>% dplyr::select(5:ncol(.)) %>%
   t() %>% log10() %>% as.data.frame(.)
 ##UMAP coordinates
 set.seed(123)
+
 if (nrow(samples$samples) < 16) {
-  umap_coord <- umap(counts_TMM_ALL, n_neighbors= nrow(samples$samples)-1)
+  neighbors=nrow(samples$samples)-1
+  if (neighbors > 1) {
+    umap_coord <- umap(counts_TMM_ALL, n_neighbors=neighbors)
+  } else {
+    umap_coord <- umap(counts_TMM_ALL, n_neighbors=2)
+  }
 } else {
   umap_coord <- umap(counts_TMM_ALL)
 }
-umap_coord <-as.data.frame(umap_coord$layout) %>% setNames(c("UMAP1", "UMAP2"))
+umap_coord <- as.data.frame(umap_coord$layout) %>% 
+              setNames(c("UMAP1", "UMAP2"))
 
 outfile <- paste0(contrasts, "-", peakcaller, "_DiffBindQC_UMAP.csv")
 write.csv(umap_coord, outfile, row.names = F)
