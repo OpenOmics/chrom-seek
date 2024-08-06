@@ -130,6 +130,6 @@ rule diffbindQC:
             --pc {params.peakcaller} --csv {params.csvfile}
         cp {params.rscript} {params.outdir}
         cd {params.outdir}
-        Rscript -e 'rmarkdown::render("DiffBind_v2_cfChIP_QC.Rmd", output_file= "{output.html}", 
-            params=list(csvfile= "{params.csvfile}", contrasts= "{params.contrast}", peakcaller= "{params.PeakTool}"))'
+        Rscript -e 'rmarkdown::render("DiffBind_v2_cfChIP_QC.Rmd", output_file= "{output.html}",  \
+            params=list(csvfile="{params.csvfile}", contrasts="{params.contrast}", peakcaller="{params.PeakTool}"))'
         """

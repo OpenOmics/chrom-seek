@@ -86,6 +86,10 @@ if assay == "cfchip":
         PeakTool="DiffBindQC", 
         _type=peak_types
     ))
+    if has_inputs:
+        rule_all_ins.extend(
+            expand(join(qc_dir, "AllSamples-{PeakTool}", "AllSamples-{PeakTool}_DiffBindQC_TMMcounts.bed"), PeakTool=PeakTools)
+        )
     rule_all_ins.extend(expand(
         join(uropa_dir, "promoterTable1", "{PeakTool}_promoter_overlap_summaryTable.txt"), 
         PeakTool=PeakTools
@@ -95,33 +99,35 @@ if assay == "cfchip":
             join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind.html"), 
             group1=zipGroup1, group2=zipGroup2, PeakTool=zipToolC
         ))
-        rule_all_ins.extend(expand(
-            join(uropa_diffbind_dir, "{name}_{PeakTool}_uropa_{_type}_allhits.txt"), 
-            PeakTool=['DiffbindEdgeR', 'DiffbindDeseq2'], 
-            name=contrasts,
-             _type=["protTSS"]
-        ))
+
         if contrast:
+            rule_all_ins.extend(expand(
+                join(uropa_diffbind_dir, "{name}_{PeakTool}_uropa_{_type}_allhits.txt"), 
+                PeakTool=['DiffbindEdgeR', 'DiffbindDeseq2'], 
+                name=contrasts,
+                _type=["protTSS"]
+            ))
             rule_all_ins.extend(expand(
                 join(uropa_dir, "promoterTable2", "DiffbindDeseq2_{PeakTool}_promoter_overlap_summaryTable.txt"), 
                 PeakTool=PeakTools
             ))
     else:
-        rule_all_ins.extend(expand(
-            join(uropa_dir, '{PeakTool}', '{name}_{PeakTool}_uropa_{_type}_allhits.txt'), 
-            PeakTool="MANorm", 
-            name=contrasts, 
-            _type=UropaCats
-        ))
-        rule_all_ins.extend(expand(
-            join(manorm_dir, "{group1}_vs_{group2}-{tool}", "{group1}_vs_{group2}-{tool}_all_MAvalues.xls"), 
-            group1=zipGroup1, 
-            group2=zipGroup2, 
-            tool=zipToolC
-        ))
+        pass
+        # remove manorm for now
+        # rule_all_ins.extend(expand(
+        #     join(uropa_dir, '{PeakTool}', '{name}_{PeakTool}_uropa_{_type}_allhits.txt'), 
+        #     PeakTool="MANorm", 
+        #     name=contrasts, 
+        #     _type=UropaCats
+        # ))
+        # rule_all_ins.extend(expand(
+        #     join(manorm_dir, "{group1}_vs_{group2}-{tool}", "{group1}_vs_{group2}-{tool}_all_MAvalues.xls"), 
+        #     group1=zipGroup1, 
+        #     group2=zipGroup2, 
+        #     tool=zipToolC
+        # ))
 
 elif assay in ["atac", "chip"]:
-    peak_types.extend(["prot", "protSEC", "genes"])
     # meme outputs turned off for now
     # if has_inputs:
     #     rule_all_ins.extend(expand(join(MEME_dir, "{PeakTool}", "{name}_meme", "meme-chip.html"), PeakTool=PeakTools, name=chips))
@@ -146,50 +152,49 @@ elif assay in ["atac", "chip"]:
         rule_all_ins.extend(expand(
             join(genrich_dir, "{name}", "{name}.narrowPeak"), name=chips
         ))
+    rule_all_ins.extend(expand(
+        join(uropa_dir, "{PeakTool}", "{name}_{PeakTool}_uropa_{_type}_allhits.txt"),
+        PeakTool=PeakTools, name=chips, _type=peak_types
+    ))
     if reps:
-        if has_inputs:
-            rule_all_ins.extend(expand(
-                join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind.html"), 
-                group1=zipGroup1, group2=zipGroup2, PeakTool=zipToolC
-            ))
-            rule_all_ins.extend(expand(
-                join(uropa_dir, "{PeakTool}", "{name}_{PeakTool}_uropa_{_type}_allhits.txt"),
-                PeakTool=PeakTools, name=chips, _type=peak_types
-            ))
+        rule_all_ins.extend(expand(
+            join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind.html"), 
+            group1=zipGroup1, group2=zipGroup2, PeakTool=zipToolC
+        ))
         if contrast:
             rule_all_ins.extend(expand(
                 join(uropa_diffbind_dir, "{name}_{PeakTool}_uropa_{_type}_allhits.txt"), 
                 PeakTool=["DiffbindEdgeR", "DiffbindDeseq2"], 
                 name=contrasts,
-                _type=["protTSS", "prot", "protSEC", "genes"],
+                _type=["protTSS"],
             ))
     else:
-        rule_all_ins.extend(expand(
-            join(uropa_dir, '{PeakTool}', '{name}_{PeakTool}_uropa_{_type}_allhits.txt'), 
-            PeakTool="MANorm", 
-            name=contrasts, 
-            _type=UropaCats
-        ))
-        rule_all_ins.extend(expand(
-            join(manorm_dir, "{group1}_vs_{group2}-{tool}", "{group1}_vs_{group2}-{tool}_all_MAvalues.xls"), 
-            group1=zipGroup1, 
-            group2=zipGroup2, 
-            tool=zipToolC
-        ))
+        pass
+        # manorm turned off now
+        # rule_all_ins.extend(expand(
+        #     join(uropa_dir, '{PeakTool}', '{name}_{PeakTool}_uropa_{_type}_allhits.txt'), 
+        #     PeakTool="MANorm", 
+        #     name=contrasts, 
+        #     _type=UropaCats
+        # ))
+        # rule_all_ins.extend(expand(
+        #     join(manorm_dir, "{group1}_vs_{group2}-{tool}", "{group1}_vs_{group2}-{tool}_all_MAvalues.xls"), 
+        #     group1=zipGroup1, 
+        #     group2=zipGroup2, 
+        #     tool=zipToolC
+        # ))
 rule_all_ins.append(join(workpath, "multiqc_report.html"))
 rule_all_ins.extend(expand(join(qc_dir, "{name}.preseq.dat"), name=samples))
-if has_inputs:
-    rule_all_ins.extend(
-        expand(join(qc_dir, "AllSamples-{PeakTool}", "AllSamples-{PeakTool}_DiffBindQC_TMMcounts.bed"), PeakTool=PeakTools)
-    )
-    rule_all_ins.extend(
-        expand(join(peakqc_dir, "{PeakTool}.{name}.Q5DD.FRiP_table.txt"), PeakTool=PeakTools, name=samples)
-    )
+rule_all_ins.extend(
+    expand(join(peakqc_dir, "{PeakTool}.{name}.Q5DD.FRiP_table.txt"), PeakTool=PeakTools, name=samples)
+)
 rule_all_ins.extend(expand(join(bam_dir, "{name}.{ext}"), name=samples, ext=extaln))
 rule_all_ins.extend(expand(join(macsN_dir, "{name}","{name}_peaks.narrowPeak"), name=chips))
 rule_all_ins.extend(expand(join(bw_dir, "{name}.{ext}.RPGC.bw"), name=samples, ext=["sorted", "Q5DD"]))
+
 if has_inputs:
     rule_all_ins.extend(expand(join(bw_dir, "{name}.Q5DD.RPGC.inputnorm.bw"), name=sampleswinput))
+    
 
 rule all:
     input:

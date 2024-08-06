@@ -185,6 +185,7 @@ rule fastqc:
             -exec cp {{}} {params.outdir} \\;
         """
 
+
 rule fastq_screen:
     """
     Quality-control step to screen for different sources of contamination.

@@ -18,8 +18,7 @@ contrast                        = config['project']['contrast']
 uropaver                        = config['tools']['UROPAVER']
 gtf                             = config['references'][genome]['GTFFILE']
 
-# ~~ directories
-bin_path                        = join(workpath, "workflow", "bin")
+# ~~ directoriesxw
 diffbind_dir_block              = join(workpath, "DiffBindBlock")
 diffbind_dir2                   = join(workpath, "DiffBind_block")
 diffbind_dir                    = join(workpath, "DiffBind")
@@ -142,15 +141,15 @@ rule diffbind:
             --pc {params.peakcaller} --csv {params.csvfile}
         cp {params.rscript} {params.outdir}
         cd {params.outdir}
-        Rscript -e 'rmarkdown::render("DiffBind_v2_ChIPseq.Rmd", output_file= "{output.html}", 
-        params=list(csvfile= "{params.csvfile}", contrasts= "{params.this_contrast}", peakcaller= "{params.this_peaktool}"))'
+        Rscript -e 'rmarkdown::render("DiffBind_v2_ChIPseq.Rmd", output_file= "{output.html}", \
+            params=list(csvfile="{params.csvfile}", contrasts="{params.this_contrast}", peakcaller="{params.this_peaktool}"))'
         if [ ! -f {output.Deseq2} ]; then touch {output.Deseq2}; fi
         if [ ! -f {output.EdgeR} ]; then touch {output.EdgeR}; fi
 
         if [ '"""+str(blocking)+"""' == True ]; then
             echo "DiffBind with Blocking"
-            Rscript -e 'rmarkdown::render("{params.blocking_rscript}", output_file= "{output.html_block}", 
-            params=list(csvfile= "{params.csvfile}", contrasts= "{params.this_contrast}", peakcaller= "{params.this_peaktool}", dir= "{params.outdir_block}"))'
+            Rscript -e 'rmarkdown::render("{params.blocking_rscript}", output_file= "{output.html_block}", \
+                params=list(csvfile= "{params.csvfile}", contrasts="{params.this_contrast}", peakcaller="{params.this_peaktool}", dir="{params.outdir_block}"))'
             if [ ! -f {params.Deseq2_block} ]; then touch {params.Deseq2_block}; fi
             if [ ! -f {params.EdgeR_block} ]; then touch {params.EdgeR_block}; fi
         fi
