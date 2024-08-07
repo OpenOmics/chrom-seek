@@ -4,8 +4,8 @@
 import snakemake
 from os.path import join
 from scripts.common import allocated, get_bam_ext
-from scripts.grouping import dedup_out7, get_bam_input, get_ppqt_input
-from scripts.blocking import ctrl_test
+from scripts.grouping import dedup_out7, get_bam_input, get_ppqt_input, \
+                             ctrl_test
 
 # ~~ workflow configuration
 workpath                        = config['project']['workpath']
