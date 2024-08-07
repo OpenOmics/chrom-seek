@@ -219,7 +219,7 @@ function submit(){
 #SBATCH --parsable
 #SBATCH -J "$2"
 #SBATCH --mail-type=BEGIN,END,FAIL
-#SBATCH --output "$3/logfiles/snakemakei_${ts}.log"
+#SBATCH --output "$3/logfiles/snakemake_${ts}.log"
 #SBATCH --error "$3/logfiles/snakemake_${ts}.log"
 set -euo pipefail
 # Main process of pipeline
