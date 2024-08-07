@@ -1,72 +1,49 @@
-# TODO: This Snakefile needs to be completely refactored.
-# Python standard library
-from os.path import join
+# Differential binding analysis rules
+# ~~~~
 import os
-
-# Local imports
-from scripts.common import (
-    allocated
-)
-
-def outputIDR(groupswreps, groupdata, chip2input, tools):
-    """
-    Produces the correct output files for IDR. All supposed replicates
-    should be directly compared when possible using IDR. IDR malfunctions
-    with bed files and GEM so it will not run with either of those.
-    Because there is no q-value calculated for SICER when there is no 
-    input file, those samples are also ignored.
-    """
-    IDRgroup, IDRsample1, IDRsample2, IDRpeaktool = [], [], [], []
-    for group in groupswreps:
-        nsamples = len(groupdata[group])
-        for i in range(nsamples):
-            ctrlTF = chip2input[groupdata[group][i]] != ""
-            for j in range(i+1,nsamples):
-                if ctrlTF == (chip2input[groupdata[group][j]] != ""):
-                    if ctrlTF == False:
-                        tooltmp = [ tool for tool in tools if tool != "sicer" ]
-                    else:
-                        tooltmp = tools			           
-                    IDRgroup.extend([group] * len(tooltmp))
-                    IDRsample1.extend([groupdata[group][i]] * len(tooltmp))
-                    IDRsample2.extend([groupdata[group][j]] * len(tooltmp))
-                    IDRpeaktool.extend(tooltmp)
-    return( IDRgroup, IDRsample1, IDRsample2, IDRpeaktool )
+import json
+from os.path import join
+from scripts.common import allocated, mk_dir_if_not_exist
+from scripts.peakcall import outputIDR, zip_peak_files, calc_effective_genome_fraction, get_manorm_sizes
+from scripts.grouping import test_for_block
 
 
-def zip_peak_files(chips, PeakTools, PeakExtensions):
-    """Making input file names for FRiP"""
-    zipSample, zipTool, zipExt = [], [], []
-    for chip in chips:
-        for PeakTool in PeakTools:
-            zipSample.append(chip)
-            zipTool.append(PeakTool)
-            zipExt.append(PeakExtensions[PeakTool])
-    return(zipSample, zipTool, zipExt)
+# ~~ workflow configuration
+workpath                        = config['project']['workpath']
+bin_path                        = config['project']['binpath']
+genome                          = config['options']['genome']
+blocks                          = config['project']['blocks']
+groupdata                       = config['project']['groups']
+contrast                        = config['project']['contrast']
+uropaver                        = config['tools']['UROPAVER']
+gtf                             = config['references'][genome]['GTFFILE']
+
+# ~~ directoriesxw
+diffbind_dir_block              = join(workpath, "DiffBindBlock")
+diffbind_dir2                   = join(workpath, "DiffBind_block")
+diffbind_dir                    = join(workpath, "DiffBind")
+uropa_dir                       = join(workpath, "UROPA_annotations")
+uropa_diffbind_dir              = join(uropa_dir, "DiffBind")
+bam_dir                         = join(workpath, "bam")
+ppqt_dir                        = join(bam_dir, "ppqt")
+qc_dir                          = join(workpath, "PeakQC")
+idr_dir                         = join(workpath, "IDR")
+memechip_dir                    = join(workpath, "MEME")
+homer_dir                       = join(workpath, "HOMER_motifs")
+manorm_dir                      = join(workpath, "MANorm")
+downstream_dir                  = join(workpath, "Downstream")
+otherDirs                       = [qc_dir, homer_dir, uropa_dir]
+cfTool_dir                      = join(workpath, "cfChIPtool")
+cfTool_subdir2                  = join(cfTool_dir, "BED", "H3K4me3")
+
+# ~~ workflow switches
+blocking                        = False if None in list(blocks.values()) else True
+if reps == "yes": otherDirs.append(diffbind_dir)
+mk_dir_if_not_exist(PeakTools + otherDirs)
 
 
-def calc_effective_genome_fraction(effectivesize, genomefile):
-    """
-    calculate the effective genome fraction by calculating the
-    actual genome size from a .genome-like file and then dividing
-    the effective genome size by that number
-    """
-    lines=list(map(lambda x:x.strip().split("\t"),open(genomefile).readlines()))
-    genomelen=0
-    for chrom,l in lines:
-        if not "_" in chrom and chrom!="chrX" and chrom!="chrM" and chrom!="chrY":
-            genomelen+=int(l)
-    return(str(float(effectivesize)/ genomelen))
-
-
-
-# PREPARING TO DEAL WITH A VARIED SET OF PEAKCALL TOOLS
-gem_dir = "gem"
-macsB_dir = "macsBroad"
-sicer_dir = "sicer"
-
+# ~~ peak calling configuration and outputs
 PeakToolsNG = [ tool for tool in PeakTools if tool != "gem" ]
-
 PeakExtensions = {
     'macsNarrow': '_peaks.narrowPeak',
     'macsBroad': '_peaks.broadPeak',
@@ -106,218 +83,206 @@ RankColIDR = {
     'macsBroad': 'q.value',
     'sicer': 'q.value'
 }
-
-
 IDRgroup, IDRsample1, IDRsample2, IDRpeaktool =	outputIDR(groupswreps, groupdata, chip2input, PeakToolsNG)
-
 zipSample, zipTool, zipExt = zip_peak_files(chips, PeakTools, PeakExtensions)
-
-
-# CREATING DIRECTORIES
-bam_dir='bam'
-qc_dir='PeakQC'
-idr_dir = 'IDR'
-memechip_dir = "MEME"
-homer_dir = "HOMER_motifs"
-manorm_dir = "MANorm"
-downstream_dir = "Downstream"
-
-otherDirs = [qc_dir, homer_dir, uropa_dir]
-if reps == "yes":
-    # otherDirs.append(idr_dir)
-    otherDirs.append(diffbind_dir)
-
-for d in PeakTools + otherDirs:
-        if not os.path.exists(join(workpath,d)):
-                os.mkdir(join(workpath,d))
-
-
-# Blocking code
-diffbind_dir2 = "DiffBind_block"
-blocks=config['project']['blocks']
-
-def test_for_block(contrast, blocks):
-   """ only want to run blocking on contrasts where all
-   individuals are on both sides of the contrast """
-   contrastBlock = [ ]
-   for con in contrast:
-       group1 = con[0]
-       group2 = con[1]
-       block1 = [ blocks[sample] for sample in groupdata[group1] ]
-       block2 = [ blocks[sample] for sample in groupdata[group2] ]
-       if len(block1) == len(block2):
-           if len(set(block1).intersection(block2)) == len(block1):
-                contrastBlock.append(con)
-   return contrastBlock  
-
-
-contrastBlock = test_for_block(contrast,blocks)
+contrastBlock = test_for_block(groupdata, contrast, blocks)
 zipGroup1B, zipGroup2B, zipToolCB, contrastsB = zip_contrasts(contrastBlock, PeakTools)
 
-
+# ~~ rules 
 rule diffbind:
     input:
         lambda w: [ join(workpath, w.PeakTool, chip, chip + PeakExtensions[w.PeakTool]) for chip in chips ]
     output:
-        html = join(workpath,diffbind_dir,"{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind.html"),
-        Deseq2 = join(workpath,diffbind_dir,"{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind_Deseq2.bed"),
-        EdgeR = join(workpath,diffbind_dir,"{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind_EdgeR.bed"),
-        EdgeR_txt = join(workpath,diffbind_dir,"{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind_EdgeR.txt"),
-        Deseq2_txt = join(workpath,diffbind_dir,"{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind_Deseq2.txt"),
-        EdgeR_ftxt = join(workpath,diffbind_dir,"{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind_EdgeR_fullList.txt"),
-        Deseq2_ftxt = join(workpath,diffbind_dir,"{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind_Deseq2_fullList.txt"),
-        html_block = provided(join(workpath,diffbind_dir_block,"{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind_blocking.html"), blocking)
+        html                            = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind.html"),
+        Deseq2                          = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind_Deseq2.bed"),
+        EdgeR                           = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind_EdgeR.bed"),
+        EdgeR_txt                       = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind_EdgeR.txt"),
+        Deseq2_txt                      = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind_Deseq2.txt"),
+        EdgeR_ftxt                      = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind_EdgeR_fullList.txt"),
+        Deseq2_ftxt                     = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind_Deseq2_fullList.txt"),
+        html_block                      = provided(join(uropa_diffbind_dir, "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind_blocking.html"), blocking)
     params:
-        rname="diffbind",
-        rscript = join(workpath,"workflow","scripts","DiffBind_v2_ChIPseq.Rmd"),
-        outdir    = join(workpath,diffbind_dir,"{group1}_vs_{group2}-{PeakTool}"),
-        contrast  = "{group1}_vs_{group2}",
-        csvfile   = join(workpath,diffbind_dir,"{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind_prep.csv"),
-        pythonscript = join(workpath,"workflow","scripts","prep_diffbind.py"),
-        PeakExtension= lambda w: PeakExtensions[w.PeakTool],
-        peakcaller= lambda w: FileTypesDiffBind[w.PeakTool],
-        group1="{group1}",
-        group2="{group2}",
-        PeakTool="{PeakTool}",
-        blocking=blocking,
-        blocking_rscript = join(workpath,"workflow","scripts","DiffBind_v2_ChIPseq_block.Rmd"),
-        outdir_block= join(workpath,diffbind_dir_block,"{group1}_vs_{group2}-{PeakTool}"),
-        Deseq2_block = provided(join(workpath, diffbind_dir_block,"{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind_Deseq2_block.bed"), blocking),
-        EdgeR_block = provided(join(workpath, diffbind_dir_block,"{group1}_vs_{group2}-{PeakTool}","{group1}_vs_{group2}-{PeakTool}_Diffbind_EdgeR_block.bed"), blocking),
+        # variables and wildcards used in the shell directive
+        rname                           = "diffbind",
+        group1                          = "{group1}",
+        group2                          = "{group2}",
+        this_peaktool                   = "{PeakTool}",
+        this_contrast                   = "{group1}_vs_{group2}",
+        this_peakextension              = lambda w: PeakExtensions[w.PeakTool],
+        peakcaller                      = lambda w: FileTypesDiffBind[w.PeakTool],
+        # scripts in the bin directory used in the shell directive
+        rscript                         = join(bin_path, "DiffBind_v2_ChIPseq.Rmd"),
+        pythonscript                    = join(bin_path, "prep_diffbind.py"),
+        blocking_rscript                = join(bin_path, "DiffBind_v2_ChIPseq_block.Rmd"),
+        # output base directories or full file locations
+        outdir                          = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}"),
+        csvfile                         = join(
+                                            diffbind_dir, 
+                                            "{group1}_vs_{group2}-{PeakTool}",
+                                            "{group1}_vs_{group2}-{PeakTool}_Diffbind_prep.csv"
+                                        ),
+        Deseq2_block                    = provided(join(
+                                            diffbind_dir_block, 
+                                            "{group1}_vs_{group2}-{PeakTool}", 
+                                            "{group1}_vs_{group2}-{PeakTool}_Diffbind_Deseq2_block.bed"
+                                        ), blocking),
+        EdgeR_block                     = provided(join(
+                                            diffbind_dir_block, 
+                                            "{group1}_vs_{group2}-{PeakTool}", 
+                                            "{group1}_vs_{group2}-{PeakTool}_Diffbind_EdgeR_block.bed"
+                                        ), blocking),
+        outdir_block                    = join(diffbind_dir_block, "{group1}_vs_{group2}-{PeakTool}"),
     container:
         config['images']['cfchip']
-    shell: """
-    python {params.pythonscript} --g1 {params.group1} --g2 {params.group2} --wp {workpath} \
-         --pt {params.PeakTool} --pe {params.PeakExtension} --bd {bam_dir} \
-         --pc {params.peakcaller} --csv {params.csvfile}
-    cp {params.rscript} {params.outdir}
-    cd {params.outdir}
-    Rscript -e 'rmarkdown::render("DiffBind_v2_ChIPseq.Rmd", output_file= "{output.html}", 
-    params=list(csvfile= "{params.csvfile}", contrasts= "{params.contrast}", peakcaller= "{params.PeakTool}"))'
-    if [ ! -f {output.Deseq2} ]; then touch {output.Deseq2}; fi
-    if [ ! -f {output.EdgeR} ]; then touch {output.EdgeR}; fi
-
-    if [ '{params.blocking}' == True ]; then
-        echo "DiffBind with Blocking"
-        Rscript -e 'rmarkdown::render("{params.blocking_rscript}", output_file= "{output.html_block}", 
-        params=list(csvfile= "{params.csvfile}", contrasts= "{params.contrast}", peakcaller= "{params.PeakTool}", dir= "{params.outdir_block}"))'
-        if [ ! -f {params.Deseq2_block} ]; then touch {params.Deseq2_block}; fi
-        if [ ! -f {params.EdgeR_block} ]; then touch {params.EdgeR_block}; fi
-    fi
-    """
-
-
-if assay == "cfchip":
-    rule UROPA:
-        input:
-            lambda w: [ join(workpath, w.PeakTool1, w.name, w.name + PeakExtensions[w.PeakTool2]) ]
-        output:
-            txt=join(workpath, uropa_dir, '{PeakTool1}', '{name}_{PeakTool2}_uropa_{type}_allhits.txt'),
-            bed1=temp(join(workpath, uropa_dir, '{PeakTool1}', '{name}_{PeakTool2}_uropa_{type}_allhits.bed')),
-            bed2=temp(join(workpath, uropa_dir, '{PeakTool1}', '{name}_{PeakTool2}_uropa_{type}_finalhits.bed')),
-        params:
-            rname="uropa",
-            uropaver = config['tools']['UROPAVER'],
-            fldr = join(workpath, uropa_dir, '{PeakTool1}'),
-            json = join(workpath, uropa_dir, '{PeakTool1}','{name}.{PeakTool2}.{type}.json'),
-            outroot = join(workpath, uropa_dir, '{PeakTool1}','{name}_{PeakTool2}_uropa_{type}'),
-            gtf = config['references'][genome]['GTFFILE'],
-            threads = 4,
-        shell: """
-        module load {params.uropaver};
-        # Dynamically creates UROPA config file
-        if [ ! -e {params.fldr} ]; then mkdir {params.fldr}; fi
-        echo '{{"queries":[ ' > {params.json}
-        if [ '{wildcards.type}' == 'protTSS' ]; then
-             echo '      {{ "feature":"gene","distance":3000,"filter.attribute":"gene_type","attribute.value":"protein_coding","feature.anchor":"start" }},' >> {params.json}
-             echo '      {{ "feature":"gene","distance":10000,"filter.attribute":"gene_type","attribute.value":"protein_coding","feature.anchor":"start" }},' >> {params.json}
-             echo '      {{ "feature":"gene","distance":100000,"filter.attribute":"gene_type","attribute.value":"protein_coding","feature.anchor":"start" }}],' >> {params.json}
-        fi
-        echo '"show_attributes":["gene_id", "gene_name","gene_type"],' >> {params.json}
-        echo '"priority":"Yes",' >> {params.json}
-        echo '"gtf":"{params.gtf}",' >> {params.json}
-        echo '"bed": "{input}" }}' >> {params.json}
-        uropa -i {params.json} -p {params.outroot} -t {params.threads} -s
+    shell: 
         """
-else:
-    rule UROPA:
-        input:
-            lambda w: [ join(workpath, w.PeakTool1, w.name, w.name + PeakExtensions[w.PeakTool2]) ]
-        output:
-            txt=join(workpath, uropa_dir, '{PeakTool1}', '{name}_{PeakTool2}_uropa_{type}_allhits.txt'),
-            bed1=temp(join(workpath, uropa_dir, '{PeakTool1}', '{name}_{PeakTool2}_uropa_{type}_allhits.bed')),
-            bed2=temp(join(workpath, uropa_dir, '{PeakTool1}', '{name}_{PeakTool2}_uropa_{type}_finalhits.bed')),
-        params:
-            rname="uropa",
-            uropaver = config['tools']['UROPAVER'],
-            fldr = join(workpath, uropa_dir, '{PeakTool1}'),
-            json = join(workpath, uropa_dir, '{PeakTool1}','{name}.{PeakTool2}.{type}.json'),
-            outroot = join(workpath, uropa_dir, '{PeakTool1}','{name}_{PeakTool2}_uropa_{type}'),
-            gtf = config['references'][genome]['GTFFILE'],
-            threads = 4,
-        shell: """
-        module load {params.uropaver};
-        # Dynamically creates UROPA config file
-        if [ ! -e {params.fldr} ]; then mkdir {params.fldr}; fi
-        echo '{{"queries":[ ' > {params.json}
-        if [ '{wildcards.type}' == 'prot' ]; then
-             echo '      {{ "feature":"gene","distance":5000,"filter.attribute":"gene_type","attribute.value":"protein_coding" }},' >> {params.json}
-             echo '      {{ "feature":"gene","distance":100000,"filter.attribute":"gene_type","attribute.value":"protein_coding" }}],' >> {params.json}
-        elif [ '{wildcards.type}' == 'genes' ]; then
-             echo '      {{ "feature":"gene","distance":5000 }},' >> {params.json}
-             echo '      {{ "feature":"gene","distance":100000 }}],' >> {params.json}
-        elif [ '{wildcards.type}' == 'protSEC' ]; then
-             echo '      {{ "feature":"gene","distance":[3000,1000],"filter.attribute":"gene_type","attribute.value":"protein_coding","feature.anchor":"start" }},' >> {params.json}
-             echo '      {{ "feature":"gene","distance":3000,"filter.attribute":"gene_type","attribute.value":"protein_coding","feature.anchor":"end" }},' >> {params.json}
-             echo '      {{ "feature":"gene","distance":100000,"filter.attribute":"gene_type","attribute.value":"protein_coding","feature.anchor":"center" }},' >> {params.json}
-             echo '      {{ "feature":"gene","distance":100000,"filter.attribute":"gene_type","attribute.value":"protein_coding" }}],' >> {params.json}
-        elif [ '{wildcards.type}' == 'protTSS' ]; then
-             echo '      {{ "feature":"gene","distance":[3000,1000],"filter.attribute":"gene_type","attribute.value":"protein_coding","feature.anchor":"start" }},' >> {params.json}
-             echo '      {{ "feature":"gene","distance":10000,"filter.attribute":"gene_type","attribute.value":"protein_coding","feature.anchor":"start" }},' >> {params.json}
-             echo '      {{ "feature":"gene","distance":100000,"filter.attribute":"gene_type","attribute.value":"protein_coding","feature.anchor":"start" }}],' >> {params.json}
+        python {params.pythonscript} --g1 {params.group1} --g2 {params.group2} --wp {workpath} \
+            --pt {params.this_peaktool} --pe {params.this_peakextension} --bd {bam_dir} \
+            --pc {params.peakcaller} --csv {params.csvfile}
+        cp {params.rscript} {params.outdir}
+        cd {params.outdir}
+        Rscript -e 'rmarkdown::render("DiffBind_v2_ChIPseq.Rmd", output_file= "{output.html}", \
+            params=list(csvfile="{params.csvfile}", contrasts="{params.this_contrast}", peakcaller="{params.this_peaktool}"))'
+        if [ ! -f {output.Deseq2} ]; then touch {output.Deseq2}; fi
+        if [ ! -f {output.EdgeR} ]; then touch {output.EdgeR}; fi
 
+        if [ '"""+str(blocking)+"""' == True ]; then
+            echo "DiffBind with Blocking"
+            Rscript -e 'rmarkdown::render("{params.blocking_rscript}", output_file= "{output.html_block}", \
+                params=list(csvfile= "{params.csvfile}", contrasts="{params.this_contrast}", peakcaller="{params.this_peaktool}", dir="{params.outdir_block}"))'
+            if [ ! -f {params.Deseq2_block} ]; then touch {params.Deseq2_block}; fi
+            if [ ! -f {params.EdgeR_block} ]; then touch {params.EdgeR_block}; fi
         fi
-        echo '"show_attributes":["gene_id", "gene_name","gene_type"],' >> {params.json}
-        echo '"priority":"Yes",' >> {params.json}
-        echo '"gtf":"{params.gtf}",' >> {params.json}
-        echo '"bed": "{input}" }}' >> {params.json}
-        uropa -i {params.json} -p {params.outroot} -t {params.threads} -s
         """
+
+
+rule UROPA:
+    input:
+        lambda w: join(workpath, w.PeakTool1, w.name, w.name + PeakExtensions[w.PeakTool2]),
+    output:
+        txt                             = join(uropa_dir, '{PeakTool1}', '{name}_{PeakTool2}_uropa_{type}_allhits.txt'),
+        bed1                            = temp(join(uropa_dir, '{PeakTool1}', '{name}_{PeakTool2}_uropa_{type}_allhits.bed')),
+        bed2                            = temp(join(uropa_dir, '{PeakTool1}', '{name}_{PeakTool2}_uropa_{type}_finalhits.bed')),
+        json                            = join(uropa_dir, '{PeakTool1}', '{name}.{PeakTool2}.{type}.json'),
+    params:
+        rname                           = "uropa",
+        fldr                            = join(uropa_dir, '{PeakTool1}'),
+        outroot                         = join(uropa_dir, '{PeakTool1}', '{name}_{PeakTool2}_uropa_{type}'),
+    threads: 4,
+    run:
+        # Dynamically creates UROPA config file
+        if not os.path.exists(params.fldr): 
+            os.mkdir(params.fldr, mode=0o775)
+
+        json_construct = dict()
+        json_construct['queries'] = []
+        json_construct['show_attributes'] = ["gene_id", "gene_name", "gene_type"]
+        json_construct["priority"] = "Yes"
+        json_construct['gtf'] = gtf
+        json_construct['bed'] = input[0]
+
+        base_query = {
+            "feature": "gene",
+            "filter.attribute": "gene_type",
+            "attribute.value": "protein_coding", 
+            "feature.anchor": "start" 
+        }
+
+        if assay == 'cfchip':
+            if wildcards.type == 'protTSS':
+                for _d in (3000, 10000, 100000):
+                    this_q = base_query.copy()
+                    this_q['distance'] = _d
+                    json_construct['queries'].append(this_q)
+        else:
+            if wildcards.type == 'prot':
+                for _d in (5000, 100000):
+                    this_q = base_query.copy()
+                    del this_q["feature.anchor"]
+                    this_q['distance'] = _d
+                    json_construct['queries'].append(this_q)
+            elif wildcards.type == 'genes':
+                this_query = {}
+                this_query['feature'] = 'gene'
+                for _d in (5000, 100000):
+                    this_q = base_query.copy()
+                    del this_q["feature.anchor"]
+                    del this_q["filter.attribute"]
+                    del this_q["attribute.value"]
+                    this_q['distance'] = _d
+                    json_construct['queries'].append(this_q)
+            elif wildcards.type == 'protSEC':
+                # distance, feature.anchor
+                query_values = (
+                    ([3000, 1000], "start"), 
+                    (3000,         "end"), 
+                    (100000,       "center"), 
+                    (100000,       None)
+                )
+                for _distance, feature_anchor in query_values:
+                    this_q = base_query.copy()
+                    del this_q["feature.anchor"]
+                    if feature_anchor: 
+                        this_q["feature.anchor"] = feature_anchor
+                    this_q['distance'] = _distance
+                    json_construct['queries'].append(this_q)
+            elif wildcards.type == 'protTSS':
+                for _d in ([3000, 1000], 10000, 100000):
+                    this_q = base_query.copy()
+                    this_q['distance'] = _d
+                    json_construct['queries'].append(this_q)
+
+        with open(output.json, 'w') as jo:
+            json.dump(json_construct, jo, indent=4)
+            jo.close()
+
+        if not os.path.exists(output.json):
+            raise FileNotFoundError(output.json + " does not exist!")
+        shell.prefix(f"module load {uropaver};")
+        shell("uropa -i " + output.json + " -p " + params.outroot + " -t " + str(threads) + " -s")
+
 
 rule manorm:
-    input: 
-        bam1 = lambda w: join(workpath,bam_dir, groupdata[w.group1][0] + ".Q5DD.bam"),
-        bam2 = lambda w: join(workpath,bam_dir, groupdata[w.group2][0] + ".Q5DD.bam"),
-        ppqt = join(workpath,bam_dir, "Q5DD.ppqt.txt"),
-        peak1 = lambda w: join(workpath, w.tool, groupdata[w.group1][0], groupdata[w.group1][0] + PeakExtensions[w.tool]),
-        peak2 = lambda w: join(workpath, w.tool, groupdata[w.group2][0], groupdata[w.group2][0] + PeakExtensions[w.tool]),
+    input:
+        bam1                            = lambda w: join(bam_dir, groupdata[w.group1][0] + ".Q5DD.bam"),
+        bam2                            = lambda w: join(bam_dir, groupdata[w.group2][0] + ".Q5DD.bam"),
+        # ppqt                            = join(ppqt_dir, "Q5DD.ppqt.txt"), # ppqt input into manorm TODO
+        peak1                           = lambda w: join(workpath, w.tool, groupdata[w.group1][0], groupdata[w.group1][0] + PeakExtensions[w.tool]),
+        peak2                           = lambda w: join(workpath, w.tool, groupdata[w.group2][0], groupdata[w.group2][0] + PeakExtensions[w.tool]),
     output:
-        xls = join(workpath,manorm_dir,"{group1}_vs_{group2}-{tool}","{group1}_vs_{group2}-{tool}_all_MAvalues.xls"),
-        bed = temp(join(workpath,manorm_dir,"{group1}_vs_{group2}-{tool}","{group1}_vs_{group2}-{tool}_all_MA.bed")),
-        wigA = join(workpath,manorm_dir,"{group1}_vs_{group2}-{tool}","output_tracks","{group1}_vs_{group2}_A_values.wig.gz"),
-        wigM = join(workpath,manorm_dir,"{group1}_vs_{group2}-{tool}","output_tracks","{group1}_vs_{group2}_M_values.wig.gz"),
-        wigP = join(workpath,manorm_dir,"{group1}_vs_{group2}-{tool}","output_tracks","{group1}_vs_{group2}_P_values.wig.gz"),
+        xls                             = join(manorm_dir, "{group1}_vs_{group2}-{tool}", "{group1}_vs_{group2}-{tool}_all_MAvalues.xls"),
+        bed                             = temp(join(manorm_dir, "{group1}_vs_{group2}-{tool}", "{group1}_vs_{group2}-{tool}_all_MA.bed")),
+        wigA                            = join(manorm_dir, "{group1}_vs_{group2}-{tool}", "output_tracks", "{group1}_vs_{group2}_A_values.wig.gz"),
+        wigM                            = join(manorm_dir, "{group1}_vs_{group2}-{tool}", "output_tracks", "{group1}_vs_{group2}_M_values.wig.gz"),
+        wigP                            = join(manorm_dir, "{group1}_vs_{group2}-{tool}", "output_tracks", "{group1}_vs_{group2}_P_values.wig.gz"),
     params:
-        rname='manorm',
-        fldr = join(workpath,manorm_dir,"{group1}_vs_{group2}-{tool}"),
-        bedtoolsver=config['tools']['BEDTOOLSVER'],
-        sample1= lambda w: groupdata[w.group1][0],
-        sample2= lambda w: groupdata[w.group2][0],
-        manormver="manorm/1.1.4"
-    run:
-        commoncmd1 = "if [ ! -e /lscratch/$SLURM_JOBID ]; then mkdir /lscratch/$SLURM_JOBID; fi "
-        commoncmd2 = "cd /lscratch/$SLURM_JOBID; "
-        commoncmd3 = "module load {params.manormver}; module load {params.bedtoolsver}; "
-        cmd1 = "bamToBed -i {input.bam1} > bam1.bed; "
-        cmd2 = "bamToBed -i {input.bam2} > bam2.bed; "
-        cmd3 = "cut -f 1,2,3 {input.peak1} > peak1.bed; "
-        cmd4 = "cut -f 1,2,3 {input.peak2} > peak2.bed; "
-        file=list(map(lambda z:z.strip().split(),open(input.ppqt,'r').readlines()))
-        extsize1 = [ ppqt[1] for ppqt in file if ppqt[0] == params.sample1 ][0]
-        extsize2 = [ ppqt[1] for ppqt in file if ppqt[0] == params.sample2 ][0]
-        cmd5 = "manorm --p1 peak1.bed --p2 peak2.bed --r1 bam1.bed --r2 bam2.bed --s1 " + extsize1  + " --s2 " + extsize2 + " -o {params.fldr} --name1 '" + wildcards.group1 + "' --name2 '" + wildcards.group2 + "'; "
-        cmd6 = "gzip {params.fldr}/output_tracks/*wig; "
-        cmd7 = "mv {params.fldr}/" + wildcards.group1 + "_vs_" + wildcards.group2 + "_all_MAvalues.xls {output.xls}; "
-        cmd8 = "tail -n +2 {output.xls} | nl -w2 | awk -v OFS='\t' '{{print $2,$3,$4,$9$1,$6}}' > {output.bed}"
-        shell(commoncmd1)
-        shell( commoncmd2 + commoncmd3 + cmd1 + cmd2 + cmd3 + cmd4 + cmd5 + cmd6 + cmd7 + cmd8 )
+        rname                           = 'manorm',
+        fldr                            = join(manorm_dir, "{group1}_vs_{group2}-{tool}"),
+        bedtoolsver                     = config['tools']['BEDTOOLSVER'],
+        manormver                       = "manorm/1.1.4",
+        extsizes                        = lambda w, input: get_manorm_sizes(w.group1, w.group2, groupdata, "")
+    shell:
+        """
+        if [ ! -e /lscratch/$SLURM_JOBID ]; then 
+            mkdir /lscratch/$SLURM_JOBID
+        fi
+        cd /lscratch/$SLURM_JOBID
+        module load {params.manormver}
+        module load {params.bedtoolsver}
+        bamToBed -i {input.bam1} > bam1.bed
+        bamToBed -i {input.bam2} > bam2.bed
+        cut -f 1,2,3 {input.peak1} > peak1.bed
+        cut -f 1,2,3 {input.peak2} > peak2.bed
+        manorm \
+            --p1 peak1.bed \
+            --p2 peak2.bed \
+            --r1 bam1.bed \
+            --r2 bam2.bed \
+            {params.extsizes} \
+            -o {params.fldr} \
+            --name1 {wildcards.group1} \
+            --name2 {wildcards.group2}
+        gzip {params.fldr}/output_tracks/*wig
+        mv {params.fldr}/{wildcards.group1}_vs_{wildcards.group2}_all_MAvalues.xls {output.xls}
+        tail -n +2 {output.xls} | nl -w2 | awk -v OFS='\t' '{{print $2,$3,$4,$9$1,$6}}' > {output.bed}
+        """

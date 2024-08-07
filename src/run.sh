@@ -209,7 +209,6 @@ function submit(){
           if [[ ${6#\'} != /lscratch* ]]; then
             CLUSTER_OPTS="sbatch --cpus-per-task {cluster.threads} -p {cluster.partition} -t {cluster.time} --mem {cluster.mem} --job-name={params.rname} -e $SLURM_DIR/slurm-%j_{params.rname}.out -o $SLURM_DIR/slurm-%j_{params.rname}.out {cluster.ntasks} {cluster.ntasks_per_core} {cluster.exclusive}"
           fi
-          # Create sbacth script to build index
     cat << EOF > kickoff.sh
 #!/usr/bin/env bash
 #SBATCH --cpus-per-task=16 

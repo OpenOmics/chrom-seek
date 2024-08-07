@@ -1,11 +1,28 @@
-# Common quality-control rules
-# Includes the following:
-#   - preseq
-#   - NRF
-#   - rawfastqc
-#   - fastqc
-#   - fastq_screen
-#   - multiQC
+# Quality control rules
+# ~~~~
+# Common quality-control rules: preseq, NRF, rawfastqc,
+#   fastqc, fastq_screen, multiQC
+from os.path import join
+from scripts.common import get_bam_ext, get_fqscreen_outputs
+
+
+# ~~ workflow configuration
+workpath                        = config['project']['workpath']
+bin_path                        = config['project']['binpath']
+genome                          = config['options']['genome']
+paired_end                      = False if config['project']['nends'] == 1 else True
+samples                         = config['samples']
+ends                            = [1] if not paired_end else [1, 2]
+ 
+
+# ~~ directories
+qc_dir                          = join(workpath, "QC")
+kraken_dir                      = join(workpath, 'kraken')
+deeptools_dir                   = join(workpath, 'deeptools')
+peakqc_dir                      = join(workpath, "PeakQC")
+extra_fingerprint_dir           = join(deeptools_dir, 'sorted_fingerprint')
+
+
 rule preseq:
     """
     Quality step to estimate library complexity. Low library complexity may indicate
@@ -17,19 +34,20 @@ rule preseq:
         Logfile containing library complexity information
     """
     input:
-        bam = join(workpath,bam_dir,"{name}.sorted.bam"),
+        bam                     = join(bam_dir, "{name}.sorted.bam"),
     output:
-        ccurve = join(workpath,qc_dir,"{name}.ccurve"),
+        ccurve                  = join(qc_dir, "{name}.ccurve"),
     params:
-        rname = "preseq",
-        preseqver=config['tools']['PRESEQVER'],
-    shell: """
-    module load {params.preseqver};
-    preseq c_curve \\
-        -B \\
-        -o {output.ccurve} \\
-        {input.bam}            
-    """
+        rname                   = "preseq",
+        preseqver               = config['tools']['PRESEQVER'],
+    shell: 
+        """
+        module load {params.preseqver};
+        preseq c_curve \\
+            -B \\
+            -o {output.ccurve} \\
+            {input.bam}            
+        """
 
 
 rule NRF:
@@ -46,34 +64,35 @@ rule NRF:
         PBC1 = one_pair/distinct_reads, and PBC2 = one_pair/two_pair.
     """
     input:
-        bam=join(workpath,bam_dir,"{name}.sorted.bam"),
+        bam                     = join(bam_dir, "{name}.sorted.bam"),
     output:
-        preseq=join(workpath,qc_dir,"{name}.preseq.dat"),
-        preseqlog=join(workpath,qc_dir,"{name}.preseq.log"),
-        nrf=temp(join(workpath,qc_dir,"{name}.nrf")),
+        preseq                  = join(qc_dir, "{name}.preseq.dat"),
+        preseqlog               = join(qc_dir, "{name}.preseq.log"),
+        nrf                     = temp(join(qc_dir, "{name}.nrf")),
     params:
-        rname='NRF',
-        samtoolsver=config['tools']['SAMTOOLSVER'],
-        rver=config['tools']['RVER'],
-        preseqver=config['tools']['PRESEQVER'],
-        nrfscript=join(workpath,"workflow","scripts","atac_nrf.py "),
+        rname                   = 'NRF',
+        samtoolsver             = config['tools']['SAMTOOLSVER'],
+        rver                    = config['tools']['RVER'],
+        preseqver               = config['tools']['PRESEQVER'],
+        nrfscript               = join(bin_path, "atac_nrf.py"),
     threads: 16
-    shell: """
-    module load {params.preseqver};
-    preseq lc_extrap \\
-        -P \\
-        -B \\
-        -D \\
-        -o {output.preseq} \\
-        {input.bam} \\
-        -seed 12345 \\
-        -v \\
-        -l 100000000000 \\
-    2> {output.preseqlog}
-    python {params.nrfscript} \\
-        {output.preseqlog} \\
-    > {output.nrf}
-    """
+    shell: 
+        """
+        module load {params.preseqver};
+        preseq lc_extrap \\
+            -P \\
+            -B \\
+            -D \\
+            -o {output.preseq} \\
+            {input.bam} \\
+            -seed 12345 \\
+            -v \\
+            -l 100000000000 \\
+        2> {output.preseqlog}
+        python {params.nrfscript} \\
+            {output.preseqlog} \\
+        > {output.nrf}
+        """
 
 
 rule rawfastqc:
@@ -87,44 +106,34 @@ rule rawfastqc:
         FastQC report and zip file containing data quality information
     """
     input:
-        expand(join(workpath,"{name}.R1.fastq.gz"), name=samples) if \
-            not paired_end else \
-            expand(join(workpath,"{name}.R{rn}.fastq.gz"), name=samples,rn=[1,2])
+        expand(join(workpath, "{name}.R{rn}.fastq.gz"), name=samples, rn=list(map(str, ends)))
     output:
-        expand(join(workpath,'rawfastQC',"{name}.R1_fastqc.html"),name=samples),
+        expand(join(qc_dir, "rawfastQC", "{name}.R{rn}_fastqc.html"), name=samples, rn=ends),
     params:
-        rname='rawfastqc',
-        outdir=join(workpath,"rawfastQC"),
-        tmpdir=tmpdir,
+        rname                   = 'rawfastqc',
+        outdir                  = join(qc_dir, "rawfastQC"),
+        tmpdir                  = tmpdir,
     envmodules: 
         config['tools']['FASTQCVER']
     threads:
         int(allocated("threads", "rawfastqc", cluster))
-    shell: """
-    # Setups temporary directory for
-    # intermediate files with built-in 
-    # mechanism for deletion on exit
-    if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
-    tmp=$(mktemp -d -p "{params.tmpdir}")
-    trap 'rm -rf "${{tmp}}"' EXIT
+    shell: 
+        """
+        # fastqc storage on lscratch b/c nfs bug
+        if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
+        tmp=$(mktemp -d -p "{params.tmpdir}")
+        trap 'rm -rf "${{tmp}}"' EXIT
 
-    # Running fastqc with local
-    # disk or a tmpdir, fastqc
-    # has been observed to lock
-    # up gpfs filesystems, adding
-    # this on request by HPC staff
-    fastqc \\
-        {input} \\
-        -t {threads} \\
-        -o "${{tmp}}"
-    
-    # Copy output files from tmpdir
-    # to output directory
-    find "${{tmp}}" \\
-        -type f \\
-        \\( -name '*.html' -o -name '*.zip' \\) \\
-        -exec cp {{}} {params.outdir} \\; 
-    """
+        fastqc \\
+            {input} \\
+            -t {threads} \\
+            -o "${{tmp}}"
+            
+        find "${{tmp}}" \\
+            -type f \\
+            \\( -name '*.html' -o -name '*.zip' \\) \\
+            -exec cp {{}} {params.outdir} \\; 
+        """
 
 
 rule fastqc:
@@ -138,44 +147,44 @@ rule fastqc:
         Trimmed FastQC reports and zip file containing data quality information
     """
     input:
-        expand(join(workpath,trim_dir,"{name}.R1.trim.fastq.gz"),name=samples) if \
-            not paired_end else \
-            expand(join(workpath,trim_dir,"{name}.R{rn}.trim.fastq.gz"), name=samples,rn=[1,2])
+        expand(join(trim_dir, "{name}.R{rn}.trim.fastq.gz"), name=samples, rn=ends)
     output:
-        expand(join(workpath,'fastQC',"{name}.R1.trim_fastqc.html"),name=samples),
+        expand(join(qc_dir, 'fastQC', "{name}.R{rn}.trim_fastqc.html"), name=samples, rn=ends),
     params:
-        rname='fastqc',
-        outdir=join(workpath,"fastQC"),
-        tmpdir=tmpdir,
+        rname                   = 'fastqc',
+        outdir                  = join(qc_dir, "fastQC"),
+        tmpdir                  = tmpdir,
     envmodules: 
         config['tools']['FASTQCVER']
     threads:
         int(allocated("threads", "fastqc", cluster))
-    shell: """
-    # Setups temporary directory for
-    # intermediate files with built-in 
-    # mechanism for deletion on exit
-    if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
-    tmp=$(mktemp -d -p "{params.tmpdir}")
-    trap 'rm -rf "${{tmp}}"' EXIT
+    shell: 
+        """
+        # Setups temporary directory for
+        # intermediate files with built-in 
+        # mechanism for deletion on exit
+        if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
+        tmp=$(mktemp -d -p "{params.tmpdir}")
+        trap 'rm -rf "${{tmp}}"' EXIT
 
-    # Running fastqc with local
-    # disk or a tmpdir, fastqc
-    # has been observed to lock
-    # up gpfs filesystems, adding
-    # this on request by HPC staff
-    fastqc \\
-        {input} \\
-        -t {threads} \\
-        -o "${{tmp}}"
-    
-    # Copy output files from tmpdir
-    # to output directory
-    find "${{tmp}}" \\
-        -type f \\
-        \\( -name '*.html' -o -name '*.zip' \\) \\
-        -exec cp {{}} {params.outdir} \\;
-    """
+        # Running fastqc with local
+        # disk or a tmpdir, fastqc
+        # has been observed to lock
+        # up gpfs filesystems, adding
+        # this on request by HPC staff
+        fastqc \\
+            {input} \\
+            -t {threads} \\
+            -o "${{tmp}}"
+        
+        # Copy output files from tmpdir
+        # to output directory
+        find "${{tmp}}" \\
+            -type f \\
+            \\( -name '*.html' -o -name '*.zip' \\) \\
+            -exec cp {{}} {params.outdir} \\;
+        """
+
 
 rule fastq_screen:
     """
@@ -189,51 +198,43 @@ rule fastq_screen:
         FastQ Screen report and logfiles
     """
     input:
-        join(workpath,trim_dir,"{name}.R1.trim.fastq.gz") if not paired_end else \
-            expand(join(workpath,trim_dir,"{name}.R{rn}.trim.fastq.gz"),name=samples,rn=[1,2])
+        expand(join(trim_dir, "{name}.R{rn}.trim.fastq.gz"), name=samples, rn=ends)
     output:
-        join(workpath,"FQscreen","{name}.R1.trim_screen.txt") if not paired_end else \
-            expand(join(workpath,"FQscreen","{name}.R{rn}.trim_screen.txt"),name=samples,rn=[1,2]),
-        join(workpath,"FQscreen","{name}.R1.trim_screen.png") if not paired_end else \
-            expand(join(workpath,"FQscreen","{name}.R{rn}.trim_screen.png"),name=samples,rn=[1,2]),
-        join(workpath,"FQscreen2","{name}.R1.trim_screen.txt") if not paired_end else \
-            expand(join(workpath,"FQscreen2","{name}.R{rn}.trim_screen.txt"),name=samples,rn=[1,2]),
-        join(workpath,"FQscreen2","{name}.R1.trim_screen.png") if not paired_end else \
-            expand(join(workpath,"FQscreen2","{name}.R{rn}.trim_screen.png"),name=samples,rn=[1,2]),
+        get_fqscreen_outputs(paired_end, samples, qc_dir)
     params:
-        rname   = 'fqscreen',
-        outdir  = join(workpath,"FQscreen"),
-        outdir2 = join(workpath,"FQscreen2"),
-        # Exposed Parameters: modify resources/fastq_screen{_2}.conf 
-        # to change defaults locations to bowtie2 indices
-        fastq_screen         = config['bin']['FASTQ_SCREEN'],
-        fastq_screen_config1 = config['shared_resources']['FASTQ_SCREEN_CONFIG_P1'],
-        fastq_screen_config2 = config['shared_resources']['FASTQ_SCREEN_CONFIG_P2'],
+        rname                   = 'fqscreen',
+        outdir                  = join(qc_dir, "FQscreen"),
+        outdir2                 = join(qc_dir, "FQscreen2"),
+        fastq_screen            = config['bin']['FASTQ_SCREEN'],
+        fastq_screen_config1    = config['shared_resources']['FASTQ_SCREEN_CONFIG_P1'],
+        fastq_screen_config2    = config['shared_resources']['FASTQ_SCREEN_CONFIG_P2'],
     envmodules:
         config['tools']['BOWTIE2VER'],
         config['tools']['PERLVER'],
     threads: 
         int(allocated("threads", "fastq_screen", cluster))
-    shell: """
-    # First pass of contamination screening
-    {params.fastq_screen} \\
-        --conf {params.fastq_screen_config1} \\
-        --outdir {params.outdir} \\
-        --threads {threads} \\
-        --subset 1000000 \\
-        --aligner bowtie2 \\
-        --force \\
-        {input}
-    # Second pass of contamination screening
-    {params.fastq_screen} \\
-        --conf {params.fastq_screen_config2} \\
-        --outdir {params.outdir2} \\
-        --threads {threads} \\
-        --subset 1000000 \\
-        --aligner bowtie2 \\
-        --force \\
-        {input}
-    """
+    shell: 
+        """
+        # First pass of contamination screening
+        {params.fastq_screen} \\
+            --conf {params.fastq_screen_config1} \\
+            --outdir {params.outdir} \\
+            --threads {threads} \\
+            --subset 1000000 \\
+            --aligner bowtie2 \\
+            --force \\
+            {input}
+        # Second pass of contamination screening
+        {params.fastq_screen} \\
+            --conf {params.fastq_screen_config2} \\
+            --outdir {params.outdir2} \\
+            --threads {threads} \\
+            --subset 1000000 \\
+            --aligner bowtie2 \\
+            --force \\
+            {input}
+        """
+
 
 rule kraken:
     """
@@ -247,52 +248,55 @@ rule kraken:
         Kraken logfile and interative krona report
     """
     input:
-        fq1=join(workpath,trim_dir,"{name}.R1.trim.fastq.gz"),
-        fq2=provided(join(workpath,trim_dir,"{name}.R2.trim.fastq.gz"), paired_end)
+        fq1                     = join(trim_dir, "{name}.R1.trim.fastq.gz"),
+        fq2                     = provided(join(trim_dir,"{name}.R2.trim.fastq.gz"), paired_end)
     output:
-        krakenout = join(workpath,kraken_dir,"{name}.trim.kraken_bacteria.out.txt"),
-        krakentaxa = join(workpath,kraken_dir,"{name}.trim.kraken_bacteria.taxa.txt"),
-        kronahtml = join(workpath,kraken_dir,"{name}.trim.kraken_bacteria.krona.html"),
+        krakenout               = join(kraken_dir, "{name}.trim.kraken_bacteria.out.txt"),
+        krakentaxa              = join(kraken_dir, "{name}.trim.kraken_bacteria.taxa.txt"),
+        kronahtml               = join(kraken_dir, "{name}.trim.kraken_bacteria.krona.html"),
     params:
-        rname='kraken',
-        outdir=join(workpath,kraken_dir),
-        bacdb=config['shared_resources']['KRAKENBACDB'],
-        tmpdir=tmpdir,
-        paired_end = paired_end
-    threads: int(allocated("threads", "kraken_pe", cluster)),
+        rname                   = 'kraken',
+        outdir                  = kraken_dir,
+        bacdb                   = config['shared_resources']['KRAKENBACDB'],
+        tmpdir                  = tmpdir,
+        paired_end              = paired_end
+    threads: 
+        int(allocated("threads", "kraken_pe", cluster)),
     envmodules:
         config['tools']['KRAKENVER'],
         config['tools']['KRONATOOLSVER'],
-    shell: """
-    # Setups temporary directory for
-    # intermediate files with built-in 
-    # mechanism for deletion on exit
-    if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
-    tmp=$(mktemp -d -p "{params.tmpdir}")
-    trap 'rm -rf "${{tmp}}"' EXIT
-    
-    # Copy kraken2 db to /lscratch or temp 
-    # location to reduce filesystem strain
-    cp -rv {params.bacdb} ${{tmp}}/;
-    kdb_base=$(basename {params.bacdb})
-    if [ '{params.paired_end}' == True ]; then
-        kraken2 --db ${{tmp}}/${{kdb_base}} \\
-            --threads {threads} --report {output.krakentaxa} \\
-            --output {output.krakenout} \\
-            --gzip-compressed \\
-            --paired {input.fq1} {input.fq2}
-    else
-        kraken2 --db ${{tmp}}/${{kdb_base}} \\
-            --threads {threads} --report {output.krakentaxa} \\
-            --output {output.krakenout} \\
-            --gzip-compressed \\
-            {input.fq1}
-    fi
-    
-    # Generate Krona Report
-    cut -f2,3 {output.krakenout} | \\
-        ktImportTaxonomy - -o {output.kronahtml}
-    """
+    shell: 
+        """
+        # Setups temporary directory for
+        # intermediate files with built-in 
+        # mechanism for deletion on exit
+        if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
+        tmp=$(mktemp -d -p "{params.tmpdir}")
+        trap 'rm -rf "${{tmp}}"' EXIT
+        
+        # Copy kraken2 db to /lscratch or temp 
+        # location to reduce filesystem strain
+        cp -rv {params.bacdb} ${{tmp}}/;
+        kdb_base=$(basename {params.bacdb})
+        if [ '{params.paired_end}' == True ]; then
+            kraken2 --db ${{tmp}}/${{kdb_base}} \\
+                --threads {threads} --report {output.krakentaxa} \\
+                --output {output.krakenout} \\
+                --gzip-compressed \\
+                --paired {input.fq1} {input.fq2}
+        else
+            kraken2 --db ${{tmp}}/${{kdb_base}} \\
+                --threads {threads} --report {output.krakentaxa} \\
+                --output {output.krakenout} \\
+                --gzip-compressed \\
+                {input.fq1}
+        fi
+        
+        # Generate Krona Report
+        cut -f2,3 {output.krakenout} | \\
+            ktImportTaxonomy - -o {output.kronahtml}
+        """
+
 
 rule multiqc:
     """
@@ -306,35 +310,34 @@ rule multiqc:
         Interactive MulitQC report and a QC metadata table
     """
     input: 
-        expand(join(workpath,"FQscreen","{name}.R1.trim_screen.txt"),name=samples),
-        expand(join(workpath,"FQscreen2","{name}.R1.trim_screen.txt"),name=samples),
-        expand(join(workpath,kraken_dir,"{name}.trim.kraken_bacteria.krona.html"),name=samples),
-        expand(join(workpath,qc_dir,"{name}.ccurve"), name=samples),
-        expand(join(workpath,bam_dir,"{name}.Q5DD.bam.flagstat"), name=samples),
-        expand(join(workpath,bam_dir,"{name}.Q5.bam.flagstat"), name=samples),
-        # join(workpath,qc_dir,"QCTable.txt"),
-        expand(join(workpath,"rawfastQC","{name}.R1_fastqc.html"),name=samples),
-        expand(join(workpath,"fastQC","{name}.R1.trim_fastqc.html"),name=samples),
-        # expand(join(workpath,deeptools_dir,"{group}.fingerprint.raw.Q5DD.tab"),group=groups),
-        join(workpath,deeptools_dir,"spearman_heatmap.Q5DD_mqc.png")
+        expand(join(qc_dir, "FQscreen", "{name}.R1.trim_screen.txt"), name=samples),
+        expand(join(qc_dir, "FQscreen2", "{name}.R1.trim_screen.txt"), name=samples),
+        expand(join(qc_dir, "{name}.ccurve"), name=samples),
+        expand(join(qc_dir, "rawfastQC", "{name}.R1_fastqc.html"), name=samples),
+        expand(join(qc_dir, "fastQC", "{name}.R1.trim_fastqc.html"), name=samples),
+        expand(join(kraken_dir, "{name}.trim.kraken_bacteria.krona.html"), name=samples),
+        expand(join(bam_dir, "{name}.Q5DD.bam.flagstat"), name=samples),
+        expand(join(bam_dir, "{name}.Q5.bam.flagstat"), name=samples),
+        join(deeptools_dir, "spearman_heatmap.Q5DD_mqc.png")
     output:
-        join(workpath,"multiqc_report.html")
+        join(workpath, "multiqc_report.html")
     params:
-        rname="multiqc",
-        multiqc=config['tools']['MULTIQCVER'],
-	    qcconfig=join(workpath, config['shared_resources']['MULTIQC_CONFIG']),
-	    excludedir=join(workpath,extra_fingerprint_dir),
-        dir=workpath
-    shell: """
-    module load {params.multiqc}
-    multiqc \\
-        -f \\
-        -c {params.qcconfig} \\
-        --interactive \\
-        -e cutadapt \\
-        --ignore {params.excludedir} \\
-        -d {params.dir}
-    """
+        rname                   = "multiqc",
+        multiqc                 = config['tools']['MULTIQCVER'],
+	    qcconfig                = join(workpath, config['shared_resources']['MULTIQC_CONFIG']),
+	    excludedir              = join(workpath, extra_fingerprint_dir),
+    shell: 
+        """
+        module load {params.multiqc}
+        multiqc \\
+            -f \\
+            -c {params.qcconfig} \\
+            --interactive \\
+            -e cutadapt \\
+            --ignore {params.excludedir} \\
+            -d """ + workpath + """
+        """
+
 
 rule insert_size:
     """
@@ -347,40 +350,98 @@ rule insert_size:
         Number of reads per insert size and their histogram
     """
     input:
-        bam = lambda w : join(workpath,bam_dir,w.name + "." + w.ext + "." + extensionsDict[w.ext])
+        bam                     = lambda w : join(bam_dir, w.name + "." + w.ext + "." + get_bam_ext(w.ext, paired_end))
     output:
-        txt= join(workpath,qc_dir,"{name}.{ext}.insert_size_metrics.txt"),
-        pdf= join(workpath,qc_dir,"{name}.{ext}.insert_size_histogram.pdf"),
+        txt                     = join(qc_dir, "{name}.{ext}.insert_size_metrics.txt"),
+        pdf                     = join(qc_dir, "{name}.{ext}.insert_size_histogram.pdf"),
     params:
-        rname="insert_size",
-        picardver=config['tools']['PICARDVER'],
-        rver=config['tools']['RVER'],
-        javaram='16g',
-    shell: """
-    module load {params.picardver} {params.rver};
-    java -Xmx{params.javaram} -jar ${{PICARDJARPATH}}/picard.jar CollectInsertSizeMetrics \\
-        -I {input.bam} \\
-        -O {output.txt} \\
-        -H {output.pdf}
-    """
+        rname                   = "insert_size",
+        picardver               = config['tools']['PICARDVER'],
+        rver                    = config['tools']['RVER'],
+        javaram                 = '16g',
+    shell: 
+        """
+        module load {params.picardver} {params.rver};
+        java -Xmx{params.javaram} -jar ${{PICARDJARPATH}}/picard.jar CollectInsertSizeMetrics \\
+            -I {input.bam} \\
+            -O {output.txt} \\
+            -H {output.pdf}
+        """
+
 
 rule deeptools_QC:
     input:
-        [ join(workpath, bw_dir, name + ".Q5DD.RPGC.bw") for name in samples ] # this should be all bigwigs
+        [ join(bw_dir, name + ".Q5DD.RPGC.bw") for name in samples ] 
     output:
-        heatmap=join(workpath,deeptools_dir,"spearman_heatmap.Q5DD.pdf"),
-        pca=join(workpath,deeptools_dir,"pca.Q5DD.pdf"),
-	    npz=temp(join(workpath,deeptools_dir,"Q5DD.npz")),
-	    png=join(workpath,deeptools_dir,"spearman_heatmap.Q5DD_mqc.png")
+        heatmap                 = join(deeptools_dir, "spearman_heatmap.Q5DD.pdf"),
+        pca                     = join(deeptools_dir, "pca.Q5DD.pdf"),
+	    npz                     = temp(join(deeptools_dir, "Q5DD.npz")),
+	    png                     = join(deeptools_dir, "spearman_heatmap.Q5DD_mqc.png")
     params:
-        rname="deeptools_QC",
-        deeptoolsver=config['tools']['DEEPTOOLSVER'],
-        labels=samples # this should be the sample names to match the bigwigs in the same order
-    shell: """    
-    module load {params.deeptoolsver}
-    multiBigwigSummary bins -b {input} -l {params.labels} -out {output.npz}
-    plotCorrelation -in {output.npz} -o {output.heatmap} -c 'spearman' -p 'heatmap' --skipZeros --removeOutliers
-    plotCorrelation -in {output.npz} -o {output.png} -c 'spearman' -p 'heatmap' --skipZeros --removeOutliers
-    plotPCA -in {output.npz} -o {output.pca}
-    """
+        rname                   = "deeptools_QC",
+        parent_dir              = deeptools_dir,
+        deeptoolsver            = config['tools']['DEEPTOOLSVER'],
+        # this should be the sample names to match the bigwigs in the same order
+        labels                  = samples
+    threads: 24
+    shell: 
+        """    
+        module load {params.deeptoolsver}
+        if [ ! -d "{params.parent_dir}" ]; then mkdir "{params.parent_dir}"; fi
+        multiBigwigSummary bins -b {input} -p {threads} -l {params.labels} -out {output.npz}
+        plotCorrelation -in {output.npz} -o {output.heatmap} -c 'spearman' -p 'heatmap' --skipZeros --removeOutliers
+        plotCorrelation -in {output.npz} -o {output.png} -c 'spearman' -p 'heatmap' --skipZeros --removeOutliers
+        plotPCA -in {output.npz} -o {output.pca}
+        """
 
+
+rule FRiP:
+    input:
+        bed                     = lambda w: [ join(workpath, w.PeakTool, chip, chip + PeakExtensions[w.PeakTool]) for chip in chips ],
+        bam                     = join(bam_dir, "{name}.Q5DD.bam"),
+    output:
+        join(workpath,"PeakQC","{PeakTool}.{name}.Q5DD.FRiP_table.txt"),
+    params:
+        rname                   = "frip",
+        outroot                 = lambda w: join(peakqc_dir, w.PeakTool),
+        script                  = join(bin_path, "frip.py"),
+        genome                  = config['references'][genome]['REFLEN'],
+        tmpdir                  = tmpdir,
+    container: 
+        config['images']['python']
+    shell: 
+        """
+        # Setups temporary directory for
+        # intermediate files with built-in 
+        # mechanism for deletion on exit
+        if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
+        tmp=$(mktemp -d -p "{params.tmpdir}")
+        trap 'rm -rf "${{tmp}}"' EXIT
+
+        python {params.script} \\
+            -p {input.bed} \\
+            -b {input.bam} \\
+            -g {params.genome} \\
+            -o {params.outroot}
+        """
+
+
+rule jaccard:
+    input:
+        lambda w: [ join(workpath, w.PeakTool, chip, chip + PeakExtensions[w.PeakTool]) for chip in chips ],
+    output:
+        join(qc_dir, '{PeakTool}_jaccard.txt'),
+    params:
+        rname                   = "jaccard",
+        outroot                 = lambda w: join(qc_dir, w.PeakTool),
+        script                  = join(bin_path, "jaccard_score.py"),
+        genome                  = config['references'][genome]['REFLEN']
+    envmodules:
+        config['tools']['BEDTOOLSVER']
+    shell: 
+        """
+        python {params.script} \\
+            -i "{input}" \\
+            -o "{params.outroot}" \\
+            -g {params.genome}
+        """

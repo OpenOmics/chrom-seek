@@ -31,7 +31,7 @@ if config['options']['mode'] == 'slurm':
             # previously submitted jobs 
             sleep 15; rm -f COMPLETED FAILED RUNNING;
             timestamp=$(date +"%Y-%m-%d_%H-%M-%S");
-            ./workflow/scripts/jobby \\
+            ./bin/jobby \\
                 $(grep --color=never "^Submitted .* external jobid" logfiles/snakemake.log \\
                     | awk '{{print $NF}}' \\
                     | sed "s/['.]//g" \\
@@ -68,7 +68,7 @@ if config['options']['mode'] == 'slurm':
             # previously submitted jobs 
             sleep 15; rm -f COMPLETED FAILED RUNNING;
             timestamp=$(date +"%Y-%m-%d_%H-%M-%S");
-            ./workflow/scripts/jobby \\
+            ./bin/jobby \\
                 $(grep --color=never "^Submitted .* external jobid" logfiles/snakemake.log \\
                     | awk '{{print $NF}}' \\
                     | sed "s/['.]//g" \\

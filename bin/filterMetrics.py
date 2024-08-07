@@ -60,9 +60,9 @@ def getmetadata(type):
 	elif type == 'tnreads':
 		metadata = 'NReads'
 	elif type == 'mnreads':
-                metadata = 'NMappedReads'
+		metadata = 'NMappedReads'
 	elif type == 'unreads':
-                metadata = 'NUniqMappedReads'
+		metadata = 'NUniqMappedReads'
 	elif type == 'fragLen':
 		metadata = 'FragmentLength'
 	return metadata
@@ -88,11 +88,11 @@ def filteredData(sample, ftype):
 			extenders = []
 			for ppqt_value in linelist:
 				if int(ppqt_value) > 150:
-                            		extenders.append(ppqt_value)
+					extenders.append(ppqt_value)
 			if len(extenders) > 0:
 				print("{}\t{}\t{}".format(sample, mtypes, extenders[0]))
 			else:
-                        	print("{}\t{}\t{}".format(sample, mtypes, linelist[0]))
+				print("{}\t{}\t{}".format(sample, mtypes, linelist[0]))
 		elif ftype == 'ppqt' or ftype == 'ngsqc' or ftype == 'nrf':
 			mtypes = getmetadata(ftype)
 			for i in range(len(linelist)):

@@ -19,7 +19,7 @@ from utils import (
 from . import version as __version__
 
 
-def init(repo_path, output_path, links=[], required=['workflow', 'resources', 'config']):
+def init(repo_path, output_path, links=[], required=['workflow', 'bin', 'resources', 'config']):
     """Initialize the output directory. If user provides a output
     directory path that already exists on the filesystem as a file 
     (small chance of happening but possible), a OSError is raised. If the
@@ -207,6 +207,7 @@ def setup(sub_args, ifiles, repo_path, output_path):
     # Add other runtime info for debugging
     config['project']['version'] = __version__
     config['project']['workpath'] = os.path.abspath(sub_args.output)
+    config['project']['binpath'] = os.path.abspath(os.path.join(config['project']['workpath'], 'bin'))
     git_hash = git_commit_hash(repo_path)
     config['project']['git_commit_hash'] = git_hash   # Add latest git commit hash
     config['project']['pipeline_path'] = repo_path    # Add path to installation
@@ -221,7 +222,8 @@ def setup(sub_args, ifiles, repo_path, output_path):
             v = str(v)
         config['options'][opt] = v
 
-
+    # initiate a few workflow vars
+    config['options']['peak_type_base'] = ["protTSS"]
     return config
 
 
@@ -608,6 +610,8 @@ def dryrun(outdir, config='config.json', snakefile=os.path.join('workflow', 'Sna
         dryrun_output = subprocess.check_output([
             'snakemake', '-npr',
             '-s', str(snakefile),
+            '--verbose',
+            # '--debug-dag',
             '--use-singularity',
             '--rerun-incomplete',
             '--cores', str(256),
