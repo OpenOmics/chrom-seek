@@ -51,4 +51,5 @@ for condition in args.group1, args.group2:
 
 f = open(args.csvfile, 'w')
 f.write ("\n".join(samplesheet))
+f.write ("\n")
 f.close()
