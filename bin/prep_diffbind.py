@@ -6,7 +6,7 @@ from os.path import join
 
 
 def main(group1, group2, peaktool, peakext, peakcaller, csvfile, wp, bam_dir):
-    config=json.load(open("config.json"))
+    config=json.load(open(join(wp, "config.json"))
     chip2input = config['project']['peaks']['inputs']
     groupdata = config['project']['groups']
     blocks = config['project']['blocks']
