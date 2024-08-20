@@ -174,11 +174,11 @@ rule diffbind:
                                             "{group1}_vs_{group2}-{PeakTool}",
                                             "{group1}_vs_{group2}-{PeakTool}_Diffbind_Deseq2_fullList.txt",
                                           ),
-        consensus_pks                   =  join(
-                                            diffbind_dir, 
-                                            "{group1}_vs_{group2}-{PeakTool}",
-                                            "{group1}_vs_{group2}-{PeakTool}_Diffbind_consensusPeaks.bed"
-                                          ),
+        # consensus_pks                   =  join(
+        #                                     diffbind_dir, 
+        #                                     "{group1}_vs_{group2}-{PeakTool}",
+        #                                     "{group1}_vs_{group2}-{PeakTool}_Diffbind_consensusPeaks.bed"
+        #                                   ),
     params:
         rname                           = "diffbind",
         this_peaktool                   = "{PeakTool}",
@@ -188,7 +188,7 @@ rule diffbind:
         rscript                         = join(bin_path, "DiffBind_v2_ChIPseq.Rmd"),
         outdir                          = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}"),
     container:
-        config["containers"]["cfchip"]
+        config["image"]["cfchip"]
     shell:
         """
         mkdir -p {params.outdir}
@@ -251,11 +251,11 @@ rule diffbind_blocking:
                                             "{group1}_vs_{group2}-{PeakTool}",
                                             "{group1}_vs_{group2}-{PeakTool}_Diffbind_Deseq2_fullList_block.txt",
                                           ),
-        consensus_pks                   =  join(
-                                            diffbind_dir, 
-                                            "{group1}_vs_{group2}-{PeakTool}",
-                                            "{group1}_vs_{group2}-{PeakTool}_Diffbind_consensusPeaks_block.bed"
-                                          ),
+        # consensus_pks                   =  join(
+        #                                     diffbind_dir, 
+        #                                     "{group1}_vs_{group2}-{PeakTool}",
+        #                                     "{group1}_vs_{group2}-{PeakTool}_Diffbind_consensusPeaks_block.bed"
+        #                                   ),
     params:
         rname                           = "diffbind_block",
         blocking_rscript                = join(bin_path, "DiffBind_v2_ChIPseq_block.Rmd"),
@@ -263,7 +263,7 @@ rule diffbind_blocking:
         this_peaktool                   = "{PeakTool}",
         this_contrast                   = "{group1}_vs_{group2}",
     container:
-        config["containers"]["cfchip"]
+        config["image"]["cfchip"]
     shell:
         """
         mkdir -p {params.outdir}
@@ -278,6 +278,7 @@ rule diffbind_blocking:
                                      )'
         """
 
+localrule: UROPA_prep_in
 
 rule UROPA_prep_in:
     input:
@@ -286,7 +287,6 @@ rule UROPA_prep_in:
         fldr                            = join(uropa_dir, "{PeakTool1}"),
     output:
         json                            = join(uropa_dir, "{PeakTool1}", "{name}.{PeakTool2}.{type}.json"),
-    localrule: True
     run:
         # Dynamically creates UROPA config file
         if not os.path.exists(params.fldr): 

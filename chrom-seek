@@ -301,13 +301,10 @@ def cache(sub_args):
     # Check for dependencies
     require(['singularity'], ['singularity'])
     
-    if sub_args.sif_cache is None and 'SINGULARITY_CACHEDIR' in os.environ:
-        sif_cache = os.environ['SINGULARITY_CACHEDIR']
-    else:
-        sif_cache = sub_args.sif_cache
+    sif_cache = sub_args.sif_cache
     # Get absolute PATH to templates in exome-seek git repo
     repo_path = os.path.dirname(os.path.abspath(__file__))
-    images = os.path.join(repo_path, 'config','containers.json')
+    images = os.path.join(repo_path, 'config', 'containers.json')
 
     # Create image cache
     if not exists(sif_cache):

@@ -23,7 +23,7 @@ params:
 
 ```{r, include=FALSE, warning=FALSE, message=FALSE}
 # inputs
-dateandtime<-format(Sys.time(), "%a %b %d %Y - %X")
+dateandtime <- format(Sys.time(), "%a %b %d %Y - %X")
 csvfile <- params$csvfile
 outbase <- dirname(csvfile)
 contrasts <- params$contrasts
