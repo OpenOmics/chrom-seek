@@ -112,7 +112,7 @@ rule init_diffbind:
         bam_dir                         = bam_dir,
         workpath                        = workpath,
     container:
-        config["containers"]["cfchip"]
+        config["images"]["cfchip"]
     shell:
         """
         python {params.pythonscript} \
@@ -188,7 +188,7 @@ rule diffbind:
         rscript                         = join(bin_path, "DiffBind_v2_ChIPseq.Rmd"),
         outdir                          = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}"),
     container:
-        config["image"]["cfchip"]
+        config["images"]["cfchip"]
     shell:
         """
         mkdir -p {params.outdir}
@@ -263,7 +263,7 @@ rule diffbind_blocking:
         this_peaktool                   = "{PeakTool}",
         this_contrast                   = "{group1}_vs_{group2}",
     container:
-        config["image"]["cfchip"]
+        config["images"]["cfchip"]
     shell:
         """
         mkdir -p {params.outdir}
@@ -386,7 +386,7 @@ rule UROPA:
         outroot=join(uropa_dir, "{PeakTool1}", "{name}_{PeakTool2}_uropa_{type}"),
     threads: 4
     container:
-        config["containers"]["uropa"]
+        config["images"]["uropa"]
     shell:
         """
         uropa -i {input.json} -p {params.outroot} -l {output.log} -t {threads} -s
