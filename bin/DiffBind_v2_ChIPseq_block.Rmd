@@ -16,7 +16,7 @@ params:
 ---
 
 <style type="text/css">
-   body{
+   body {
       font-size: 12pt;
    }
 </style>
@@ -39,7 +39,6 @@ edger_bed_fullist <- "_Diffbind_EdgeR_fullList_block.txt"
 
 # knittr configuration
 knitr::opts_chunk$set(echo = FALSE, include=TRUE, message=FALSE, warning=FALSE, error=FALSE)
-knitr::opts_knit$set(root.dir=params$dir)
 
 # load libs
 suppressMessages(library(DT))
