@@ -25,6 +25,7 @@ params:
 # global variables
 dateandtime <- format(Sys.time(), "%a %b %d %Y - %X")
 csvfile <- params$csvfile
+outbase <- dirname(csvfile)
 contrasts <- params$contrasts
 peakcaller <- params$peakcaller
 
@@ -238,9 +239,9 @@ tryDeseqExport <- function(DBReportDeseq2, outfile2) {
    )
 }
 
-tryDeseqExport(DBReportDeseq2, outfile2)
+tryDeseqExport(DBReportDeseq2, file.path(outbase, outfile2))
 
-write.table(DBReportDeseq2, outfile, quote=F, sep="\t", row.names=F)
+write.table(DBReportDeseq2, file.path(outbase, outfile), quote=F, sep="\t", row.names=F)
 D2i <- length(DBReportDeseq2)
 if (D2i == 0) {
    i=1
@@ -255,7 +256,7 @@ report2 <- dba.report(DBAnalysisDeseq2,method = DBA_DESEQ2_BLOCK,
                       th=100,bNormalized=T,bFlip=FALSE,precision=0)
 
 outfile3 <- paste0(contrasts, "-", peakcaller, deseq2_bed_fullist)
-write.table(report2, outfile3, quote=F, sep="\t", row.names=F)
+write.table(report2, file.path(outbase, outfile3), quote=F, sep="\t", row.names=F)
 ```
 
 ### EdgeR {-}
@@ -278,7 +279,7 @@ tryEdgeRExport <- function(edger_report, fout) {
 
 tryEdgeRExport(DBReportEdgeR, file.path(outbase, outfile2))
 
-write.table(DBReportEdgeR, outfile, quote=F, sep="\t", row.names=F)
+write.table(DBReportEdgeR, file.path(outbase, outfile), quote=F, sep="\t", row.names=F)
 Ei <- length(DBReportEdgeR)
 if (Ei == 0) {
    i=1
@@ -292,7 +293,7 @@ try(DT::datatable(data.frame(DBReportEdgeR)[1:i,], rownames=F), silent=TRUE)
 report2 <- dba.report(DBAnalysisEdgeR,method = DBA_EDGER_BLOCK,
                       th=100,bNormalized=T,bFlip=FALSE,precision=0)
 outfile3 <- paste0(contrasts, "-", peakcaller, edger_bed_fullist)
-write.table(report2, outfile3, quote=F, sep="\t", row.names=F)
+write.table(report2, file.path(outbase, outfile3), quote=F, sep="\t", row.names=F)
 ```
 
 ## R tool version information
