@@ -300,7 +300,11 @@ def cache(sub_args):
     """
     # Check for dependencies
     require(['singularity'], ['singularity'])
-    sif_cache = sub_args.sif_cache
+    
+    if sub_args.sif_cache is None and 'SINGULARITY_CACHEDIR' in os.environ:
+        sif_cache = os.environ['SINGULARITY_CACHEDIR']
+    else:
+        sif_cache = sub_args.sif_cache
     # Get absolute PATH to templates in exome-seek git repo
     repo_path = os.path.dirname(os.path.abspath(__file__))
     images = os.path.join(repo_path, 'config','containers.json')
@@ -725,6 +729,7 @@ def parsed_arguments(name, description):
     subparser_run.add_argument(
         '--singularity-cache',
         type = lambda option: check_cache(parser, os.path.abspath(os.path.expanduser(option))),
+        default = None,
         required = False,
         help = argparse.SUPPRESS
     )
@@ -941,7 +946,6 @@ def parsed_arguments(name, description):
 
 
 def main():
-
     # Sanity check for usage
     if len(sys.argv) == 1:
         # Nothing was provided
