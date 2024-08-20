@@ -111,7 +111,7 @@ rule init_diffbind:
         pythonscript                    = join(bin_path, "prep_diffbind.py"),
         bam_dir                         = bam_dir,
         workpath                        = workpath,
-    containerized:
+    container:
         config["containers"]["cfchip"]
     shell:
         """
@@ -187,10 +187,12 @@ rule diffbind:
         peakcaller                      = lambda w: FileTypesDiffBind[w.PeakTool],
         rscript                         = join(bin_path, "DiffBind_v2_ChIPseq.Rmd"),
         outdir                          = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}"),
-    containerized:
+    container:
         config["containers"]["cfchip"]
     shell:
         """
+        mkdir -p {params.outdir}
+        cd {params.outdir}
         Rscript -e 'rmarkdown::render("{params.rscript}", \
                                         output_file="{output.diffbind_report}", \
                                         params=list( \
@@ -260,17 +262,18 @@ rule diffbind_blocking:
         outdir                          = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}"),
         this_peaktool                   = "{PeakTool}",
         this_contrast                   = "{group1}_vs_{group2}",
-    containerized:
+    container:
         config["containers"]["cfchip"]
     shell:
         """
+        mkdir -p {params.outdir}
+        cd {params.outdir}
         Rscript -e 'rmarkdown::render("{params.blocking_rscript}", \
                                         output_file="{output.diffbind_block_report}", \
                                         params=list( \
                                             csvfile="{input.csvfile}", \
                                             contrasts="{params.this_contrast}", \
                                             peakcaller="{params.this_peaktool}", \
-                                            dir="{params.outdir}" \
                                         ) \
                                      )'
         """
@@ -380,7 +383,7 @@ rule UROPA:
         rname="uropa",
         outroot=join(uropa_dir, "{PeakTool1}", "{name}_{PeakTool2}_uropa_{type}"),
     threads: 4
-    containerized:
+    container:
         config["containers"]["uropa"]
     shell:
         """
