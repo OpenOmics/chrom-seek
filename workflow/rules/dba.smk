@@ -273,12 +273,14 @@ rule diffbind_blocking:
                                         params=list( \
                                             csvfile="{input.csvfile}", \
                                             contrasts="{params.this_contrast}", \
-                                            peakcaller="{params.this_peaktool}", \
+                                            peakcaller="{params.this_peaktool}" \
                                         ) \
                                      )'
         """
 
-localrule: UROPA_prep_in
+
+localrules: UROPA_prep_in
+
 
 rule UROPA_prep_in:
     input:
