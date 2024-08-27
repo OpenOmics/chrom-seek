@@ -13,22 +13,38 @@ params:
     csvfile: samplesheet.csv
     contrasts: "group1_vs_group2"
     peakcaller: "macs"
-    dir: "/path/to/DiffBindBlock/directory"
 ---
 
 <style type="text/css">
-  body{
-  font-size: 12pt;
-}
+   body {
+      font-size: 12pt;
+   }
 </style>
 
 ```{r, include=FALSE, warning=FALSE, message=FALSE}
-## grab args
-dateandtime<-format(Sys.time(), "%a %b %d %Y - %X")
-
+# global variables
+dateandtime <- format(Sys.time(), "%a %b %d %Y - %X")
 csvfile <- params$csvfile
+outbase <- dirname(csvfile)
 contrasts <- params$contrasts
 peakcaller <- params$peakcaller
+
+# file output suffixes
+cp_bed <- "_Diffbind_consensusPeaks_block.bed"
+edger_txt <- "_Diffbind_EdgeR_block.txt"
+deseq2_txt <- "_Diffbind_Deseq2_block.txt"
+edger_bed <- "_Diffbind_EdgeR_block.bed"
+deseq2_bed <- "_Diffbind_Deseq2_block.bed"
+deseq2_bed_fullist <- "_Diffbind_Deseq2_fullList_block.txt"
+edger_bed_fullist <- "_Diffbind_EdgeR_fullList_block.txt"
+
+# knittr configuration
+knitr::opts_chunk$set(echo = FALSE, include=TRUE, message=FALSE, warning=FALSE, error=FALSE)
+
+# load libs
+suppressMessages(library(DT))
+suppressMessages(library(DiffBind))
+suppressMessages(library(parallel))
 ```
 
 **Groups being compared:**
@@ -36,34 +52,26 @@ peakcaller <- params$peakcaller
 **Peak sources:**
     *`r peakcaller`*  
 **Report generated:** 
-    *`r dateandtime`*  
-
-```{r setup, echo=FALSE, warning=FALSE,message=FALSE}
-knitr::opts_chunk$set(echo = FALSE, include=TRUE, message=FALSE, warning=FALSE, error=FALSE)
-knitr::opts_knit$set(root.dir=params$dir)
-suppressMessages(library(DT))
-suppressMessages(library(DiffBind))
-suppressMessages(library(parallel))
-```
-
+    *`r dateandtime`*
+ 
 # Peak Data
 Read in sample sheet information and peak information
 ```{r samples} 
 samples <- dba(sampleSheet=csvfile)
-consensus <- dba.peakset(samples,consensus=DBA_CONDITION)
+consensus <- dba.peakset(samples, consensus=DBA_CONDITION)
 print(samples)
 ```
 
 ## Correlation heatmap: Only peaks
 Pearson correlation of peak positions: all samples versus all samples  
 ```{r heatmap1}
-try(dba.plotHeatmap(samples,main="",cexRow=1,cexCol=1),silent=TRUE)
+try(dba.plotHeatmap(samples, main="", cexRow=1, cexCol=1), silent=TRUE)
 ```
 
 ## PCA: Only peaks
 Variance of peak positions  
 ```{r PCA1, fig.height=5,fig.width=5}
-try(dba.plotPCA(samples,DBA_CONDITION),silent=TRUE)
+try(dba.plotPCA(samples,DBA_CONDITION), silent=TRUE)
 ```
 
 ## Overlapping peak counts
@@ -73,11 +81,11 @@ the consensus peak set are the peaks identified in at least 2 samples for that c
 from the consensus peak set used for differential analyses.
 ```{r Venn, fig_height=4}
 if (nrow(samples$samples) < 5) {
-   dba.plotVenn(samples,1:nrow(samples$samples)) 
+   dba.plotVenn(samples, 1:nrow(samples$samples)) 
 } else {
-   dba.plotVenn(consensus,consensus$masks$Consensus,main="Binding Site Overlaps: 'consensus', comparing between groups")
-   try(dba.plotVenn(samples,samples$masks[[3]],main="Binding Site Overlaps: samples in Group1"),silent=TRUE)
-   try(dba.plotVenn(samples,samples$masks[[4]],main="Binding Site Overlaps: samples in Group2"),silent=TRUE)
+   dba.plotVenn(consensus, consensus$masks$Consensus, main="Binding Site Overlaps: 'consensus', comparing between groups")
+   try(dba.plotVenn(samples,samples$masks[[3]],main="Binding Site Overlaps: samples in Group1"), silent=TRUE)
+   try(dba.plotVenn(samples,samples$masks[[4]],main="Binding Site Overlaps: samples in Group2"), silent=TRUE)
 }
 ```
 
@@ -85,18 +93,18 @@ if (nrow(samples$samples) < 5) {
 Consensus peaks are peaks found in at least two samples, independent of condition.
 FRiP is of consensus peaks and will not match FRiP values calculated outside of this tool.
 ```{r peaksORsummits}
-if ( grepl("narrow",samples$samples$Peaks[1]) ) {
+if ( grepl("narrow", samples$samples$Peaks[1]) ) {
    summits <- TRUE
    print ("Narrow peak calling tool.")
    print ("Differential peaks are 250bp upstream and downstream of the summits.")
-} else if ( grepl("broad",samples$samples$Peaks[1]) ) {
-  summits <- FALSE
-  print ("Broad peak calling tool.")
-  print ("Differential peaks are consensus peaks.")
+} else if ( grepl("broad", samples$samples$Peaks[1]) ) {
+   summits <- FALSE
+   print ("Broad peak calling tool.")
+   print ("Differential peaks are consensus peaks.")
 } else {
-  summits <- FALSE
-  print ("Indeterminate peak calling tool.")
-  print ("Differential peaks are consensus peaks.")
+   summits <- FALSE
+   print ("Indeterminate peak calling tool.")
+   print ("Differential peaks are consensus peaks.")
 }
 ```
 
@@ -107,28 +115,28 @@ if (summits == TRUE) {
 	DBdataCounts <- dba.count(samples)
 }
 print(DBdataCounts)
-outfile2 <- paste0(contrasts, "-", peakcaller,"_Diffbind_consensusPeaks.bed")
-consensus2 <- dba.peakset(DBdataCounts,bRetrieve=T)
-consensus2$name <- paste0("Peak",1:length(consensus2))
-#rtracklayer::export(consensus2,outfile2)
+outfile2 <- paste0(contrasts, "-", peakcaller, cp_bed)
+consensus2 <- dba.peakset(DBdataCounts, bRetrieve=T)
+consensus2$name <- paste0("Peak", 1:length(consensus2))
+#rtracklayer::export(consensus2, outfile2)
 ```
 
 ## Correlation heatmap: Peaks and reads
 Pearson correlation of library-size normalized counts of consensus peaks: all samples versus all samples
 ```{r heatmap2}
-try(dba.plotHeatmap(DBdataCounts,main="",cexRow=1,cexCol=1),silent=TRUE)
+try(dba.plotHeatmap(DBdataCounts, main="", cexRow=1, cexCol=1),silent=TRUE)
 ```
 
 ## Heatmap: Average signal across each peak
 1000 most variable consensus peaks (library-size normalized counts)
 ```{r heatmap3}
-try(dba.plotHeatmap(DBdataCounts,correlations=FALSE,cexRow=1,cexCol=1),silent=TRUE)
+try(dba.plotHeatmap(DBdataCounts, correlations=FALSE, cexRow=1, cexCol=1),silent=TRUE)
 ```
 
 ## PCA: Peaks and reads
 Variation of library-size normalized counts of consensus peaks
 ```{r PCA2, fig.height=5,fig.width=5}
-try(dba.plotPCA(DBdataCounts,DBA_CONDITION),silent=TRUE)
+try(dba.plotPCA(DBdataCounts, DBA_CONDITION), silent=TRUE)
 ```
 
 # Set Up Contrast
@@ -189,12 +197,12 @@ Each dot is a consensus peak.
 
 ### DeSeq2 {-}
 ```{r Volcano1}
-try(dba.plotVolcano(DBAnalysisDeseq2, method = DBA_DESEQ2_BLOCK),silent=TRUE)
+try(dba.plotVolcano(DBAnalysisDeseq2, method = DBA_DESEQ2_BLOCK), silent=TRUE)
 ```
 
 ### EdgeR {-}
 ```{r Volcano2}
-try(dba.plotVolcano(DBAnalysisEdgeR, method = DBA_EDGER_BLOCK),silent=TRUE)
+try(dba.plotVolcano(DBAnalysisEdgeR, method = DBA_EDGER_BLOCK), silent=TRUE)
 ```
 
 ## Heatmap: Differential {.tabset .tabset-fade}
@@ -202,24 +210,38 @@ try(dba.plotVolcano(DBAnalysisEdgeR, method = DBA_EDGER_BLOCK),silent=TRUE)
 
 ### DeSeq2 {-}
 ```{r heatmap4D}
-try(dba.plotHeatmap(DBAnalysisDeseq2,contrast=1,method = DBA_DESEQ2_BLOCK,
-                    correlations=FALSE,margin=20,cexRow=1,cexCol=1),silent=TRUE)
+try(dba.plotHeatmap(DBAnalysisDeseq2, contrast=1, method = DBA_DESEQ2_BLOCK,
+                    correlations=FALSE, margin=20, cexRow=1, cexCol=1), silent=TRUE)
 ```
 
 ### EdgeR {-}
 ```{r heatmap4E}
-try(dba.plotHeatmap(DBAnalysisEdgeR,contrast=1,method = DBA_EDGER_BLOCK,
-                    correlations=FALSE,margin=20,cexRow=1,cexCol=1),silent=TRUE)
+try(dba.plotHeatmap(DBAnalysisEdgeR, contrast=1, method = DBA_EDGER_BLOCK,
+                    correlations=FALSE, margin=20, cexRow=1, cexCol=1), silent=TRUE)
 ```
 
 ## Top 500 differentially bound peaks {.tabset .tabset-fade}
 ### DeSeq2 {-}
 ```{r Deseq2Report}
-outfile <- paste0(contrasts, "-", peakcaller, "_Diffbind_Deseq2_block.txt")
-outfile2 <- paste0(contrasts, "-", peakcaller, "_Diffbind_Deseq2_block.bed")
-DBReportDeseq2$name <- paste0("Peak",1:length(DBReportDeseq2))
-try(rtracklayer::export(DBReportDeseq2, outfile2),silent=TRUE)
-write.table(DBReportDeseq2, outfile, quote=F, sep="\t", row.names=F)
+outfile <- paste0(contrasts, "-", peakcaller, deseq2_txt)
+outfile2 <- paste0(contrasts, "-", peakcaller, deseq2_bed)
+DBReportDeseq2$name <- paste0("Peak", 1:length(DBReportDeseq2))
+
+tryDeseqExport <- function(DBReportDeseq2, outfile2) {
+   tryCatch(
+      {
+         rtracklayer::export(DBReportDeseq2, outfile2)
+      },
+      error = function(cond) {
+         print("ERROR: Failed to export DeSeq bed file `rtracklayer::export(DBReportDeseq2, outfile2)`, output blank file")
+         write.table(outfile2, file='empty', col.names=FALSE)
+      }
+   )
+}
+
+tryDeseqExport(DBReportDeseq2, file.path(outbase, outfile2))
+
+write.table(DBReportDeseq2, file.path(outbase, outfile), quote=F, sep="\t", row.names=F)
 D2i <- length(DBReportDeseq2)
 if (D2i == 0) {
    i=1
@@ -232,17 +254,32 @@ try(DT::datatable(data.frame(DBReportDeseq2)[1:i,], rownames=F),silent=TRUE)
 
 report2 <- dba.report(DBAnalysisDeseq2,method = DBA_DESEQ2_BLOCK,
                       th=100,bNormalized=T,bFlip=FALSE,precision=0)
-outfile3 <- paste0(contrasts, "-", peakcaller, "_Diffbind_Deseq2_block_fullList.txt")
-write.table(report2, outfile3, quote=F, sep="\t", row.names=F)
+
+outfile3 <- paste0(contrasts, "-", peakcaller, deseq2_bed_fullist)
+write.table(report2, file.path(outbase, outfile3), quote=F, sep="\t", row.names=F)
 ```
 
 ### EdgeR {-}
 ```{r EdgeRReport}
-outfile <- paste0(contrasts, "-", peakcaller,"_Diffbind_EdgeR_block.txt")
-outfile2 <- paste0(contrasts, "-", peakcaller,"_Diffbind_EdgeR_block.bed")
-DBReportEdgeR$name <- paste0("Peak",1:length(DBReportEdgeR))
-try(rtracklayer::export(DBReportEdgeR, outfile2),silent=TRUE)
-write.table(DBReportEdgeR, outfile, quote=F, sep="\t", row.names=F)
+outfile <- paste0(contrasts, "-", peakcaller, edger_txt)
+outfile2 <- paste0(contrasts, "-", peakcaller, edger_bed)
+DBReportEdgeR$name <- paste0("Peak", 1:length(DBReportEdgeR))
+
+tryEdgeRExport <- function(edger_report, fout) {
+   tryCatch(
+      {
+         rtracklayer::export(edger_report, fout)
+      },
+      error = function(cond) {
+         print("ERROR: Failed to export EdgeR bed file `rtracklayer::export(edger_report, fout))`, output blank file")
+         write.table(fout, file='empty', col.names=FALSE)
+      }
+   )
+}
+
+tryEdgeRExport(DBReportEdgeR, file.path(outbase, outfile2))
+
+write.table(DBReportEdgeR, file.path(outbase, outfile), quote=F, sep="\t", row.names=F)
 Ei <- length(DBReportEdgeR)
 if (Ei == 0) {
    i=1
@@ -251,12 +288,12 @@ if (Ei == 0) {
 } else {
    i=Ei
 }
-try(DT::datatable(data.frame(DBReportEdgeR)[1:i,], rownames=F),silent=TRUE)
+try(DT::datatable(data.frame(DBReportEdgeR)[1:i,], rownames=F), silent=TRUE)
 
 report2 <- dba.report(DBAnalysisEdgeR,method = DBA_EDGER_BLOCK,
                       th=100,bNormalized=T,bFlip=FALSE,precision=0)
-outfile3 <- paste0(contrasts, "-", peakcaller, "_Diffbind_EdgeR_block_fullList.txt")
-write.table(report2, outfile3, quote=F, sep="\t", row.names=F)
+outfile3 <- paste0(contrasts, "-", peakcaller, edger_bed_fullist)
+write.table(report2, file.path(outbase, outfile3), quote=F, sep="\t", row.names=F)
 ```
 
 ## R tool version information

@@ -1,6 +1,7 @@
 {
     "images": {
         "cfchip": "docker://skchronicles/cfchip_toolkit:v0.5.0",
+        "uropa": "docker://quay.io/biocontainers/uropa:4.0.2--pyhdfd78af_0",
         "python": "docker://asyakhleborodova/chrom_seek_python:v0.1.0",
         "ppqt": "docker://asyakhleborodova/ppqt:v0.2.0"
     }

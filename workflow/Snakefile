@@ -17,6 +17,8 @@ samples                         = config['samples']
 bin_path                        = config['project']['binpath']
 workpath                        = config['project']['workpath']
 assay                           = config['options']['assay']
+blocks                          = config['project']['blocks']
+blocking                        = False if set(blocks.values()) in ({None}, {''}) else True
 paired_end                      = False if config['project']['nends'] == 1 else True
 chips                           = config['project']['peaks']['chips']
 contrast                        = config['project']['contrast']
@@ -99,7 +101,11 @@ if assay == "cfchip":
             join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind.html"), 
             group1=zipGroup1, group2=zipGroup2, PeakTool=zipToolC
         ))
-
+        if blocking:
+            rule_all_ins.extend(expand(
+                join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind_blocking.html"),
+                group1=zipGroup1, group2=zipGroup2, PeakTool=zipToolC
+            ))
         if contrast:
             rule_all_ins.extend(expand(
                 join(uropa_diffbind_dir, "{name}_{PeakTool}_uropa_{_type}_allhits.txt"), 
@@ -161,6 +167,11 @@ elif assay in ["atac", "chip"]:
             join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind.html"), 
             group1=zipGroup1, group2=zipGroup2, PeakTool=zipToolC
         ))
+        if blocking:
+            rule_all_ins.extend(expand(
+                join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind_blocking.html"),
+                group1=zipGroup1, group2=zipGroup2, PeakTool=zipToolC
+            ))
         if contrast:
             rule_all_ins.extend(expand(
                 join(uropa_diffbind_dir, "{name}_{PeakTool}_uropa_{_type}_allhits.txt"), 

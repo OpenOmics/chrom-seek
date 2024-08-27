@@ -31,8 +31,9 @@ if config['options']['mode'] == 'slurm':
             # previously submitted jobs 
             sleep 15; rm -f COMPLETED FAILED RUNNING;
             timestamp=$(date +"%Y-%m-%d_%H-%M-%S");
+            snk_log=$(ls -Art logfiles/snakemake_*.log | tail -n 1);
             ./bin/jobby \\
-                $(grep --color=never "^Submitted .* external jobid" logfiles/snakemake.log \\
+                $(grep --color=never "^Submitted .* external jobid" ${{snk_log}} \\
                     | awk '{{print $NF}}' \\
                     | sed "s/['.]//g" \\
                     | sort \\
@@ -68,8 +69,9 @@ if config['options']['mode'] == 'slurm':
             # previously submitted jobs 
             sleep 15; rm -f COMPLETED FAILED RUNNING;
             timestamp=$(date +"%Y-%m-%d_%H-%M-%S");
+            snk_log=$(ls -Art logfiles/snakemake_*.log | tail -n 1);
             ./bin/jobby \\
-                $(grep --color=never "^Submitted .* external jobid" logfiles/snakemake.log \\
+                $(grep --color=never "^Submitted .* external jobid" ${{snk_log}} \\
                     | awk '{{print $NF}}' \\
                     | sed "s/['.]//g" \\
                     | sort \\
