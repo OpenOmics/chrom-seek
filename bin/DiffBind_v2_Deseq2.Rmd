@@ -16,19 +16,37 @@ params:
 ---
 
 <style type="text/css">
-  body{
-  font-size: 12pt;
-}
+   body {
+      font-size: 12pt;
+   }
 </style>
 
 ```{r, include=FALSE, warning=FALSE, message=FALSE}
-## grab args
-dateandtime<-format(Sys.time(), "%a %b %d %Y - %X")
-
+# inputs
+dateandtime <- format(Sys.time(), "%a %b %d %Y - %X")
 csvfile <- params$csvfile
+outbase <- dirname(csvfile)
 contrasts <- params$contrasts
 peakcaller <- params$peakcaller
 peak_counts <- params$counts
+```
+
+# file output suffixes
+cp_bed <- "_Diffbind_consensusPeaks.bed"
+edger_txt <- "_Diffbind_EdgeR.txt"
+deseq2_txt <- "_Diffbind_Deseq2.txt"
+edger_bed <- "_Diffbind_EdgeR.bed"
+deseq2_bed <- "_Diffbind_Deseq2.bed"
+deseq2_bed_fullist <- "_Diffbind_Deseq2_fullList.txt"
+edger_bed_fullist <- "_Diffbind_EdgeR_fullList.txt"
+
+# knitr options
+knitr::opts_chunk$set(echo = FALSE, include=TRUE, message=FALSE, warning=FALSE, error=FALSE)
+
+# libraries
+suppressMessages(library(DT))
+suppressMessages(library(DiffBind))
+suppressMessages(library(parallel))
 ```
 
 **Groups being compared:**
@@ -36,14 +54,7 @@ peak_counts <- params$counts
 **Peak sources:**
     *`r peakcaller`*  
 **Report generated:** 
-    *`r dateandtime`*  
-
-```{r setup, echo=FALSE, warning=FALSE,message=FALSE}
-knitr::opts_chunk$set(echo = FALSE, include=TRUE, message=FALSE, warning=FALSE, error=FALSE)
-suppressMessages(library(DT))
-suppressMessages(library(DiffBind))
-suppressMessages(library(parallel))
-```
+    *`r dateandtime`* 
 
 # Peak Data
 Read in sample sheet information and peak information
@@ -89,12 +100,16 @@ FRiP is of consensus peaks and will not match FRiP values calculated outside of 
 ```{r}
 if ( peakcaller == "macsNarrow" ) {
    summits <- TRUE
-   print("Ran macsNarrow.")
-   print("Differential peaks are 250bp upstream and downstream of the summits.")
+   print ("Narrow peak calling tool.")
+   print ("Differential peaks are 250bp upstream and downstream of the summits.")
+} else if (grepl("broad", samples$samples$Peaks[1])) {
+   summits <- FALSE
+   print ("Broad peak calling tool.")
+   print ("Differential peaks are consensus peaks.")
 } else {
    summits <- FALSE
-   print("Assuming broad peak calling tool.")
-   print("Differential peaks are consensus peaks.")
+   print ("Indeterminate peak calling tool.")
+   print ("Differential peaks are consensus peaks.")
 }
 ```
 
@@ -169,16 +184,24 @@ try(dba.plotHeatmap(DBAnalysisDeseq2,contrast=1,method = DBA_DESEQ2,correlations
 ## Top 500 or less differentially bound peaks 
 
 ```{r Deseq2Report}
+outfile <- paste0(contrasts, "-", peakcaller, deseq2_txt)
+outfile2 <- paste0(contrasts, "-", peakcaller, deseq2_bed)
+DBReportDeseq2$name <- paste0("Peak",1:length(DBReportDeseq2))
 
-UpPeaks <- DBReportDeseq2[which(DBReportDeseq2$Fold > 0)]
-outfile2 <- paste0(contrasts, "-", peakcaller, up_file)
-try(rtracklayer::export(UpPeaks, outfile2),silent=TRUE)
+tryDeseqExport <- function(DBReportDeseq2, outfile2) {
+   tryCatch(
+      {
+         rtracklayer::export(DBReportDeseq2, outfile2)
+      },
+      error = function(cond) {
+         print("ERROR: Failed to export DeSeq bed file `rtracklayer::export(DBReportDeseq2, outfile2)`, output blank file")
+         write.table(outfile2, file='empty', col.names=FALSE)
+      }
+   )
+}
 
-DownPeaks <- DBReportDeseq2[which(DBReportDeseq2$Fold < 0)]
-outfile2 <- paste0(contrasts, "-", peakcaller, down_file)
-try(rtracklayer::export(DownPeaks, outfile2),silent=TRUE)
-
-
+tryDeseqExport(DBReportDeseq2, file.path(outbase, outfile2))
+write.table(DBReportDeseq2, file.path(outbase, outfile), quote=F, sep="\t", row.names=F)
 D2i <- length(DBReportDeseq2)
 i <- as.integer(min(c(500, as.integer(max(c(D2i, 1)))))
 try(DT::datatable(data.frame(DBReportDeseq2)[1:i,], rownames=F),silent=TRUE)
