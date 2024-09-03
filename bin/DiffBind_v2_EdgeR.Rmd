@@ -1,0 +1,206 @@
+---
+title: "DiffBind: chrom-seek pipeline"
+subtitle: "EdgeR"
+output: 
+    html_document:
+        toc: true
+        toc_float:
+           collapsed: false
+        number_sections: true
+        toc_depth: 3
+        fig_width: 7
+        fig_height: 6
+params:
+    csvfile: samplesheet.csv
+    contrasts: "group1_vs_group2"
+    peakcaller: "macsNarrow"
+---
+
+<style type="text/css">
+  body{
+  font-size: 12pt;
+}
+</style>
+
+```{r, include=FALSE, warning=FALSE, message=FALSE}
+## grab args
+dateandtime<-format(Sys.time(), "%a %b %d %Y - %X")
+
+csvfile <- params$csvfile
+contrasts <- params$contrasts
+peakcaller <- params$peakcaller
+peak_counts <- params$counts
+```
+
+**Groups being compared:**
+    *`r contrasts`*  
+**Peak sources:**
+    *`r peakcaller`*  
+**Report generated:** 
+    *`r dateandtime`*  
+
+```{r setup, echo=FALSE, warning=FALSE,message=FALSE}
+knitr::opts_chunk$set(echo = FALSE, include=TRUE, message=FALSE, warning=FALSE, error=FALSE)
+suppressMessages(library(DT))
+suppressMessages(library(DiffBind))
+suppressMessages(library(parallel))
+```
+
+# Peak Data
+Read in sample sheet information and peak information
+```{r samples}
+up_file <- "_Diffbind_EdgeR_up.bed"
+down_file <- "_Diffbind_EdgeR_down.bed"
+list_file <- "_Diffbind_EdgeR_fullList.txt"
+samples <- dba(sampleSheet=csvfile)
+consensus <- dba.peakset(samples,consensus=DBA_CONDITION)
+print(samples)
+```
+
+## Correlation heatmap: Only peaks
+Pearson correlation of peak positions: all samples versus all samples  
+```{r heatmap1}
+try(dba.plotHeatmap(samples,main="",cexRow=1,cexCol=1),silent=TRUE)
+```
+
+## PCA: Only peaks
+Variance of peak positions  
+```{r PCA1, fig.height=5,fig.width=5}
+try(dba.plotPCA(samples,DBA_CONDITION),silent=TRUE)
+```
+
+## Overlapping peak counts
+Number of overlapping peaks.  
+If the number of samples is greater than 4, a "consensus" peak Venn diagram is created, where
+the consensus peak set are the peaks identified in at least 2 samples for that condition. This is different
+from the consensus peak set used for differential analyses.
+```{r Venn, fig_height=4}
+if (nrow(samples$samples) < 5) {
+   dba.plotVenn(samples,1:nrow(samples$samples)) 
+} else {
+   dba.plotVenn(consensus,consensus$masks$Consensus,main="Binding Site Overlaps: 'consensus', comparing between groups")
+   try(dba.plotVenn(samples,samples$masks[[3]],main="Binding Site Overlaps: samples in Group1"),silent=TRUE)
+   try(dba.plotVenn(samples,samples$masks[[4]],main="Binding Site Overlaps: samples in Group2"),silent=TRUE)
+}
+```
+
+# Consensus peaks and counts
+Consensus peaks are peaks found in at least two samples, independent of condition.
+FRiP is of consensus peaks and will not match FRiP values calculated outside of this tool.
+```{r}
+if ( peakcaller == "macsNarrow" ) {
+   summits <- TRUE
+   print ("Ran macsNarrow.")
+   print ("Differential peaks are 250bp upstream and downstream of the summits.")
+} else {
+  summits <- FALSE
+  print ("Assuming broad peak calling tool.")
+  print ("Differential peaks are consensus peaks.")
+}
+```
+
+```{r DBcount}
+DBdataCounts <- readRDS(file = peak_counts)
+print(DBdataCounts)
+```
+
+## Correlation heatmap: Peaks and reads
+Pearson correlation of library-size normalized counts of consensus peaks: all samples versus all samples
+```{r heatmap2}
+try(dba.plotHeatmap(DBdataCounts,main="",cexRow=1,cexCol=1),silent=TRUE)
+```
+
+## Heatmap: Average signal across each peak
+1000 most variable consensus peaks (library-size normalized counts)
+```{r heatmap3}
+try(dba.plotHeatmap(DBdataCounts,correlations=FALSE,cexRow=1,cexCol=1),silent=TRUE)
+```
+
+## PCA: Peaks and reads
+Variation of library-size normalized counts of consensus peaks
+```{r PCA2, fig.height=5,fig.width=5}
+try(dba.plotPCA(DBdataCounts,DBA_CONDITION),silent=TRUE)
+```
+
+# Set Up Contrast
+Contrast is Group1 - Group2.
+```{r contrast}
+DBdatacontrast <- dba.contrast(DBdataCounts, minMembers=2, categories = DBA_CONDITION)
+print(DBdatacontrast)
+```
+
+# Differential Analysis
+All concentrations are on log2 scale.
+
+```{r analyze}
+DBAnalysisEdgeR <- dba.analyze(DBdatacontrast, method = DBA_EDGER)
+DBReportEdgeR <- dba.report(DBAnalysisEdgeR, method = DBA_EDGER)
+```
+
+## PCA
+Variance of differential peaks only
+
+```{r PCA3, fig.height=5,fig.width=5}
+try(dba.plotPCA(DBAnalysisEdgeR, contrast=1, method= DBA_EdgeR),silent=TRUE)
+```
+
+## MA plot
+"Log concentration" means average concentration across all samples.
+Each dot is a consensus peak.
+
+```{r MA_D}
+try(dba.plotMA(DBAnalysisEdgeR, method = DBA_EdgeR),silent=TRUE)
+```
+
+## Volcano plot
+Each dot is a consensus peak.
+
+```{r Volcano1}
+try(dba.plotVolcano(DBAnalysisEdgeR, method = DBA_EdgeR),silent=TRUE)
+```
+
+
+## Heatmap: Differential
+1000 most significant differential peaks (EdgeR or EdgeR normalized)
+
+```{r heatmap4D}
+try(dba.plotHeatmap(DBAnalysisEdgeR,contrast=1,method = DBA_EdgeR,correlations=FALSE,margin=20,cexRow=1,cexCol=1),silent=TRUE)
+```
+
+## Top 500 or less differentially bound peaks 
+
+```{r EdgeRReport}
+
+UpPeaks <- DBReportEdgeR[which(DBReportEdgeR$Fold > 0)]
+outfile2 <- paste0(contrasts, "-", peakcaller, up_file)
+try(rtracklayer::export(UpPeaks, outfile2), silent=TRUE)
+
+DownPeaks <- DBReportEdgeR[which(DBReportEdgeR$Fold < 0)]
+outfile2 <- paste0(contrasts, "-", peakcaller, down_file)
+try(rtracklayer::export(DownPeaks, outfile2), silent=TRUE)
+
+
+D2i <- length(DBReportEdgeR)
+i <- as.integer(min(c(500, as.integer(max(c(D2i, 1)))))
+try(DT::datatable(data.frame(DBReportEdgeR)[1:i,], rownames=F), silent=TRUE)
+
+report2 <- dba.report(
+               DBAnalysisEdgeR,
+               method = DBA_EdgeR,
+               th=100,
+               bNormalized=T,
+               bFlip=FALSE,
+               precision=0,
+               bCalled=T
+           )
+outfile3 <- paste0(contrasts, "-", peakcaller, list_file)
+write.table(report2, outfile3, quote=F, sep="\t", row.names=F)
+```
+
+
+## R tool version information
+```{r Info}
+sessionInfo()
+```
+
+<div class="tocify-extend-page" data-unique="tocify-extend-page" style="height: 0;"></div>

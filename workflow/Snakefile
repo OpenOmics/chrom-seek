@@ -11,6 +11,11 @@ from scripts.grouping import group_samples_by_reps, \
 
 configfile: "config.json"
 
+wildcard_constraints:
+        group1                          = "[a-zA-Z0-9]+",
+        group2                          = "[a-zA-Z0-9]+",
+        PeakTool                        = "[a-zA-Z0-9]+",
+
 # Global workflow variables
 today                           = str(datetime.datetime.today()).split()[0].replace('-', '') # YYYYMMDD
 samples                         = config['samples']
@@ -98,12 +103,20 @@ if assay == "cfchip":
     ))
     if reps:
         rule_all_ins.extend(expand(
-            join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind.html"), 
+            join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind_EdgeR.html"), 
+            group1=zipGroup1, group2=zipGroup2, PeakTool=zipToolC
+        ))
+        rule_all_ins.extend(expand(
+            join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind_DeSeq2.html"), 
             group1=zipGroup1, group2=zipGroup2, PeakTool=zipToolC
         ))
         if blocking:
             rule_all_ins.extend(expand(
-                join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind_blocking.html"),
+                join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind_blocking_EdgeR.html"),
+                group1=zipGroup1, group2=zipGroup2, PeakTool=zipToolC
+            ))
+            rule_all_ins.extend(expand(
+                join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind_blocking_DeSeq2.html"),
                 group1=zipGroup1, group2=zipGroup2, PeakTool=zipToolC
             ))
         if contrast:
@@ -134,6 +147,7 @@ if assay == "cfchip":
         # ))
 
 elif assay in ["atac", "chip"]:
+    peak_types.extend(["prot", "protSEC", "genes"])
     # meme outputs turned off for now
     # if has_inputs:
     #     rule_all_ins.extend(expand(join(MEME_dir, "{PeakTool}", "{name}_meme", "meme-chip.html"), PeakTool=PeakTools, name=chips))
@@ -164,12 +178,20 @@ elif assay in ["atac", "chip"]:
     ))
     if reps:
         rule_all_ins.extend(expand(
-            join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind.html"), 
+            join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind_EdgeR.html"), 
+            group1=zipGroup1, group2=zipGroup2, PeakTool=zipToolC
+        ))
+        rule_all_ins.extend(expand(
+            join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind_DeSeq2.html"), 
             group1=zipGroup1, group2=zipGroup2, PeakTool=zipToolC
         ))
         if blocking:
             rule_all_ins.extend(expand(
-                join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind_blocking.html"),
+                join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind_blocking_EdgeR.html"),
+                group1=zipGroup1, group2=zipGroup2, PeakTool=zipToolC
+            ))
+            rule_all_ins.extend(expand(
+                join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind_blocking_DeSeq2.html"),
                 group1=zipGroup1, group2=zipGroup2, PeakTool=zipToolC
             ))
         if contrast:
