@@ -97,10 +97,21 @@
         "mem": "50g"
     },
     "diffbindQC": {
-        "mem": "150g"
+        "mem": "120g"
     },
     "diffbind": {
-        "mem": "150g"
+        "mem": "120g"
+    },
+    "diffbind_blocking": {
+        "mem": "120g"
+    },
+    "diffbind_count": {
+        "threads": "28",
+        "mem": "120g"
+    },
+    "UROPA": {
+        "threads": "16",
+        "mem": "120g"
     },
     "MEME": {
         "threads": "2",
