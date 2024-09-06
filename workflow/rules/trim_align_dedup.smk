@@ -63,7 +63,7 @@ rule trim:
         javaram                             = "64g",
         sample                              = "{name}",
     threads: 
-        16
+        32
     shell: 
         """
         module load {params.cutadaptver};

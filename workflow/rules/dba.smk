@@ -3,6 +3,7 @@
 import os
 import json
 from os.path import join
+from textwrap import dedent
 from scripts.common import allocated, mk_dir_if_not_exist
 from scripts.peakcall import outputIDR, zip_peak_files, \
     calc_effective_genome_fraction, get_manorm_sizes
@@ -19,11 +20,6 @@ contrast                        = config["project"]["contrast"]
 uropaver                        = config["tools"]["UROPAVER"]
 gtf                             = config["references"][genome]["GTFFILE"]
 
-# extend peak types based on assay type
-peak_types                      = config['options']['peak_type_base']
-if assay in ["atac", "chip"]:   
-    peak_types.extend(["prot", "protSEC", "genes"])
-    peak_types = list(set(peak_types))
 
 # ~~ directories
 diffbind_dir2                   = join(workpath, "DiffBind_block")
@@ -56,10 +52,10 @@ PeakExtensions = {
     "sicer": "_broadpeaks.bed",
     "gem": ".GEM_events.narrowPeak",
     "MANorm": "_all_MA.bed",
-    "DiffbindEdgeR": "_Diffbind_EdgeR_fullList.bed",
-    "DiffbindDeseq2": "_Diffbind_Deseq2_fullList.bed",
-    "DiffbindEdgeRBlock": "_Diffbind_EdgeRblock_fullList.bed",
-    "DiffbindDeseq2Block": "_Diffbind_Deseq2block_fullList.bed",
+    "DiffbindEdgeR": "_Diffbind_EdgeR_full_list.txt",
+    "DiffbindDeseq2": "_Diffbind_Deseq2_full_list.txt",
+    "DiffbindEdgeRBlock": "_Diffbind_block_EdgeR_full_list.txt",
+    "DiffbindDeseq2Block": "_Diffbind_block_Deseq2_full_list.txt",
     "Genrich": ".narrowPeak",
     "DiffBindQC": "_DiffBindQC_TMMcounts.bed",
 }
@@ -146,8 +142,8 @@ rule diffbind_count:
                                             "{group1}_vs_{group2}-{PeakTool}_Diffbind_prep.csv",
                                           ),
     output:
-        peak_counts                     = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}_Diffbind_fullList.bed"),
-        peak_list                       = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}_Diffbind_counts.RDS"),
+        peak_counts                     = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}_Diffbind_counts.rds"),
+        peak_list                       = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}_Diffbind_fullList.bed"),
     params:
         rname                           = "diffbind_count",
         this_contrast                   = "{group1}_vs_{group2}",
@@ -157,13 +153,13 @@ rule diffbind_count:
     container:
         config["images"]["cfchip"]
     shell:
-        """
-        {params.this_script} \
-            --csvfile {input.csvfile} \
-            --contrasts "{params.this_contrast}" \
-            --peakcaller "{params.this_peaktool}"
-            --threads {threads}
-        """
+        dedent("""
+        {params.this_script} \\
+            --csvfile {input.csvfile} \\
+            --counts {output.peak_counts} \\
+            --list {output.peak_list} \\
+            --peakcaller {params.this_peaktool}
+        """)
 
 
 rule diffbind_edger:
@@ -173,12 +169,7 @@ rule diffbind_edger:
                                             "{group1}_vs_{group2}-{PeakTool}",
                                             "{group1}_vs_{group2}-{PeakTool}_Diffbind_prep.csv",
                                           ),
-        peak_counts                     = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}_Diffbind_fullList.bed"),
-        peak_list                       = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}_Diffbind_counts.RDS"),
-        bed                             = lambda w: [
-                                            join(workpath, w.PeakTool, chip, chip + PeakExtensions[w.PeakTool])
-                                            for chip in chips
-                                          ],
+        peak_counts                     = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}_Diffbind_counts.rds"),
     output:
         diffbind_report                 = join(
                                             diffbind_dir,
@@ -198,32 +189,41 @@ rule diffbind_edger:
         full_list                       = join(
                                             diffbind_dir,
                                             "{group1}_vs_{group2}-{PeakTool}",
-                                            "{group1}_vs_{group2}-{PeakTool}_Diffbind_EdgeR_fullList.bed",
+                                            "{group1}_vs_{group2}-{PeakTool}_Diffbind_EdgeR_full_list.txt",
                                           ),
     params:
-        rname                           = "diffbind",
+        rname                           = "diffbind_edger",
         this_peaktool                   = "{PeakTool}",
         this_contrast                   = "{group1}_vs_{group2}",
         this_peakextension              = lambda w: PeakExtensions[w.PeakTool],
         peakcaller                      = lambda w: FileTypesDiffBind[w.PeakTool],
-        rscript                         = join(bin_path, "DiffBind_v2_ChIPseq.Rmd"),
+        rscript                         = join(bin_path, "DiffBind_v2_EdgeR.Rmd"),
         outdir                          = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}"),
     container:
         config["images"]["cfchip"]
     shell:
-        """
+        dedent("""
+        if [ ! -d \"""" + tmpdir + """\" ]; then mkdir -p \"""" + tmpdir + """\"; fi
+        tmp=$(mktemp -d -p \"""" + tmpdir + """\")
+        trap 'rm -rf "${{tmp}}"' EXIT
+
         mkdir -p {params.outdir}
         cd {params.outdir}
-        Rscript -e 'rmarkdown::render("{params.rscript}", \
-                                        output_file="{output.diffbind_report}", \
-                                        params=list( \
-                                            csvfile="{input.csvfile}", \
-                                            contrasts="{params.this_contrast}", \
-                                            peakcaller="{params.this_peaktool}" \
-                                            counts="{input.peak_list}" \
-                                        ) \
-                                     )'
-        """
+
+        cat <<'EOF' > ${{tmp}}/rscript.sh
+        #!/bin/bash
+        Rscript -e 'rmarkdown::render("{params.rscript}", output_file="{output.diffbind_report}", 
+            params=list(csvfile="{input.csvfile}", peakcaller="{params.this_peaktool}", list_file="{output.full_list}", 
+            up_file="{output.up_file}", down_file="{output.down_file}", contrasts="{params.this_contrast}", counts="{input.peak_counts}"))'
+        EOF
+
+        chmod +x ${{tmp}}/rscript.sh
+        echo "--"
+        cat ${{tmp}}/rscript.sh
+        echo "--"
+        ls -al ${{tmp}}
+        sh ${{tmp}}/rscript.sh
+        """)
 
 
 rule diffbind_deseq:
@@ -233,12 +233,7 @@ rule diffbind_deseq:
                                             "{group1}_vs_{group2}-{PeakTool}",
                                             "{group1}_vs_{group2}-{PeakTool}_Diffbind_prep.csv",
                                           ),
-        peak_counts                     = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}_Diffbind_fullList.bed"),
-        peak_list                       = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}_Diffbind_counts.RDS"),
-        bed                             = lambda w: [
-                                            join(workpath, w.PeakTool, chip, chip + PeakExtensions[w.PeakTool])
-                                            for chip in chips
-                                          ],
+        peak_counts                     = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}_Diffbind_counts.rds"),
     output:
         diffbind_report                 = join(
                                             diffbind_dir,
@@ -258,47 +253,51 @@ rule diffbind_deseq:
         full_list                       = join(
                                             diffbind_dir,
                                             "{group1}_vs_{group2}-{PeakTool}",
-                                            "{group1}_vs_{group2}-{PeakTool}_Diffbind_Deseq2_fullList.bed",
+                                            "{group1}_vs_{group2}-{PeakTool}_Diffbind_Deseq2_full_list.txt",
                                           ),
     params:
-        rname                           = "diffbind",
+        rname                           = "diffbind_deseq2",
         this_peaktool                   = "{PeakTool}",
         this_contrast                   = "{group1}_vs_{group2}",
         this_peakextension              = lambda w: PeakExtensions[w.PeakTool],
         peakcaller                      = lambda w: FileTypesDiffBind[w.PeakTool],
-        rscript                         = join(bin_path, "DiffBind_v2_ChIPseq.Rmd"),
+        rscript                         = join(bin_path, "DiffBind_v2_Deseq2.Rmd"),
         outdir                          = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}"),
     container:
         config["images"]["cfchip"]
     shell:
-        """
+        dedent("""
+        if [ ! -d \"""" + tmpdir + """\" ]; then mkdir -p \"""" + tmpdir + """\"; fi
+        tmp=$(mktemp -d -p \"""" + tmpdir + """\")
+        trap 'rm -rf "${{tmp}}"' EXIT
+
         mkdir -p {params.outdir}
         cd {params.outdir}
-        Rscript -e 'rmarkdown::render("{params.rscript}", \
-                                        output_file="{output.diffbind_report}", \
-                                        params=list( \
-                                            csvfile="{input.csvfile}", \
-                                            contrasts="{params.this_contrast}", \
-                                            peakcaller="{params.this_peaktool}" \
-                                            counts="{input.peak_list}" \
-                                        ) \
-                                     )'
-        """
+
+        cat <<'EOF' > ${{tmp}}/rscript.sh
+        #!/bin/bash
+        Rscript -e 'rmarkdown::render("{params.rscript}", output_file="{output.diffbind_report}", 
+            params=list(csvfile="{input.csvfile}", peakcaller="{params.this_peaktool}", list_file="{output.full_list}", 
+            up_file="{output.up_file}", down_file="{output.down_file}", contrasts="{params.this_contrast}", counts="{input.peak_counts}"))'
+        EOF
+
+        chmod +x ${{tmp}}/rscript.sh
+        echo "--"
+        cat ${{tmp}}/rscript.sh
+        echo "--"
+        ls -al ${{tmp}}
+        sh ${{tmp}}/rscript.sh
+        """)
 
 
 rule diffbind_deseq_blocking:
     input:
-        csvfile                        = join(
+        csvfile                         = join(
                                             diffbind_dir,
                                             "{group1}_vs_{group2}-{PeakTool}",
                                             "{group1}_vs_{group2}-{PeakTool}_Diffbind_prep.csv",
                                           ),
-        peak_counts                     = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}_Diffbind_fullList.bed"),
-        peak_list                       = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}_Diffbind_counts.RDS"),
-        bed                             = lambda w: [
-                                            join(workpath, w.PeakTool, chip, chip + PeakExtensions[w.PeakTool])
-                                            for chip in chips
-                                          ],
+        peak_counts                     = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}_Diffbind_counts.rds"),
     output:
         diffbind_block_report           = join(
                                             diffbind_dir,
@@ -308,78 +307,99 @@ rule diffbind_deseq_blocking:
         full_list                       = join(
                                             diffbind_dir,
                                             "{group1}_vs_{group2}-{PeakTool}",
-                                            "{group1}_vs_{group2}-{PeakTool}_Diffbind_Deseq2block_fullList.bed",
+                                            "{group1}_vs_{group2}-{PeakTool}_Diffbind_block_Deseq2_full_list.txt",
                                           ),
     params:
-        rname                           = "diffbind_block",
-        blocking_rscript                = join(bin_path, "DiffBind_v2_ChIPseq_block.Rmd"),
+        rname                           = "diffbind_deseq_block",
+        blocking_rscript                = join(bin_path, "DiffBind_v2_Deseq2_block.Rmd"),
         outdir                          = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}"),
         this_peaktool                   = "{PeakTool}",
         this_contrast                   = "{group1}_vs_{group2}",
     container:
         config["images"]["cfchip"]
     shell:
-        """
+        dedent("""
+        if [ ! -d \"""" + tmpdir + """\" ]; then mkdir -p \"""" + tmpdir + """\"; fi
+        tmp=$(mktemp -d -p \"""" + tmpdir + """\")
+        trap 'rm -rf "${{tmp}}"' EXIT
+
         mkdir -p {params.outdir}
         cd {params.outdir}
-        Rscript -e 'rmarkdown::render("{params.blocking_rscript}", \
-                                        output_file="{output.diffbind_block_report}", \
-                                        params=list( \
-                                            csvfile="{input.csvfile}", \
-                                            contrasts="{params.this_contrast}", \
-                                            peakcaller="{params.this_peaktool}", \
-                                            counts="{input.peak_list}" \
-                                        ) \
-                                     )'
-        """
+        cat <<'EOF' > ${{tmp}}/rscript.sh
+        #!/bin/bash
+        Rscript -e 'rmarkdown::render("{params.blocking_rscript}", output_file="{output.diffbind_block_report}", 
+            params=list(csvfile="{input.csvfile}", peakcaller="{params.this_peaktool}", list_file="{output.full_list}", 
+            contrasts="{params.this_contrast}", counts="{input.peak_counts}"))'
+        EOF
+
+        chmod +x ${{tmp}}/rscript.sh
+        echo "--"
+        cat ${{tmp}}/rscript.sh
+        echo "--"
+        sh ${{tmp}}/rscript.sh
+        """)
 
 
 rule diffbind_edger_blocking:
     input:
-        csvfile                        = join(
+        csvfile                         = join(
                                             diffbind_dir,
                                             "{group1}_vs_{group2}-{PeakTool}",
                                             "{group1}_vs_{group2}-{PeakTool}_Diffbind_prep.csv",
                                           ),
-        peak_counts                     = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}_Diffbind_fullList.bed"),
-        peak_list                       = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}_Diffbind_counts.RDS"),
-        bed                             = lambda w: [
-                                            join(workpath, w.PeakTool, chip, chip + PeakExtensions[w.PeakTool])
-                                            for chip in chips
-                                          ],
+        peak_counts                     = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}_Diffbind_counts.rds"),
     output:
         diffbind_block_report           = join(
                                             diffbind_dir,
                                             "{group1}_vs_{group2}-{PeakTool}",
                                             "{group1}_vs_{group2}-{PeakTool}_Diffbind_blocking_EdgeR.html",
                                           ),
-        full_list                        = join(
+        up_file                         = join(
                                             diffbind_dir,
                                             "{group1}_vs_{group2}-{PeakTool}",
-                                            "{group1}_vs_{group2}-{PeakTool}_Diffbind_EdgeRblock_fullList.bed",
+                                            "{group1}_vs_{group2}-{PeakTool}_Diffbind_block_EdgeR_up.bed",
+                                          ),
+        down_file                       = join(
+                                            diffbind_dir,
+                                            "{group1}_vs_{group2}-{PeakTool}",
+                                            "{group1}_vs_{group2}-{PeakTool}_Diffbind_block_EdgeR_down.bed",
+                                          ),
+        full_list                       = join(
+                                            diffbind_dir,
+                                            "{group1}_vs_{group2}-{PeakTool}",
+                                            "{group1}_vs_{group2}-{PeakTool}_Diffbind_block_EdgeR_full_list.txt",
                                           ),
     params:
-        rname                           = "diffbind_block",
-        blocking_rscript                = join(bin_path, "DiffBind_v2_ChIPseq_block.Rmd"),
+        rname                           = "diffbind_edger_block",
+        blocking_rscript                = join(bin_path, "DiffBind_v2_EdgeR_block.Rmd"),
         outdir                          = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}"),
         this_peaktool                   = "{PeakTool}",
         this_contrast                   = "{group1}_vs_{group2}",
     container:
         config["images"]["cfchip"]
     shell:
-        """
+        dedent("""
+        if [ ! -d \"""" + tmpdir + """\" ]; then mkdir -p \"""" + tmpdir + """\"; fi
+        tmp=$(mktemp -d -p \"""" + tmpdir + """\")
+        trap 'rm -rf "${{tmp}}"' EXIT
+
         mkdir -p {params.outdir}
         cd {params.outdir}
-        Rscript -e 'rmarkdown::render("{params.blocking_rscript}", \
-                                        output_file="{output.diffbind_block_report}", \
-                                        params=list( \
-                                            csvfile="{input.csvfile}", \
-                                            peakcaller="{params.this_peaktool}", \
-                                            contrast="{params.this_contrast}", \\
-                                            counts="{input.peak_list}" \
-                                        ) \
-                                     )'
-        """
+
+        cat << EOF > ${{tmp}}/rscript.sh
+        #!/bin/bash
+        Rscript -e 'rmarkdown::render("{params.blocking_rscript}", output_file="{output.diffbind_block_report}",
+            params=list(csvfile="{input.csvfile}", peakcaller="{params.this_peaktool}", list_file="{output.full_list}",
+            contrasts="{params.this_contrast}", counts="{input.peak_counts}"))'
+        EOF
+
+        chmod +x ${{tmp}}/rscript.sh
+        echo "--"
+        cat ${{tmp}}/rscript.sh
+        echo "--"
+        ls -al ${{tmp}}
+        sh ${{tmp}}/rscript.sh
+        """)
 
 
 rule UROPA_prep_in:
@@ -404,27 +424,29 @@ rule UROPA_prep_in:
             "feature.anchor": "start" 
         }
 
-        for i in range(len(input.peak_counts)):
+        assert len(input) == len(peak_types)
+
+        for peak_type in peak_types:
             json_construct = dict()
             json_construct['queries'] = []
             json_construct['show_attributes'] = ["gene_id", "gene_name", "gene_type"]
             json_construct["priority"] = "Yes"
             json_construct['gtf'] = gtf
-            json_construct['bed'] = input.peak_counts[i]
+            json_construct['bed'] = input[0]
             if assay == 'cfchip':
-                if wildcards._type == 'protTSS':
+                if peak_type == 'protTSS':
                     for _d in (3000, 10000, 100000):
                         this_q = base_query.copy()
                         this_q['distance'] = _d
                         json_construct['queries'].append(this_q)
             else:
-                if wildcards._type == 'prot':
+                if peak_type == 'prot':
                     for _d in (5000, 100000):
                         this_q = base_query.copy()
                         del this_q["feature.anchor"]
                         this_q['distance'] = _d
                         json_construct['queries'].append(this_q)
-                elif wildcards._type == 'genes':
+                elif peak_type == 'genes':
                     this_query = {}
                     this_query['feature'] = 'gene'
                     for _d in (5000, 100000):
@@ -434,7 +456,7 @@ rule UROPA_prep_in:
                         del this_q["attribute.value"]
                         this_q['distance'] = _d
                         json_construct['queries'].append(this_q)
-                elif wildcards._type == 'protSEC':
+                elif peak_type == 'protSEC':
                     # distance, feature.anchor
                     query_values = (
                         ([3000, 1000], "start"), 
@@ -449,18 +471,18 @@ rule UROPA_prep_in:
                             this_q["feature.anchor"] = feature_anchor
                         this_q['distance'] = _distance
                         json_construct['queries'].append(this_q)
-                elif wildcards._type == 'protTSS':
+                elif peak_type == 'protTSS':
                     for _d in ([3000, 1000], 10000, 100000):
                         this_q = base_query.copy()
                         this_q['distance'] = _d
                         json_construct['queries'].append(this_q)
 
-            with open(output.json, 'w') as jo:
+            with open(output.json[peak_types.index(peak_type)], 'w') as jo:
                 json.dump(json_construct, jo, indent=4)
                 jo.close()
 
-            if not os.path.exists(output.json):
-                raise FileNotFoundError(output.json + " does not exist!")
+            if not os.path.exists(output.json[peak_types.index(peak_type)]):
+                raise FileNotFoundError(output.json[peak_types.index(peak_type)] + " does not exist!")
 
 
 

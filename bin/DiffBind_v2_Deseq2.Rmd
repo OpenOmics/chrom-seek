@@ -1,18 +1,22 @@
 ---
 title: "DiffBind: chrom-seek pipeline"
 output: 
-    html_document:
-        toc: true
-        toc_float:
-           collapsed: false
-        number_sections: true
-        toc_depth: 3
-        fig_width: 7
-        fig_height: 6
+   html_document:
+      toc: true
+      toc_float:
+         collapsed: false
+      number_sections: true
+      toc_depth: 3
+      fig_width: 7
+      fig_height: 6
 params:
-    csvfile: samplesheet.csv
-    contrasts: "group1_vs_group2"
-    peakcaller: "macsNarrow"
+   csvfile: samplesheet.csv
+   contrasts: "group1_vs_group2"
+   peakcaller: "macsNarrow"
+   counts: ""
+   up_file: ""
+   down_file: ""
+   list_file: ""
 ---
 
 <style type="text/css">
@@ -29,16 +33,9 @@ outbase <- dirname(csvfile)
 contrasts <- params$contrasts
 peakcaller <- params$peakcaller
 peak_counts <- params$counts
-```
-
-# file output suffixes
-cp_bed <- "_Diffbind_consensusPeaks.bed"
-edger_txt <- "_Diffbind_EdgeR.txt"
-deseq2_txt <- "_Diffbind_Deseq2.txt"
-edger_bed <- "_Diffbind_EdgeR.bed"
-deseq2_bed <- "_Diffbind_Deseq2.bed"
-deseq2_bed_fullist <- "_Diffbind_Deseq2_fullList.txt"
-edger_bed_fullist <- "_Diffbind_EdgeR_fullList.txt"
+up_file <- params$up_file
+down_file <- params$down_file
+list_file <- params$counts
 
 # knitr options
 knitr::opts_chunk$set(echo = FALSE, include=TRUE, message=FALSE, warning=FALSE, error=FALSE)
@@ -59,9 +56,6 @@ suppressMessages(library(parallel))
 # Peak Data
 Read in sample sheet information and peak information
 ```{r samples}
-up_file <- "_Diffbind_Deseq2_up.bed"
-down_file <- "_Diffbind_Deseq2_down.bed"
-full_list <- "_Diffbind_Deseq2_fullList.bed" 
 samples <- dba(sampleSheet=csvfile)
 consensus <- dba.peakset(samples,consensus=DBA_CONDITION)
 print(samples)
@@ -121,19 +115,19 @@ print(DBdataCounts)
 ## Correlation heatmap: Peaks and reads
 Pearson correlation of library-size normalized counts of consensus peaks: all samples versus all samples
 ```{r heatmap2}
-try(dba.plotHeatmap(DBdataCounts,main="",cexRow=1,cexCol=1),silent=TRUE)
+dba.plotHeatmap(DBdataCounts, main="", cexRow=1, cexCol=1)
 ```
 
 ## Heatmap: Average signal across each peak
 1000 most variable consensus peaks (library-size normalized counts)
 ```{r heatmap3}
-try(dba.plotHeatmap(DBdataCounts,correlations=FALSE,cexRow=1,cexCol=1),silent=TRUE)
+dba.plotHeatmap(DBdataCounts, correlations=FALSE, cexRow=1, cexCol=1)
 ```
 
 ## PCA: Peaks and reads
 Variation of library-size normalized counts of consensus peaks
 ```{r PCA2, fig.height=5,fig.width=5}
-try(dba.plotPCA(DBdataCounts,DBA_CONDITION),silent=TRUE)
+dba.plotPCA(DBdataCounts, DBA_CONDITION)
 ```
 
 # Set Up Contrast
@@ -155,7 +149,7 @@ DBReportDeseq2 <- dba.report(DBAnalysisDeseq2, method = DBA_DESEQ2)
 Variance of differential peaks only
 
 ```{r PCA3, fig.height=5,fig.width=5}
-try(dba.plotPCA(DBAnalysisDeseq2, contrast=1, method= DBA_DESEQ2),silent=TRUE)
+dba.plotPCA(DBAnalysisDeseq2, contrast=1, method= DBA_DESEQ2)
 ```
 
 ## MA plot
@@ -163,14 +157,14 @@ try(dba.plotPCA(DBAnalysisDeseq2, contrast=1, method= DBA_DESEQ2),silent=TRUE)
 Each dot is a consensus peak.
 
 ```{r MA_D}
-try(dba.plotMA(DBAnalysisDeseq2, method = DBA_DESEQ2),silent=TRUE)
+dba.plotMA(DBAnalysisDeseq2, method = DBA_DESEQ2)
 ```
 
 ## Volcano plot
 Each dot is a consensus peak.
 
 ```{r Volcano1}
-try(dba.plotVolcano(DBAnalysisDeseq2, method = DBA_DESEQ2),silent=TRUE)
+dba.plotVolcano(DBAnalysisDeseq2, method = DBA_DESEQ2)
 ```
 
 
@@ -178,38 +172,33 @@ try(dba.plotVolcano(DBAnalysisDeseq2, method = DBA_DESEQ2),silent=TRUE)
 1000 most significant differential peaks (Deseq2 or EdgeR normalized)
 
 ```{r heatmap4D}
-try(dba.plotHeatmap(DBAnalysisDeseq2,contrast=1,method = DBA_DESEQ2,correlations=FALSE,margin=20,cexRow=1,cexCol=1),silent=TRUE)
+dba.plotHeatmap(DBAnalysisDeseq2,contrast=1,method = DBA_DESEQ2,correlations=FALSE,margin=20,cexRow=1,cexCol=1)
 ```
 
 ## Top 500 or less differentially bound peaks 
-
 ```{r Deseq2Report}
-outfile <- paste0(contrasts, "-", peakcaller, deseq2_txt)
-outfile2 <- paste0(contrasts, "-", peakcaller, deseq2_bed)
-DBReportDeseq2$name <- paste0("Peak",1:length(DBReportDeseq2))
+UpPeaks <- DBReportDeseq2[which(DBReportDeseq2$Fold > 0)]
+rtracklayer::export(UpPeaks, up_file)
 
-tryDeseqExport <- function(DBReportDeseq2, outfile2) {
-   tryCatch(
-      {
-         rtracklayer::export(DBReportDeseq2, outfile2)
-      },
-      error = function(cond) {
-         print("ERROR: Failed to export DeSeq bed file `rtracklayer::export(DBReportDeseq2, outfile2)`, output blank file")
-         write.table(outfile2, file='empty', col.names=FALSE)
-      }
-   )
-}
+DownPeaks <- DBReportDeseq2[which(DBReportDeseq2$Fold < 0)]
+rtracklayer::export(DownPeaks, down_file)
 
-tryDeseqExport(DBReportDeseq2, file.path(outbase, outfile2))
-write.table(DBReportDeseq2, file.path(outbase, outfile), quote=F, sep="\t", row.names=F)
 D2i <- length(DBReportDeseq2)
-i <- as.integer(min(c(500, as.integer(max(c(D2i, 1)))))
-try(DT::datatable(data.frame(DBReportDeseq2)[1:i,], rownames=F),silent=TRUE)
+i <- as.integer(min(c(500, as.integer(max(c(D2i, 1))))))
+DT::datatable(data.frame(DBReportDeseq2)[1:i,], rownames=F)
 
-report2 <- dba.report(DBAnalysisDeseq2,method = DBA_DESEQ2,th=100,bNormalized=T,bFlip=FALSE,precision=0,bCalled=T)
-outfile3 <- paste0(contrasts, "-", peakcaller, full_list)
-write.table(report2, outfile3, quote=F, sep="\t", row.names=F)
+report2 <- dba.report(
+               DBAnalysisDeseq2,
+               method = DBA_DESEQ2,
+               th=100,
+               bNormalized=T,
+               bFlip=FALSE,
+               precision=0,
+               bCalled=T
+            )
+write.table(report2, list_file, quote=F, sep="\t", row.names=F)
 ```
+
 
 
 ## R tool version information

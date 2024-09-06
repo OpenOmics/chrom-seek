@@ -14,6 +14,10 @@ params:
     csvfile: samplesheet.csv
     contrasts: "group1_vs_group2"
     peakcaller: "macsNarrow"
+    counts: ""
+    down_file: ""
+    up_file: ""
+    list_file: ""
 ---
 
 <style type="text/css">
@@ -24,12 +28,16 @@ params:
 
 ```{r, include=FALSE, warning=FALSE, message=FALSE}
 ## grab args
-dateandtime<-format(Sys.time(), "%a %b %d %Y - %X")
+dateandtime <- format(Sys.time(), "%a %b %d %Y - %X")
 
+# file output suffixes
 csvfile <- params$csvfile
 contrasts <- params$contrasts
 peakcaller <- params$peakcaller
 peak_counts <- params$counts
+down_file <- params$down_file
+up_file <- params$up_file
+list_file <- params$list_file
 ```
 
 **Groups being compared:**
@@ -49,22 +57,21 @@ suppressMessages(library(parallel))
 # Peak Data
 Read in sample sheet information and peak information
 ```{r samples}
-full_list <- "_Diffbind_EdgeRblock_fullList.bed"
 samples <- dba(sampleSheet=csvfile)
-consensus <- dba.peakset(samples,consensus=DBA_CONDITION)
+consensus <- dba.peakset(samples, consensus=DBA_CONDITION)
 print(samples)
 ```
 
 ## Correlation heatmap: Only peaks
 Pearson correlation of peak positions: all samples versus all samples  
 ```{r heatmap1}
-try(dba.plotHeatmap(samples,main="",cexRow=1,cexCol=1),silent=TRUE)
+dba.plotHeatmap(samples, main="", cexRow=1, cexCol=1)
 ```
 
 ## PCA: Only peaks
 Variance of peak positions  
 ```{r PCA1, fig.height=5,fig.width=5}
-try(dba.plotPCA(samples,DBA_CONDITION),silent=TRUE)
+dba.plotPCA(samples, DBA_CONDITION)
 ```
 
 ## Overlapping peak counts
@@ -74,11 +81,11 @@ the consensus peak set are the peaks identified in at least 2 samples for that c
 from the consensus peak set used for differential analyses.
 ```{r Venn, fig_height=4}
 if (nrow(samples$samples) < 5) {
-   dba.plotVenn(samples,1:nrow(samples$samples)) 
+   dba.plotVenn(samples, 1:nrow(samples$samples)) 
 } else {
-   dba.plotVenn(consensus,consensus$masks$Consensus,main="Binding Site Overlaps: 'consensus', comparing between groups")
-   try(dba.plotVenn(samples,samples$masks[[3]],main="Binding Site Overlaps: samples in Group1"),silent=TRUE)
-   try(dba.plotVenn(samples,samples$masks[[4]],main="Binding Site Overlaps: samples in Group2"),silent=TRUE)
+   dba.plotVenn(consensus, consensus$masks$Consensus, main="Binding Site Overlaps: 'consensus', comparing between groups")
+   dba.plotVenn(samples,samples$masks[[3]], main="Binding Site Overlaps: samples in Group1")
+   dba.plotVenn(samples,samples$masks[[4]], main="Binding Site Overlaps: samples in Group2")
 }
 ```
 
@@ -98,32 +105,34 @@ if ( peakcaller == "macsNarrow" ) {
 ```
 
 ```{r DBcount}
-DBdataCounts <- readRDS(file = peak_counts)
+DBdataCounts <- readRDS(peak_counts)
 print(DBdataCounts)
 ```
 
 ## Correlation heatmap: Peaks and reads
 Pearson correlation of library-size normalized counts of consensus peaks: all samples versus all samples
 ```{r heatmap2}
-try(dba.plotHeatmap(DBdataCounts,main="",cexRow=1,cexCol=1),silent=TRUE)
+dba.plotHeatmap(DBdataCounts,main="",cexRow=1,cexCol=1)
 ```
 
 ## Heatmap: Average signal across each peak
 1000 most variable consensus peaks (library-size normalized counts)
 ```{r heatmap3}
-try(dba.plotHeatmap(DBdataCounts,correlations=FALSE,cexRow=1,cexCol=1),silent=TRUE)
+dba.plotHeatmap(DBdataCounts,correlations=FALSE,cexRow=1,cexCol=1)
 ```
 
 ## PCA: Peaks and reads
 Variation of library-size normalized counts of consensus peaks
 ```{r PCA2, fig.height=5,fig.width=5}
-try(dba.plotPCA(DBdataCounts,DBA_CONDITION),silent=TRUE)
+dba.plotPCA(DBdataCounts, DBA_CONDITION)
 ```
 
 # Set Up Contrast
 Contrast is Group1 - Group2.
 ```{r contrast}
-DBdatacontrast <- dba.contrast(DBdataCounts, minMembers=2, categories = DBA_CONDITION,
+DBdatacontrast <- dba.contrast(DBdataCounts, 
+                               minMembers=2, 
+                               categories=DBA_CONDITION,
 							   block=DBA_TREATMENT)
 print(DBdatacontrast)
 ```
@@ -132,15 +141,15 @@ print(DBdatacontrast)
 All concentrations are on log2 scale.
 
 ```{r analyze}
-DBAnalysisEdgeR <- dba.analyze(DBdatacontrast, method = DBA_EDGER)
-DBReportEdgeR <- dba.report(DBAnalysisEdgeR, method = DBA_EDGER_BLOCK)
+DBAnalysisEdgeR <- dba.analyze(DBdatacontrast, method=DBA_EDGER)
+DBReportEdgeR <- dba.report(DBAnalysisEdgeR, method=DBA_EDGER_BLOCK)
 ```
 
 ## PCA
 Variance of differential peaks only
 
 ```{r PCA3, fig.height=5,fig.width=5}
-try(dba.plotPCA(DBAnalysisEdgeR, contrast=1, method= DBA_EDGER_BLOCK),silent=TRUE)
+dba.plotPCA(DBAnalysisEdgeR, contrast=1, method=DBA_EDGER_BLOCK)
 ```
 
 ## MA plot
@@ -148,14 +157,14 @@ try(dba.plotPCA(DBAnalysisEdgeR, contrast=1, method= DBA_EDGER_BLOCK),silent=TRU
 Each dot is a consensus peak.
 
 ```{r MA_D}
-try(dba.plotMA(DBAnalysisEdgeR, method = DBA_EDGER_BLOCK),silent=TRUE)
+dba.plotMA(DBAnalysisEdgeR, method=DBA_EDGER_BLOCK)
 ```
 
 ## Volcano plot
 Each dot is a consensus peak.
 
 ```{r Volcano1}
-try(dba.plotVolcano(DBAnalysisEdgeR, method = DBA_EDGER_BLOCK),silent=TRUE)
+dba.plotVolcano(DBAnalysisEdgeR, method=DBA_EDGER_BLOCK)
 ```
 
 
@@ -163,14 +172,20 @@ try(dba.plotVolcano(DBAnalysisEdgeR, method = DBA_EDGER_BLOCK),silent=TRUE)
 1000 most significant differential peaks
 
 ```{r heatmap4D}
-try(dba.plotHeatmap(DBAnalysisEdgeR,contrast=1,method = DBA_EDGER_BLOCK,correlations=FALSE,margin=20,cexRow=1,cexCol=1),silent=TRUE)
+dba.plotHeatmap(DBAnalysisEdgeR, contrast=1, method=DBA_EDGER_BLOCK, correlations=FALSE, margin=20, cexRow=1, cexCol=1)
 ```
 
 ## Top 500 or less differentially bound peaks 
 
 ```{r EdgeRReport}
+UpPeaks <- DBReportEdgeR[which(DBReportEdgeR$Fold > 0)]
+try(rtracklayer::export(UpPeaks, up_file),silent=TRUE)
+
+DownPeaks <- DBReportEdgeR[which(DBReportEdgeR$Fold < 0)]
+try(rtracklayer::export(DownPeaks, down_file),silent=TRUE)
+
 D2i <- length(DBReportEdgeR)
-i <- as.integer(min(c(500, as.integer(max(c(D2i, 1)))))
+i <- as.integer(min(c(500, as.integer(max(c(D2i, 1))))))
 try(DT::datatable(data.frame(DBReportEdgeR)[1:i,], rownames=F),silent=TRUE)
 
 report2 <- dba.report(
@@ -182,9 +197,8 @@ report2 <- dba.report(
                precision=0,
                bCalled=T
            )
-write.table(report2, full_list, quote=F, sep="\t", row.names=F)
+write.table(report2, list_file, quote=F, sep="\t", row.names=F)
 ```
-
 
 ## R tool version information
 ```{r Info}

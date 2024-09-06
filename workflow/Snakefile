@@ -147,7 +147,10 @@ if assay == "cfchip":
         # ))
 
 elif assay in ["atac", "chip"]:
-    peak_types.extend(["prot", "protSEC", "genes"])
+    # turn off other peak types for now
+    # if assay in ["atac", "chip"]:   
+    #     peak_types.extend(["prot", "protSEC", "genes"])
+    #     peak_types = list(set(peak_types))
     # meme outputs turned off for now
     # if has_inputs:
     #     rule_all_ins.extend(expand(join(MEME_dir, "{PeakTool}", "{name}_meme", "meme-chip.html"), PeakTool=PeakTools, name=chips))
