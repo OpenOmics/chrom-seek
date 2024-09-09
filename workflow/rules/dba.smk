@@ -1,7 +1,6 @@
 # Differential binding analysis rules
 # ~~~~
 import os
-import json
 from os.path import join
 from textwrap import dedent
 from scripts.common import allocated, mk_dir_if_not_exist
@@ -390,7 +389,7 @@ rule diffbind_edger_blocking:
         #!/bin/bash
         Rscript -e 'rmarkdown::render("{params.blocking_rscript}", output_file="{output.diffbind_block_report}",
             params=list(csvfile="{input.csvfile}", peakcaller="{params.this_peaktool}", list_file="{output.full_list}",
-            contrasts="{params.this_contrast}", counts="{input.peak_counts}"))'
+            up_file="{output.up_file}", down_file="{output.down_file}", contrasts="{params.this_contrast}", counts="{input.peak_counts}"))'
         EOF
 
         chmod +x ${{tmp}}/rscript.sh
@@ -407,12 +406,25 @@ rule UROPA_prep_in:
         lambda w: join(workpath, w.PeakTool1, w.name, w.name + PeakExtensions[w.PeakTool2])
     params:
         fldr                            = join(uropa_dir, "{PeakTool1}"),
+    log:
+        join(uropa_dir, "{PeakTool1}", "{name}.{PeakTool2}.log")
     output:
         json                            = [
-                                            join(uropa_dir, "{PeakTool1}", "{name}.{PeakTool2}."+pktype+".json") \
-                                            for pktype in peak_types
+                                            join(
+                                                uropa_dir, 
+                                                "{PeakTool1}", 
+                                                "{name}.{PeakTool2}."+pktype+".json"
+                                            ) for pktype in peak_types
+                                          ],
+        reformat_bed                    = [
+                                            join(
+                                                uropa_dir, 
+                                                "{PeakTool1}", 
+                                                "{name}_{PeakTool2}_uropa_"+pktype+"_input.bed"
+                                            ) for pktype in peak_types
                                           ],
     run:
+        import json, csv
         # Dynamically creates UROPA config file
         if not os.path.exists(params.fldr): 
             os.mkdir(params.fldr, mode=0o775)
@@ -426,13 +438,31 @@ rule UROPA_prep_in:
 
         assert len(input) == len(peak_types)
 
-        for peak_type in peak_types:
+        for i, peak_type in enumerate(peak_types):
             json_construct = dict()
             json_construct['queries'] = []
             json_construct['show_attributes'] = ["gene_id", "gene_name", "gene_type"]
             json_construct["priority"] = "Yes"
             json_construct['gtf'] = gtf
-            json_construct['bed'] = input[0]
+            
+            # reformat to standard bed
+            rdr = csv.DictReader(input[i], delimiter='\t')
+            csv_map = {
+                'seqnames': 'chr',
+                'start': 'start',
+                'end': 'stop',
+                'strand': 'strand'
+            }
+            newbed = []
+            for row in rdr:
+                row = {csv_map[k.lower()]: v for k, v in row.items() if k.lower() in csv_map}
+                newbed.append(row)
+            with open(output.reformat_bed[i], 'w') as fo:
+                wrt = csv.DictWriter(fo, fieldnames=csv_map.values())
+                # wrt.writeheader() # bed file wo header row
+                wrt.writerows(newbed)
+            json_construct['bed'] = output.reformat_bed[i]
+
             if assay == 'cfchip':
                 if peak_type == 'protTSS':
                     for _d in (3000, 10000, 100000):
@@ -477,18 +507,18 @@ rule UROPA_prep_in:
                         this_q['distance'] = _d
                         json_construct['queries'].append(this_q)
 
-            with open(output.json[peak_types.index(peak_type)], 'w') as jo:
+            with open(output.json[i], 'w') as jo:
                 json.dump(json_construct, jo, indent=4)
                 jo.close()
 
-            if not os.path.exists(output.json[peak_types.index(peak_type)]):
-                raise FileNotFoundError(output.json[peak_types.index(peak_type)] + " does not exist!")
+            if not os.path.exists(output.json[i]):
+                raise FileNotFoundError(output.json[i] + " does not exist!")
 
 
 
 rule UROPA:
     input:
-        json                            = join(uropa_dir, "{PeakTool1}", "{name}.{PeakTool2}.{_type}.json"),
+        this_json                       = join(uropa_dir, "{PeakTool1}", "{name}.{PeakTool2}.{_type}.json"),
     output:
         txt                             = join(
                                             uropa_dir, 
@@ -509,10 +539,10 @@ rule UROPA:
     params:
         rname                           = "uropa",
         outroot                         = join(uropa_dir, "{PeakTool1}", "{name}_{PeakTool2}_uropa_{_type}"),
-    threads:  int(allocated("threads", "UROPA", cluster))
+    threads: int(allocated("threads", "UROPA", cluster))
     container:
         config["images"]["uropa"]
     shell:
         """
-        uropa -i {input.json} -p {params.outroot} -l {output.log} -t {threads} -s
+        uropa -i {input.this_json} -p {params.outroot} -l {output.log} -t {threads} -s
         """

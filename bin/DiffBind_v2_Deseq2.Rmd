@@ -29,13 +29,12 @@ params:
 # inputs
 dateandtime <- format(Sys.time(), "%a %b %d %Y - %X")
 csvfile <- params$csvfile
-outbase <- dirname(csvfile)
 contrasts <- params$contrasts
 peakcaller <- params$peakcaller
 peak_counts <- params$counts
 up_file <- params$up_file
 down_file <- params$down_file
-list_file <- params$counts
+list_file <- params$list_file
 
 # knitr options
 knitr::opts_chunk$set(echo = FALSE, include=TRUE, message=FALSE, warning=FALSE, error=FALSE)

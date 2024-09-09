@@ -42,11 +42,6 @@ DBdataCounts <- dba.count(samples, summits=summits_arg, bParallel=T)
 
 # save counts
 saveRDS(DBdataCounts, counts)
-cp_cmd <- paste("cp ", counts, " /data/OpenOmics/dev/datasets/outputs/w_blocking/")
-print(cp_cmd)
-system(cp_cmd, wait=TRUE)
-head <- system(paste("head ", counts), wait=TRUE)
-print(head)
 
 # save peaklist
 consensus <- dba.peakset(DBdataCounts, bRetrieve=T)

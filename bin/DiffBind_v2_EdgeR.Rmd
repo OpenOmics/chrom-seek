@@ -145,7 +145,7 @@ DBReportEdgeR <- dba.report(DBAnalysisEdgeR, method = DBA_EDGER)
 Variance of differential peaks only
 
 ```{r PCA3, fig.height=5,fig.width=5}
-dba.plotPCA(DBAnalysisEdgeR, contrast=1, method=DBA_EdgeR)
+dba.plotPCA(DBAnalysisEdgeR, contrast=1, method=DBA_EDGER)
 ```
 
 ## MA plot
@@ -153,14 +153,14 @@ dba.plotPCA(DBAnalysisEdgeR, contrast=1, method=DBA_EdgeR)
 Each dot is a consensus peak.
 
 ```{r MA_D}
-dba.plotMA(DBAnalysisEdgeR, method=DBA_EdgeR)
+dba.plotMA(DBAnalysisEdgeR, method=DBA_EDGER)
 ```
 
 ## Volcano plot
 Each dot is a consensus peak.
 
 ```{r Volcano1}
-dba.plotVolcano(DBAnalysisEdgeR, method=DBA_EdgeR)
+dba.plotVolcano(DBAnalysisEdgeR, method=DBA_EDGER)
 ```
 
 
@@ -168,7 +168,7 @@ dba.plotVolcano(DBAnalysisEdgeR, method=DBA_EdgeR)
 1000 most significant differential peaks (EdgeR or EdgeR normalized)
 
 ```{r heatmap4D}
-dba.plotHeatmap(DBAnalysisEdgeR, contrast=1, method=DBA_EdgeR, correlations=FALSE, margin=20, cexRow=1, cexCol=1)
+dba.plotHeatmap(DBAnalysisEdgeR, contrast=1, method=DBA_EDGER, correlations=FALSE, margin=20, cexRow=1, cexCol=1)
 ```
 
 ## Top 500 or less differentially bound peaks 
@@ -186,7 +186,7 @@ DT::datatable(data.frame(DBReportEdgeR)[1:i,], rownames=F)
 
 report2 <- dba.report(
                DBAnalysisEdgeR,
-               method = DBA_EdgeR,
+               method = DBA_EDGER,
                th=100,
                bNormalized=T,
                bFlip=FALSE,

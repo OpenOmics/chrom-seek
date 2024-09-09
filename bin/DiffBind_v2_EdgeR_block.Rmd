@@ -179,14 +179,18 @@ dba.plotHeatmap(DBAnalysisEdgeR, contrast=1, method=DBA_EDGER_BLOCK, correlation
 
 ```{r EdgeRReport}
 UpPeaks <- DBReportEdgeR[which(DBReportEdgeR$Fold > 0)]
-try(rtracklayer::export(UpPeaks, up_file),silent=TRUE)
+print("up ")
+print(dim(UpPeaks))
+rtracklayer::export(UpPeaks, up_file)
 
 DownPeaks <- DBReportEdgeR[which(DBReportEdgeR$Fold < 0)]
-try(rtracklayer::export(DownPeaks, down_file),silent=TRUE)
+print("down ")
+print(dim(DownPeaks))
+rtracklayer::export(DownPeaks, down_file)
 
 D2i <- length(DBReportEdgeR)
 i <- as.integer(min(c(500, as.integer(max(c(D2i, 1))))))
-try(DT::datatable(data.frame(DBReportEdgeR)[1:i,], rownames=F),silent=TRUE)
+DT::datatable(data.frame(DBReportEdgeR)[1:i,], rownames=F)
 
 report2 <- dba.report(
                DBAnalysisEdgeR,
