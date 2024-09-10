@@ -409,7 +409,7 @@ rule UROPA_prep_in:
     log:
         join(uropa_dir, "{PeakTool1}", "{name}.{PeakTool2}.log")
     output:
-        json                            = [
+        this_json                       = [
                                             join(
                                                 uropa_dir, 
                                                 "{PeakTool1}", 
@@ -425,10 +425,19 @@ rule UROPA_prep_in:
                                           ],
     run:
         import json, csv
-        # Dynamically creates UROPA config file
         if not os.path.exists(params.fldr): 
             os.mkdir(params.fldr, mode=0o775)
-
+        csv_map = {
+            'seqnames': 'chr',
+            'start': 'start',
+            'end': 'stop',
+            'strand': 'strand'
+        }
+        bed_map = {
+            0: 'chr',
+            1: 'start',
+            2: 'stop',
+        }
         base_query = {
             "feature": "gene",
             "filter.attribute": "gene_type",
@@ -436,8 +445,7 @@ rule UROPA_prep_in:
             "feature.anchor": "start" 
         }
 
-        assert len(input) == len(peak_types)
-
+        assert len(input) == len(peak_types), 'Unequal # of inputs and peak types, something wrong!'
         for i, peak_type in enumerate(peak_types):
             json_construct = dict()
             json_construct['queries'] = []
@@ -446,17 +454,19 @@ rule UROPA_prep_in:
             json_construct['gtf'] = gtf
             
             # reformat to standard bed
-            rdr = csv.DictReader(input[i], delimiter='\t')
-            csv_map = {
-                'seqnames': 'chr',
-                'start': 'start',
-                'end': 'stop',
-                'strand': 'strand'
-            }
+            sniff = open(input[i]).read(len('seqnames'))
+            rdr = csv.DictReader(open(input[i]), delimiter='\t')
             newbed = []
             for row in rdr:
-                row = {csv_map[k.lower()]: v for k, v in row.items() if k.lower() in csv_map}
-                newbed.append(row)
+                # two different formats for bed file input 
+                # need to back up somewhere see if theres an upstream method for 
+                # fixing the discrepancy of formatting
+                if sniff == 'seqnames':
+                    # diff bind format
+                    row = {csv_map[k.lower()]: v for k, v in row.items() if k.lower() in csv_map}
+                else:
+                    # ?? format
+                    row = {bed_map[i]: v for i, (k, v) in enumerate(row.items()) if i < 3}
             with open(output.reformat_bed[i], 'w') as fo:
                 wrt = csv.DictWriter(fo, fieldnames=csv_map.values())
                 # wrt.writeheader() # bed file wo header row
@@ -507,13 +517,9 @@ rule UROPA_prep_in:
                         this_q['distance'] = _d
                         json_construct['queries'].append(this_q)
 
-            with open(output.json[i], 'w') as jo:
+            with open(output.this_json[i], 'w') as jo:
                 json.dump(json_construct, jo, indent=4)
                 jo.close()
-
-            if not os.path.exists(output.json[i]):
-                raise FileNotFoundError(output.json[i] + " does not exist!")
-
 
 
 rule UROPA:
