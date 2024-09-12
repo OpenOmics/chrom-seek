@@ -51,10 +51,10 @@ PeakExtensions = {
     "sicer": "_broadpeaks.bed",
     "gem": ".GEM_events.narrowPeak",
     "MANorm": "_all_MA.bed",
-    "DiffbindEdgeR": "_Diffbind_EdgeR_full_list.txt",
-    "DiffbindDeseq2": "_Diffbind_Deseq2_full_list.txt",
-    "DiffbindEdgeRBlock": "_Diffbind_block_EdgeR_full_list.txt",
-    "DiffbindDeseq2Block": "_Diffbind_block_Deseq2_full_list.txt",
+    "DiffbindEdgeR": "_Diffbind_fullList.bed",
+    "DiffbindDeseq2": "_Diffbind_fullList.bed",
+    "DiffbindEdgeRBlock": "_Diffbind_fullList.bed",
+    "DiffbindDeseq2Block": "_Diffbind_fullList.bed",
     "Genrich": ".narrowPeak",
     "DiffBindQC": "_DiffBindQC_TMMcounts.bed",
 }
@@ -424,20 +424,6 @@ rule UROPA_prep_in:
                                             ) for pktype in peak_types
                                           ],
     run:
-        import json, csv
-        if not os.path.exists(params.fldr): 
-            os.mkdir(params.fldr, mode=0o775)
-        csv_map = {
-            'seqnames': 'chr',
-            'start': 'start',
-            'end': 'stop',
-            'strand': 'strand'
-        }
-        bed_map = {
-            0: 'chr',
-            1: 'start',
-            2: 'stop',
-        }
         base_query = {
             "feature": "gene",
             "filter.attribute": "gene_type",
@@ -445,33 +431,13 @@ rule UROPA_prep_in:
             "feature.anchor": "start" 
         }
 
-        assert len(input) == len(peak_types), 'Unequal # of inputs and peak types, something wrong!'
         for i, peak_type in enumerate(peak_types):
             json_construct = dict()
             json_construct['queries'] = []
             json_construct['show_attributes'] = ["gene_id", "gene_name", "gene_type"]
             json_construct["priority"] = "Yes"
             json_construct['gtf'] = gtf
-            
-            # reformat to standard bed
-            sniff = open(input[i]).read(len('seqnames'))
-            rdr = csv.DictReader(open(input[i]), delimiter='\t')
-            newbed = []
-            for row in rdr:
-                # two different formats for bed file input 
-                # need to back up somewhere see if theres an upstream method for 
-                # fixing the discrepancy of formatting
-                if sniff == 'seqnames':
-                    # diff bind format
-                    row = {csv_map[k.lower()]: v for k, v in row.items() if k.lower() in csv_map}
-                else:
-                    # ?? format
-                    row = {bed_map[i]: v for i, (k, v) in enumerate(row.items()) if i < 3}
-            with open(output.reformat_bed[i], 'w') as fo:
-                wrt = csv.DictWriter(fo, fieldnames=csv_map.values())
-                # wrt.writeheader() # bed file wo header row
-                wrt.writerows(newbed)
-            json_construct['bed'] = output.reformat_bed[i]
+            json_construct['bed'] = input[0]
 
             if assay == 'cfchip':
                 if peak_type == 'protTSS':
