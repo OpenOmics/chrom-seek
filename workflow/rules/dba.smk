@@ -51,10 +51,10 @@ PeakExtensions = {
     "sicer": "_broadpeaks.bed",
     "gem": ".GEM_events.narrowPeak",
     "MANorm": "_all_MA.bed",
-    "DiffbindEdgeR": "_Diffbind_fullList.bed",
-    "DiffbindDeseq2": "_Diffbind_fullList.bed",
-    "DiffbindEdgeRBlock": "_Diffbind_fullList.bed",
-    "DiffbindDeseq2Block": "_Diffbind_fullList.bed",
+    "DiffbindEdgeR": "_DiffbindEdgeR_fullList.bed",
+    "DiffbindDeseq2": "_DiffbindDeseq2_fullList.bed",
+    "DiffbindEdgeRBlock": "_DiffbindEdgeRBlock_fullList.bed",
+    "DiffbindDeseq2Block": "_DiffbindDeseq2Block_fullList.bed",
     "Genrich": ".narrowPeak",
     "DiffBindQC": "_DiffBindQC_TMMcounts.bed",
 }
@@ -87,7 +87,7 @@ zipSample, zipTool, zipExt = zip_peak_files(chips, PeakTools, PeakExtensions)
 contrastBlock = test_for_block(groupdata, contrast, blocks)
 zipGroup1B, zipGroup2B, zipToolCB, contrastsB = zip_contrasts(contrastBlock, PeakTools)
 
-localrules: UROPA_prep_in
+localrules: UROPA_prep_in_db, UROPA_prep_in_macs
 
 
 # ~~ rules
@@ -391,91 +391,61 @@ rule diffbind_edger_blocking:
         """)
 
 
-rule UROPA_prep_in:
+rule UROPA_prep_in_db:
     input:
-        lambda w: join(workpath, w.PeakTool1, w.name, w.name + PeakExtensions[w.PeakTool2])
+        join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}_Diffbind_fullList.bed"),
     params:
-        fldr                            = join(uropa_dir, "{PeakTool1}"),
-    log:
-        join(uropa_dir, "{PeakTool1}", "{name}.{PeakTool2}.log")
+        this_script                     = join(bin_path, "uropa_input.py"),
+        this_gtf                        = gtf,
+        this_assay                      = assay,
+        peak_types                      = ' '.join(peak_types),
     output:
         this_json                       = [
                                             join(
                                                 uropa_dir, 
                                                 "{PeakTool1}", 
-                                                "{name}.{PeakTool2}."+pktype+".json"
+                                                "{name}.{group1}_vs_{group2}."+pktype+".json"
                                             ) for pktype in peak_types
                                           ],
-        reformat_bed                    = [
+    shell:
+        dedent("""
+        {params.this_script} \\
+            -g {params.this_gtf} \\
+            -o {output.this_json} \\
+            -a {params.assay} \\
+            -t {params.peak_types}
+        """)
+
+
+rule UROPA_prep_in_macs:
+    input:
+        # join(macsN_dir, "{name}", "{name}_peaks.narrowPeak"),
+        # join(macsB_dir, "{name}", "{name}_peaks.broadPeak"),
+        # macsN_dir                       = join(workpath, "macsNarrow")
+        # macsB_dir                       = join(workpath, "macsBroad")
+        join(macsN_dir, "{pname}", "{pname}_peaks.narrowPeak"),
+    params:
+        this_script                     = join(bin_path, "uropa_input.py"),
+        this_gtf                        = gtf,
+        this_assay                      = assay,
+        peak_types                      = ' '.join(peak_types),
+    output:
+        this_json                       = [
                                             join(
                                                 uropa_dir, 
-                                                "{PeakTool1}", 
-                                                "{name}_{PeakTool2}_uropa_"+pktype+"_input.bed"
+                                                "macsNarrow", 
+                                                "{pname}."+pktype+".json"
                                             ) for pktype in peak_types
                                           ],
-    run:
-        base_query = {
-            "feature": "gene",
-            "filter.attribute": "gene_type",
-            "attribute.value": "protein_coding", 
-            "feature.anchor": "start" 
-        }
-
-        for i, peak_type in enumerate(peak_types):
-            json_construct = dict()
-            json_construct['queries'] = []
-            json_construct['show_attributes'] = ["gene_id", "gene_name", "gene_type"]
-            json_construct["priority"] = "Yes"
-            json_construct['gtf'] = gtf
-            json_construct['bed'] = input[0]
-
-            if assay == 'cfchip':
-                if peak_type == 'protTSS':
-                    for _d in (3000, 10000, 100000):
-                        this_q = base_query.copy()
-                        this_q['distance'] = _d
-                        json_construct['queries'].append(this_q)
-            else:
-                if peak_type == 'prot':
-                    for _d in (5000, 100000):
-                        this_q = base_query.copy()
-                        del this_q["feature.anchor"]
-                        this_q['distance'] = _d
-                        json_construct['queries'].append(this_q)
-                elif peak_type == 'genes':
-                    this_query = {}
-                    this_query['feature'] = 'gene'
-                    for _d in (5000, 100000):
-                        this_q = base_query.copy()
-                        del this_q["feature.anchor"]
-                        del this_q["filter.attribute"]
-                        del this_q["attribute.value"]
-                        this_q['distance'] = _d
-                        json_construct['queries'].append(this_q)
-                elif peak_type == 'protSEC':
-                    # distance, feature.anchor
-                    query_values = (
-                        ([3000, 1000], "start"), 
-                        (3000,         "end"), 
-                        (100000,       "center"), 
-                        (100000,       None)
-                    )
-                    for _distance, feature_anchor in query_values:
-                        this_q = base_query.copy()
-                        del this_q["feature.anchor"]
-                        if feature_anchor: 
-                            this_q["feature.anchor"] = feature_anchor
-                        this_q['distance'] = _distance
-                        json_construct['queries'].append(this_q)
-                elif peak_type == 'protTSS':
-                    for _d in ([3000, 1000], 10000, 100000):
-                        this_q = base_query.copy()
-                        this_q['distance'] = _d
-                        json_construct['queries'].append(this_q)
-
-            with open(output.this_json[i], 'w') as jo:
-                json.dump(json_construct, jo, indent=4)
-                jo.close()
+    shell:
+        dedent("""
+        {params.this_script} \\
+            -g {params.this_gtf} \\
+            -o {output.this_json} \\
+            -a {params.assay} \\
+            -t {params.peak_types}
+        """)
+        
 
 
 rule UROPA:
