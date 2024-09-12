@@ -353,16 +353,6 @@ rule diffbind_edger_blocking:
                                             "{group1}_vs_{group2}-{PeakTool}",
                                             "{group1}_vs_{group2}-{PeakTool}_Diffbind_blocking_EdgeR.html",
                                           ),
-        up_file                         = join(
-                                            diffbind_dir,
-                                            "{group1}_vs_{group2}-{PeakTool}",
-                                            "{group1}_vs_{group2}-{PeakTool}_Diffbind_block_EdgeR_up.bed",
-                                          ),
-        down_file                       = join(
-                                            diffbind_dir,
-                                            "{group1}_vs_{group2}-{PeakTool}",
-                                            "{group1}_vs_{group2}-{PeakTool}_Diffbind_block_EdgeR_down.bed",
-                                          ),
         full_list                       = join(
                                             diffbind_dir,
                                             "{group1}_vs_{group2}-{PeakTool}",
