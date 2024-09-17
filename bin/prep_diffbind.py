@@ -49,8 +49,7 @@ def main(group1, group2, peaktool, peakext, peakcaller, csvfile, wp, bam_dir):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Script to prepare the DiffBind input csv')
-    parser.add_argument('--g1', dest='group1', required=True, help='Name of the first group')
-    parser.add_argument('--g2', dest='group2', required=True, help='Name of the second group')
+    parser.add_argument('--con', dest='contrast', required=True, help='Contrast string in [GROUP1]_vs_[GROUP2] format')
     parser.add_argument('--wp', dest='wp', required=True, help='Full path of the working directory')
     parser.add_argument('--pt', dest='peaktool', required=True, 
                         help='Name of the the peak calling tool, also the directory where the peak file will be located')

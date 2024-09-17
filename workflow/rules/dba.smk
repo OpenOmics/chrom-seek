@@ -5,8 +5,9 @@ from os.path import join
 from textwrap import dedent
 from scripts.common import allocated, mk_dir_if_not_exist
 from scripts.peakcall import outputIDR, zip_peak_files, \
-    calc_effective_genome_fraction, get_manorm_sizes
+    calc_effective_genome_fraction, get_manorm_sizes, getMacChip
 from scripts.grouping import test_for_block
+from itertools import combinations
 
 
 # ~~ workflow configuration
@@ -18,7 +19,7 @@ groupdata                       = config["project"]["groups"]
 contrast                        = config["project"]["contrast"]
 uropaver                        = config["tools"]["UROPAVER"]
 gtf                             = config["references"][genome]["GTFFILE"]
-
+chips                           = config['project']['peaks']['chips']
 
 # ~~ directories
 diffbind_dir2                   = join(workpath, "DiffBind_block")
@@ -36,12 +37,15 @@ downstream_dir                  = join(workpath, "Downstream")
 otherDirs                       = [qc_dir, homer_dir, uropa_dir]
 cfTool_dir                      = join(workpath, "cfChIPtool")
 cfTool_subdir2                  = join(cfTool_dir, "BED", "H3K4me3")
-
+group_combos                    = []
+for (g1, g2) in list(combinations(config['project']['groups'].keys(), 2)):
+    group_combos.append(f"{g1}_vs_{g2}")
 
 # ~~ workflow switches
 blocking = False if set(blocks.values()) in ({None}, {""}) else True
 if reps == "yes": otherDirs.append(diffbind_dir)
 mk_dir_if_not_exist(PeakTools + otherDirs)
+
 
 # ~~ peak calling configuration and outputs
 PeakToolsNG = [tool for tool in PeakTools if tool != "gem"]
@@ -69,7 +73,7 @@ FileTypesDiffBind = {
 
 PeakExtensionsIDR = {
     "macsNarrow": "_peaks.narrowPeak",
-    "macsBroad": "_peaks.broadPeak",
+    "macsBroad": "",
     "sicer": "_sicer.broadPeak",
 }
 
@@ -87,70 +91,141 @@ zipSample, zipTool, zipExt = zip_peak_files(chips, PeakTools, PeakExtensions)
 contrastBlock = test_for_block(groupdata, contrast, blocks)
 zipGroup1B, zipGroup2B, zipToolCB, contrastsB = zip_contrasts(contrastBlock, PeakTools)
 
-localrules: UROPA_prep_in_db, UROPA_prep_in_macs
+localrules: UROPA_prep_in_db, UROPA_prep_in_macsN, UROPA_prep_in_macsB
 
 
 # ~~ rules
-rule diffbind_csv:
+rule diffbind_csv_macsB:
     input:
-        bed                             = lambda w: [
-                                            join(workpath, w.PeakTool, chip, chip + PeakExtensions[w.PeakTool])
-                                            for chip in chips
-                                          ],
+        beds                            = expand(join(macsB_dir, "{name}", "{name}_peaks.broadPeak"), name=chips),
     output:
-        csvfile                         = join(
+        csvfile                         = expand(join(
                                             diffbind_dir,
-                                            "{group1}_vs_{group2}-{PeakTool}",
-                                            "{group1}_vs_{group2}-{PeakTool}_Diffbind_prep.csv",
-                                          ),
+                                            "{contrast}-macsNarrow",
+                                            "{contrast}-macsNarrow_Diffbind_prep.csv",
+                                          ), contrast=group_combos),
     params:
-        rname                           = "diffbind_csv",
-        group1                          = "{group1}",
-        group2                          = "{group2}",
-        this_peaktool                   = "{PeakTool}",
-        peakcaller                      = lambda w: FileTypesDiffBind[w.PeakTool],
-        this_peakextension              = lambda w: PeakExtensions[w.PeakTool],
+        rname                           = "diffbind_csv_macsB",
+        this_peaktool                   = "macsBroad",
+        peakcaller                      = "narrowPeak",
+        this_peakextension              = "_peaks.broadPeak",
         pythonscript                    = join(bin_path, "prep_diffbind.py"),
         bam_dir                         = bam_dir,
         workpath                        = workpath,
-    container:
-        config["images"]["cfchip"]
-    shell:
-        """
-        python {params.pythonscript} \
-            --g1 {params.group1} \
-            --g2 {params.group2} \
-            --wp {params.workpath} \
-            --pt {params.this_peaktool} \
-            --pe {params.this_peakextension} \
-            --bd {params.bam_dir} \
-            --pc {params.peakcaller} \
-            --csv {output.csvfile}
-        """
+    threads: 6
+    run:
+        for i, contrast in enumerate(group_combos):
+            shell(dedent(
+                """
+                python {params.pythonscript} \\
+                    --con """ + contrast + """ \\
+                    --wp {params.workpath} \\
+                    --pt {params.this_peaktool} \\
+                    --pe {params.this_peakextension} \\
+                    --bd {params.bam_dir} \\
+                    --pc {params.peakcaller} \\
+                    --csv {output.csvfile}
+                """
+            ))
+
+
+rule diffbind_csv_macsN:
+    input:
+        beds                            = expand(join(macsN_dir, "{name}", "{name}_peaks.narrowPeak"), name=chips),
+    output:
+        csvfile                         = expand(join(
+                                            diffbind_dir,
+                                            "{contrast}-macsBroad",
+                                            "{contrast}-macsBroad_Diffbind_prep.csv",
+                                          ), contrast=group_combos),
+                                          
+    params:
+        rname                           = "diffbind_csv_macsN",
+        this_peaktool                   = "macsBroad",
+        peakcaller                      = "narrowPeak",
+        this_peakextension              = "_peaks.broadPeak",
+        pythonscript                    = join(bin_path, "prep_diffbind.py"),
+        bam_dir                         = bam_dir,
+        workpath                        = workpath,
+    threads: 32
+    run:
+        for i, contrast in enumerate(group_combos):
+            shell(dedent(
+                """
+                python {params.pythonscript} \\
+                    --con """ + contrast + """ \\
+                    --wp {params.workpath} \\
+                    --pt {params.this_peaktool} \\
+                    --pe {params.this_peakextension} \\
+                    --bd {params.bam_dir} \\
+                    --pc {params.peakcaller} \\
+                    --csv {output.csvfile}
+                """
+            ))
+
+
+rule diffbind_csv_deseq2:
+    input:
+        join(
+            diffbind_dir,
+            "{group1}_vs_{group2}-{PeakTool}",
+            "{group1}_vs_{group2}-{PeakTool}_DiffbindDeseq2_full_list.txt",
+        ),
+    output:
+        csvfile                         = expand(join(
+                                            diffbind_dir,
+                                            "{contrast}-DiffbindDeseq2",
+                                            "{contrast}-DiffbindDeseq2_Diffbind_prep.csv",
+                                          ), contrast=group_combos),                                
+    params:
+        rname                           = "diffbind_csv_deseq2",
+        this_peaktool                   = "DiffbindDeseq2",
+        peakcaller                      = "DiffBind",
+        this_peakextension              = "_DiffbindDeseq2_fullList.bed",
+        pythonscript                    = join(bin_path, "prep_diffbind.py"),
+        bam_dir                         = bam_dir,
+        workpath                        = workpath,
+    threads: 32
+    run:
+        for i, contrast in enumerate(group_combos):
+            shell(dedent(
+                """
+                python {params.pythonscript} \\
+                    --con """ + contrast + """ \\
+                    --wp {params.workpath} \\
+                    --pt {params.this_peaktool} \\
+                    --pe {params.this_peakextension} \\
+                    --bd {params.bam_dir} \\
+                    --pc {params.peakcaller} \\
+                    --csv {output.csvfile}
+                """
+            ))
 
 
 rule diffbind_count:
     input:
-        bed                             = lambda w: [
-                                            join(workpath, w.PeakTool, chip, chip + PeakExtensions[w.PeakTool])
-                                            for chip in chips
-                                          ],
         csvfile                         = join(
                                             diffbind_dir,
                                             "{group1}_vs_{group2}-{PeakTool}",
                                             "{group1}_vs_{group2}-{PeakTool}_Diffbind_prep.csv",
                                           ),
     output:
-        peak_counts                     = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}_Diffbind_counts.rds"),
-        peak_list                       = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}_Diffbind_fullList.bed"),
+        peak_counts                     = join(
+                                            diffbind_dir, 
+                                            "{group1}_vs_{group2}-{PeakTool}", 
+                                            "{group1}_vs_{group2}-{PeakTool}_Diffbind_counts.rds"
+                                          ),
+        peak_list                       = join(
+                                            diffbind_dir, 
+                                            "{group1}_vs_{group2}-{PeakTool}", 
+                                            "{group1}_vs_{group2}-{PeakTool}_Diffbind_fullList.bed"
+                                          ),
     params:
         rname                           = "diffbind_count",
         this_contrast                   = "{group1}_vs_{group2}",
         this_peaktool                   = "{PeakTool}",
         this_script                     = join(bin_path, "DiffBind_v2_load.R"),
-    threads: 32
-    container:
-        config["images"]["cfchip"]
+    threads: 6
     shell:
         dedent("""
         {params.this_script} \\
@@ -168,7 +243,11 @@ rule diffbind_edger:
                                             "{group1}_vs_{group2}-{PeakTool}",
                                             "{group1}_vs_{group2}-{PeakTool}_Diffbind_prep.csv",
                                           ),
-        peak_counts                     = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}_Diffbind_counts.rds"),
+        peak_counts                     = join(
+                                            diffbind_dir, 
+                                            "{group1}_vs_{group2}-{PeakTool}",
+                                            "{group1}_vs_{group2}-{PeakTool}_Diffbind_counts.rds"
+                                          ),
     output:
         diffbind_report                 = join(
                                             diffbind_dir,
@@ -188,7 +267,7 @@ rule diffbind_edger:
         full_list                       = join(
                                             diffbind_dir,
                                             "{group1}_vs_{group2}-{PeakTool}",
-                                            "{group1}_vs_{group2}-{PeakTool}_Diffbind_EdgeR_full_list.txt",
+                                            "{group1}_vs_{group2}-{PeakTool}_Diffbind_EdgeR_full_list.bed",
                                           ),
     params:
         rname                           = "diffbind_edger",
@@ -232,7 +311,11 @@ rule diffbind_deseq:
                                             "{group1}_vs_{group2}-{PeakTool}",
                                             "{group1}_vs_{group2}-{PeakTool}_Diffbind_prep.csv",
                                           ),
-        peak_counts                     = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}_Diffbind_counts.rds"),
+        peak_counts                     = join(
+                                            diffbind_dir,
+                                            "{group1}_vs_{group2}-{PeakTool}",
+                                            "{group1}_vs_{group2}-{PeakTool}_Diffbind_counts.rds"
+                                          ),
     output:
         diffbind_report                 = join(
                                             diffbind_dir,
@@ -296,7 +379,11 @@ rule diffbind_deseq_blocking:
                                             "{group1}_vs_{group2}-{PeakTool}",
                                             "{group1}_vs_{group2}-{PeakTool}_Diffbind_prep.csv",
                                           ),
-        peak_counts                     = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}_Diffbind_counts.rds"),
+        peak_counts                     = join(
+                                            diffbind_dir, 
+                                            "{group1}_vs_{group2}-{PeakTool}",
+                                            "{group1}_vs_{group2}-{PeakTool}_Diffbind_counts.rds"
+                                          ),
     output:
         diffbind_block_report           = join(
                                             diffbind_dir,
@@ -346,7 +433,10 @@ rule diffbind_edger_blocking:
                                             "{group1}_vs_{group2}-{PeakTool}",
                                             "{group1}_vs_{group2}-{PeakTool}_Diffbind_prep.csv",
                                           ),
-        peak_counts                     = join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}_Diffbind_counts.rds"),
+        peak_counts                     = join(
+                                            diffbind_dir, 
+                                            "{group1}_vs_{group2}-{PeakTool}",
+                                            "{group1}_vs_{group2}-{PeakTool}_Diffbind_counts.rds"),
     output:
         diffbind_block_report           = join(
                                             diffbind_dir,
@@ -356,7 +446,7 @@ rule diffbind_edger_blocking:
         full_list                       = join(
                                             diffbind_dir,
                                             "{group1}_vs_{group2}-{PeakTool}",
-                                            "{group1}_vs_{group2}-{PeakTool}_Diffbind_block_EdgeR_full_list.txt",
+                                            "{group1}_vs_{group2}-{PeakTool}_Diffbind_block_EdgeR_full_list.bed",
                                           ),
     params:
         rname                           = "diffbind_edger_block",
@@ -379,7 +469,7 @@ rule diffbind_edger_blocking:
         #!/bin/bash
         Rscript -e 'rmarkdown::render("{params.blocking_rscript}", output_file="{output.diffbind_block_report}",
             params=list(csvfile="{input.csvfile}", peakcaller="{params.this_peaktool}", list_file="{output.full_list}",
-            up_file="{output.up_file}", down_file="{output.down_file}", contrasts="{params.this_contrast}", counts="{input.peak_counts}"))'
+            contrasts="{params.this_contrast}", counts="{input.peak_counts}"))'
         EOF
 
         chmod +x ${{tmp}}/rscript.sh
@@ -391,10 +481,12 @@ rule diffbind_edger_blocking:
         """)
 
 
-rule UROPA_prep_in_db:
+
+rule UROPA_prep_in_edger:
     input:
-        join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}_Diffbind_fullList.bed"),
+        join(diffbind_dir, "{group1}_vs_{group2}-DiffbindEdgeR", "{group1}_vs_{group2}-DiffbindEdgeR_Diffbind_fullList.bed"),
     params:
+        rname                           = "UROPA_prep_in_edger",
         this_script                     = join(bin_path, "uropa_input.py"),
         this_gtf                        = gtf,
         this_assay                      = assay,
@@ -403,10 +495,10 @@ rule UROPA_prep_in_db:
         this_json                       = [
                                             join(
                                                 uropa_dir, 
-                                                "{PeakTool1}", 
-                                                "{name}.{group1}_vs_{group2}."+pktype+".json"
+                                                "DiffbindEdgeR", 
+                                                "{group1}_vs_{group2}.DiffbindEdgeR."+pktype+".json"
                                             ) for pktype in peak_types
-                                          ],
+                                          ]
     shell:
         dedent("""
         {params.this_script} \\
@@ -417,14 +509,65 @@ rule UROPA_prep_in_db:
         """)
 
 
-rule UROPA_prep_in_macs:
+rule UROPA_prep_in_deseq2:
     input:
-        # join(macsN_dir, "{name}", "{name}_peaks.narrowPeak"),
-        # join(macsB_dir, "{name}", "{name}_peaks.broadPeak"),
-        # macsN_dir                       = join(workpath, "macsNarrow")
-        # macsB_dir                       = join(workpath, "macsBroad")
-        join(macsN_dir, "{pname}", "{pname}_peaks.narrowPeak"),
+        join(diffbind_dir, "{group1}_vs_{group2}-DiffbindDeseq2", "{group1}_vs_{group2}-DiffbindDeseq2_Diffbind_fullList.bed"),
     params:
+        rname                           = "UROPA_prep_in_deseq2",
+        this_script                     = join(bin_path, "uropa_input.py"),
+        this_gtf                        = gtf,
+        this_assay                      = assay,
+        peak_types                      = ' '.join(peak_types),
+    output:
+        this_json                       = [
+                                            join(
+                                                uropa_dir, 
+                                                "DiffbindDeseq2", 
+                                                "{group1}_vs_{group2}.DiffbindDeseq2."+pktype+".json"
+                                            ) for pktype in peak_types
+                                          ]
+    shell:
+        dedent("""
+        {params.this_script} \\
+            -g {params.this_gtf} \\
+            -o {output.this_json} \\
+            -a {params.assay} \\
+            -t {params.peak_types}
+        """)
+
+
+rule UROPA_prep_in_macsB:
+    input:
+        join(macsB_dir, "{name}", "{name}_peaks.broadPeak"),
+    params:
+        rname                           = "UROPA_prep_in_macsB",
+        this_script                     = join(bin_path, "uropa_input.py"),
+        this_gtf                        = gtf,
+        this_assay                      = assay,
+        peak_types                      = ' '.join(peak_types),
+    output:
+        this_json                       = [
+                                            join(
+                                                uropa_dir, 
+                                                "macsBroad", 
+                                                "{name}.macsBroad."+pktype+".json"
+                                            ) for pktype in peak_types
+                                          ],
+    shell:
+        dedent("""
+        {params.this_script} \\
+            -g {params.this_gtf} \\
+            -o {output.this_json} \\
+            -a {params.this_assay} \\
+            -t {params.peak_types}
+        """)
+
+
+rule UROPA_prep_in_macsN:
+    input:
+        join(macsN_dir, "{name}", "{name}_peaks.narrowPeak"),
+    params:
+        rname                           = "UROPA_prep_in_macsN",
         this_script                     = join(bin_path, "uropa_input.py"),
         this_gtf                        = gtf,
         this_assay                      = assay,
@@ -434,7 +577,7 @@ rule UROPA_prep_in_macs:
                                             join(
                                                 uropa_dir, 
                                                 "macsNarrow", 
-                                                "{pname}."+pktype+".json"
+                                                "{name}.macsNarrow."+pktype+".json"
                                             ) for pktype in peak_types
                                           ],
     shell:
@@ -442,39 +585,16 @@ rule UROPA_prep_in_macs:
         {params.this_script} \\
             -g {params.this_gtf} \\
             -o {output.this_json} \\
-            -a {params.assay} \\
+            -a {params.this_assay} \\
             -t {params.peak_types}
         """)
-        
 
 
-rule UROPA:
+rule UROPA_macsNarrow:
     input:
-        this_json                       = join(uropa_dir, "{PeakTool1}", "{name}.{PeakTool2}.{_type}.json"),
-    output:
-        txt                             = join(
-                                            uropa_dir, 
-                                            "{PeakTool1}", 
-                                            "{name}_{PeakTool2}_uropa_{_type}_allhits.txt"
-                                          ),
-        bed1                            = temp(join(
-                                            uropa_dir, 
-                                            "{PeakTool1}", 
-                                            "{name}_{PeakTool2}_uropa_{_type}_allhits.bed"
-                                          )),
-        bed2                            = temp(join(
-                                            uropa_dir,
-                                            "{PeakTool1}",
-                                            "{name}_{PeakTool2}_uropa_{_type}_finalhits.bed",
-                                          )),
-        log                             = join(uropa_dir, "{PeakTool1}", "{name}_{PeakTool2}_uropa_{_type}.log")
-    params:
-        rname                           = "uropa",
-        outroot                         = join(uropa_dir, "{PeakTool1}", "{name}_{PeakTool2}_uropa_{_type}"),
-    threads: int(allocated("threads", "UROPA", cluster))
-    container:
-        config["images"]["uropa"]
-    shell:
-        """
-        uropa -i {input.this_json} -p {params.outroot} -l {output.log} -t {threads} -s
-        """
+        join(
+            uropa_dir, 
+            "macsNarrow", 
+            "{name}.macsNarrow.{_type}.json"
+        )
+        

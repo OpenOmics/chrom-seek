@@ -15,6 +15,7 @@ wildcard_constraints:
         group1                          = "[a-zA-Z0-9]+",
         group2                          = "[a-zA-Z0-9]+",
         PeakTool                        = "[a-zA-Z0-9]+",
+        name                            = "[a-zA-Z0-9_]+",
 
 # Global workflow variables
 today                           = str(datetime.datetime.today()).split()[0].replace('-', '') # YYYYMMDD
@@ -121,7 +122,7 @@ if assay == "cfchip":
             ))
         if contrast:
             rule_all_ins.extend(expand(
-                join(uropa_diffbind_dir, "{name}_{PeakTool}_uropa_{_type}_allhits.txt"), 
+                join(uropa_dir, "{PeakTool}", "{name}_{PeakTool}_uropa_{_type}_allhits.txt"), 
                 PeakTool=['DiffbindEdgeR', 'DiffbindDeseq2'], 
                 name=contrasts,
                 _type=["protTSS"]
@@ -175,10 +176,12 @@ elif assay in ["atac", "chip"]:
         rule_all_ins.extend(expand(
             join(genrich_dir, "{name}", "{name}.narrowPeak"), name=chips
         ))
+
     rule_all_ins.extend(expand(
         join(uropa_dir, "{PeakTool}", "{name}_{PeakTool}_uropa_{_type}_allhits.txt"),
         PeakTool=PeakTools, name=chips, _type=peak_types
     ))
+
     if reps:
         rule_all_ins.extend(expand(
             join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind_EdgeR.html"), 
@@ -197,11 +200,30 @@ elif assay in ["atac", "chip"]:
                 join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind_blocking_DeSeq2.html"),
                 group1=zipGroup1, group2=zipGroup2, PeakTool=zipToolC
             ))
+
         if contrast:
             rule_all_ins.extend(expand(
-                join(uropa_diffbind_dir, "{name}_{PeakTool}_uropa_{_type}_allhits.txt"), 
-                PeakTool=["DiffbindEdgeR", "DiffbindDeseq2"], 
+                join(uropa_dir, "{application}", "{name}_{application}_uropa_{_type}_allhits.txt"), 
+                contrast=contrasts,
+                application="DiffbindEdgeR",
+                _type=["protTSS"],
+            ))
+            rule_all_ins.extend(expand(
+                join(uropa_dir, "{application}", "{name}_{application}_uropa_{_type}_allhits.txt"), 
                 name=contrasts,
+                application="DiffbindDeseq2",
+                _type=["protTSS"],
+            ))
+            rule_all_ins.extend(expand(
+                join(uropa_dir, "{application}", "{name}_{application}_uropa_{_type}_allhits.txt"), 
+                name=contrasts,
+                application="macsBroad",
+                _type=["protTSS"],
+            ))
+            rule_all_ins.extend(expand(
+                join(uropa_dir, "{application}", "{name}_{application}_uropa_{_type}_allhits.txt"), 
+                name=contrasts,
+                application="macsNarrow",
                 _type=["protTSS"],
             ))
     else:
@@ -230,7 +252,6 @@ rule_all_ins.extend(expand(join(bw_dir, "{name}.{ext}.RPGC.bw"), name=samples, e
 
 if has_inputs:
     rule_all_ins.extend(expand(join(bw_dir, "{name}.Q5DD.RPGC.inputnorm.bw"), name=sampleswinput))
-    
 
 rule all:
     input:

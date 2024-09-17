@@ -57,11 +57,12 @@ def zip_contrasts(contrast, PeakTools):
     """
     zipGroup1, zipGroup2, zipTool, contrasts = [], [], [], []
     for g1, g2 in contrast:
+        contrasts.append( g1 + "_vs_" + g2)
         for PeakTool in PeakTools:
             zipGroup1.append(g1)
             zipGroup2.append(g2)
             zipTool.append(PeakTool)
-            contrasts.append( g1 + "_vs_" + g2 + "-" + PeakTool )
+            
     return(zipGroup1, zipGroup2, zipTool, contrasts)
 
 
