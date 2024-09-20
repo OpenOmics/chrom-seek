@@ -109,7 +109,7 @@
         "threads": "28",
         "mem": "120g"
     },
-    "UROPA": {
+    "UROPA_macsNarrow": {
         "threads": "16",
         "mem": "120g"
     },
