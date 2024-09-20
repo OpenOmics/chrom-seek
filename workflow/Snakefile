@@ -9,13 +9,9 @@ from scripts.common import provided, get_file_components
 from scripts.grouping import group_samples_by_reps, \
     group_output_files, zip_contrasts, get_peaktools
 
+
 configfile: "config.json"
 
-wildcard_constraints:
-        group1                          = "[a-zA-Z0-9]+",
-        group2                          = "[a-zA-Z0-9]+",
-        PeakTool                        = "[a-zA-Z0-9]+",
-        name                            = "[a-zA-Z0-9_]+",
 
 # Global workflow variables
 today                           = str(datetime.datetime.today()).split()[0].replace('-', '') # YYYYMMDD
@@ -177,55 +173,49 @@ elif assay in ["atac", "chip"]:
             join(genrich_dir, "{name}", "{name}.narrowPeak"), name=chips
         ))
 
-    rule_all_ins.extend(expand(
-        join(uropa_dir, "{PeakTool}", "{name}_{PeakTool}_uropa_{_type}_allhits.txt"),
-        PeakTool=PeakTools, name=chips, _type=peak_types
-    ))
-
     if reps:
         rule_all_ins.extend(expand(
-            join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind_EdgeR.html"), 
-            group1=zipGroup1, group2=zipGroup2, PeakTool=zipToolC
+            join(uropa_dir, "{application}", "{name}_uropa_{_type}_allhits.txt"), 
+            name=chips,
+            application="macsBroad",
+            _type=["protTSS"],
         ))
         rule_all_ins.extend(expand(
-            join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind_DeSeq2.html"), 
-            group1=zipGroup1, group2=zipGroup2, PeakTool=zipToolC
+            join(uropa_dir, "{application}", "{name}_uropa_{_type}_allhits.txt"), 
+            name=chips,
+            application="macsNarrow",
+            _type=["protTSS"],
         ))
-        if blocking:
-            rule_all_ins.extend(expand(
-                join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind_blocking_EdgeR.html"),
-                group1=zipGroup1, group2=zipGroup2, PeakTool=zipToolC
-            ))
-            rule_all_ins.extend(expand(
-                join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind_blocking_DeSeq2.html"),
-                group1=zipGroup1, group2=zipGroup2, PeakTool=zipToolC
-            ))
-
         if contrast:
             rule_all_ins.extend(expand(
-                join(uropa_dir, "{application}", "{name}_{application}_uropa_{_type}_allhits.txt"), 
+                join(uropa_dir, "DiffBind", "{contrast}_{application}_uropa_{_type}_allhits.txt"), 
                 contrast=contrasts,
-                application="DiffbindEdgeR",
-                _type=["protTSS"],
-            ))
-            rule_all_ins.extend(expand(
-                join(uropa_dir, "{application}", "{name}_{application}_uropa_{_type}_allhits.txt"), 
-                name=contrasts,
-                application="DiffbindDeseq2",
-                _type=["protTSS"],
-            ))
-            rule_all_ins.extend(expand(
-                join(uropa_dir, "{application}", "{name}_{application}_uropa_{_type}_allhits.txt"), 
-                name=contrasts,
                 application="macsBroad",
                 _type=["protTSS"],
             ))
             rule_all_ins.extend(expand(
-                join(uropa_dir, "{application}", "{name}_{application}_uropa_{_type}_allhits.txt"), 
-                name=contrasts,
+                join(uropa_dir, "DiffBind", "{contrast}_{application}_uropa_{_type}_allhits.txt"), 
+                contrast=contrasts,
                 application="macsNarrow",
                 _type=["protTSS"],
             ))
+            rule_all_ins.extend(expand(
+                join(diffbind_dir, "{contrast}-{PeakTool}", "{contrast}-{PeakTool}_Diffbind_EdgeR.html"), 
+                contrast=contrasts, PeakTool=['macsBroad', 'macsNarrow']
+            ))
+            rule_all_ins.extend(expand(
+                join(diffbind_dir, "{contrast}-{PeakTool}", "{contrast}-{PeakTool}_Diffbind_DeSeq2.html"), 
+                contrast=contrasts, PeakTool=['macsBroad', 'macsNarrow']
+            ))
+            if blocking:
+                rule_all_ins.extend(expand(
+                    join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind_blocking_EdgeR.html"),
+                    group1=zipGroup1, group2=zipGroup2, PeakTool=zipToolC
+                ))
+                rule_all_ins.extend(expand(
+                    join(diffbind_dir, "{group1}_vs_{group2}-{PeakTool}", "{group1}_vs_{group2}-{PeakTool}_Diffbind_blocking_DeSeq2.html"),
+                    group1=zipGroup1, group2=zipGroup2, PeakTool=zipToolC
+                ))
     else:
         pass
         # manorm turned off now
