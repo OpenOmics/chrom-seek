@@ -106,6 +106,7 @@ rule UROPA_prep_in_macsN:
             -g {params.this_gtf} \\
             -o {output.this_json} \\
             -a {params.this_assay} \\
+            -b {input} \\
             -t {params.peak_types}
         """)
 
@@ -145,6 +146,7 @@ rule UROPA_prep_in_macsB:
             -g {params.this_gtf} \\
             -o {output.this_json} \\
             -a {params.this_assay} \\
+            -b {input} \\
             -t {params.peak_types}
         """)
 
@@ -460,7 +462,7 @@ rule diffbind_csv_macsN:
             shell(dedent(
                 """
                 python {params.pythonscript} \\
-                    --con "{wildcards.group1}_vs_{wildcards.group2}" \\
+                    --con \"""" + contrast + """\" \\
                     --wp {params.workpath} \\
                     --pt {params.this_peaktool} \\
                     --pe {params.this_peakextension} \\
@@ -526,6 +528,7 @@ rule UROPA_prep_in_diffbind:
             -g {params.this_gtf} \\
             -o {output.this_json} \\
             -a {params.this_assay} \\
+            -b {input} \\
             -t {params.peak_types}
         """)
 
