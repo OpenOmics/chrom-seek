@@ -395,15 +395,46 @@ rule deeptools_QC:
         """
 
 
-rule FRiP:
+rule FRiP_macsN:
     input:
-        bed                     = lambda w: [ join(workpath, w.PeakTool, chip, chip + PeakExtensions[w.PeakTool]) for chip in chips ],
+        bed                     = expand(join(macsN_dir, "{name}", "{name}_peaks.narrowPeak"), name=chips),
         bam                     = join(bam_dir, "{name}.Q5DD.bam"),
     output:
-        join(workpath,"PeakQC","{PeakTool}.{name}.Q5DD.FRiP_table.txt"),
+        join(workpath, "PeakQC", "macsNarrow.{name}.Q5DD.FRiP_table.txt"),
     params:
-        rname                   = "frip",
-        outroot                 = lambda w: join(peakqc_dir, w.PeakTool),
+        rname                   = "FRiP_macsN",
+        outroot                 = join(peakqc_dir, "macsNarrow"),
+        script                  = join(bin_path, "frip.py"),
+        genome                  = config['references'][genome]['REFLEN'],
+        tmpdir                  = tmpdir,
+    container: 
+        config['images']['python']
+    shell: 
+        """
+        # Setups temporary directory for
+        # intermediate files with built-in 
+        # mechanism for deletion on exit
+        if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
+        tmp=$(mktemp -d -p "{params.tmpdir}")
+        trap 'rm -rf "${{tmp}}"' EXIT
+
+        python {params.script} \\
+            -p {input.bed} \\
+            -b {input.bam} \\
+            -g {params.genome} \\
+            -o {params.outroot}
+        """
+
+
+rule FRiP_macsB:
+    input:
+        bed                     = expand(join(macsB_dir, "{name}", "{name}_peaks.broadPeak"), name=chips),
+        bam                     = join(bam_dir, "{name}.Q5DD.bam"),
+    output:
+        join(workpath, "PeakQC", "macsBroad.{name}.Q5DD.FRiP_table.txt"),
+    params:
+        rname                   = "FRiP_macsB",
+        outroot                 = join(peakqc_dir, "macsBroad"),
         script                  = join(bin_path, "frip.py"),
         genome                  = config['references'][genome]['REFLEN'],
         tmpdir                  = tmpdir,

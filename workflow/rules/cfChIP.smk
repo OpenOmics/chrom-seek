@@ -9,7 +9,7 @@ bin_path                        = config['project']['binpath']
 genome                          = config['options']['genome']
 blocks                          = config['project']['blocks']
 groupdata                       = config['project']['groups']
-
+chips                           = config['project']['peaks']['chips']
 
 # Directory end points
 bam_dir                         = join(workpath, "bam")
@@ -67,15 +67,15 @@ rule cfChIPcompile:
         """
 
 
-rule promoterTable1:
+rule promoterTable1_macsN:
     input:
-        expand(join(workpath,uropa_dir,'{PeakTool}','{name}_{PeakTool}_uropa_protTSS_allhits.txt'), PeakTool=PeakTools, name=chips),
+        expand(join(uropa_dir, "macsNarrow", "{name}_uropa_protTSS_allhits.txt"), name=chips)
     output:
-        txt                     = join(uropa_dir, "promoterTable1", "{PeakTool}_promoter_overlap_summaryTable.txt")
+        txt                     = join(uropa_dir, "promoterTable1", "macsNarrow_promoter_overlap_summaryTable.txt")
     params:
-        rname                   = "promoter1",
+        rname                   = "promoterTable1",
         script                  = join(bin_path, "promoterAnnotation_by_Gene.R"),
-        infolder                = join(uropa_dir, '{PeakTool}')
+        infolder                = join(uropa_dir, "macsNarrow")
     container:
         config['images']['cfchip']
     shell: 
@@ -86,9 +86,9 @@ rule promoterTable1:
 
 rule promoterTable2:
     input:
-        expand(join(uropa_diffbind_dir, '{name}_DiffbindDeseq2_uropa_protTSS_allhits.txt'), name=contrasts),
+        join(diffbind_dir, "{contrast}-{PeakTool}", "{contrast}-{PeakTool}_Diffbind_Deseq2_full_list.txt"),
     output:
-        txt                     = join(uropa_dir, "promoterTable2", 'DiffbindDeseq2_{PeakTool}_promoter_overlap_summaryTable.txt'),
+        txt                     = join(uropa_dir, "promoterTable2", '{contrast}-{PeakTool}_DiffbindDeseq2_promoter_overlap_summaryTable.txt'),
     params:
         rname                   = "promoter2",
         script1                 = join(bin_path, "promoterAnnotation_by_Gene.R"),
@@ -99,28 +99,28 @@ rule promoterTable2:
         config['images']['cfchip']
     shell: 
         """
-        Rscript -e "source('{params.script1}'); diffbindVersion('{params.infolder}','{output.txt}')";
-        Rscript -e "source('{params.script2}'); promoterAnnotationWrapper('{output.txt}','{params.gtf}','KEGG')";
-        Rscript -e "source('{params.script2}'); promoterAnnotationWrapper('{output.txt}','{params.gtf}','Reactome')";
+        Rscript -e "source('{params.script1}'); diffbindVersion('{params.infolder}', '{output.txt}')";
+        Rscript -e "source('{params.script2}'); promoterAnnotationWrapper('{output.txt}', '{params.gtf}', 'KEGG')";
+        Rscript -e "source('{params.script2}'); promoterAnnotationWrapper('{output.txt}', '{params.gtf}', 'Reactome')";
         """
 
 
-rule diffbindQC:
+rule diffbindQC_macsN:
     input:
-        lambda w: [ join(workpath, w.PeakTool, chip, chip + PeakExtensions[w.PeakTool]) for chip in chips ]
+        expand(join(macsN_dir, "{name}", "{name}_peaks.narrowPeak"), name=chips),
     output:
-        html                    = join(qc_dir, "AllSamples-{PeakTool}", "AllSamples-{PeakTool}_DiffBindQC.html"),
-        bed                     = join(workpath, "QC", "AllSamples-{PeakTool}", "AllSamples-{PeakTool}_DiffBindQC_TMMcounts.bed"),
+        html                    = join(qc_dir, "AllSamples-macsNarrow", "AllSamples-macsNarrow_DiffBindQC.html"),
+        bed                     = join(qc_dir, "AllSamples-macsNarrow", "AllSamples-macsNarrow_DiffBindQC_TMMcounts.bed"),
     params:
-       rname                    = "diffbindQC",
+       rname                    = "diffbindQC_macsN",
        contrast                 = "AllSamples",
-       PeakTool                 = "{PeakTool}",
+       PeakTool                 = "macsNarrow",
        rscript                  = join(bin_path, "DiffBind_v2_cfChIP_QC.Rmd"),
-       outdir                   = join(qc_dir, "AllSamples-{PeakTool}"),
-       csvfile                  = join(qc_dir, "AllSamples-{PeakTool}", "AllSamples-{PeakTool}_DiffBind_prep.csv"),
+       outdir                   = join(qc_dir, "AllSamples-macsNarrow"),
+       csvfile                  = join(qc_dir, "AllSamples-macsNarrow", "AllSamples-macsNarrow_DiffBind_prep.csv"),
        pythonscript             = join(bin_path, "prep_diffbindQC.py"),
-       PeakExtension            = lambda w: PeakExtensions[w.PeakTool],
-       peakcaller               = lambda w: FileTypesDiffBind[w.PeakTool],
+       PeakExtension            = "_peaks.narrowPeak",
+       peakcaller               = "narrowPeak",
     container:
        config['images']['cfchip']
     shell: 

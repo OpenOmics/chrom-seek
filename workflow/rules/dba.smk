@@ -5,7 +5,7 @@ from textwrap import dedent
 from itertools import combinations
 from scripts.common import allocated, mk_dir_if_not_exist
 from scripts.peakcall import outputIDR, zip_peak_files, \
-    calc_effective_genome_fraction, get_manorm_sizes, getMacChip
+    calc_effective_genome_fraction, get_manorm_sizes
 from scripts.grouping import test_for_block
 
 
@@ -35,59 +35,18 @@ otherDirs                       = [qc_dir, homer_dir, uropa_dir]
 cfTool_dir                      = join(workpath, "cfChIPtool")
 cfTool_subdir2                  = join(cfTool_dir, "BED", "H3K4me3")
 group_combos                    = []
+
+# ~~ workflow config ~~
 for (g1, g2) in list(combinations(config['project']['groups'].keys(), 2)):
     group_combos.append(f"{g1}_vs_{g2}")
-
-
-# ~~ workflow switches
 blocking = False if set(blocks.values()) in ({None}, {""}) else True
 if reps == "yes": otherDirs.append(diffbind_dir)
 mk_dir_if_not_exist(PeakTools + otherDirs)
 
 
-# ~~ peak calling configuration and outputs
-PeakToolsNG = [tool for tool in PeakTools if tool != "gem"]
-PeakExtensions = {
-    "macsNarrow": "_peaks.narrowPeak",
-    "macsBroad": "_peaks.broadPeak",
-    "sicer": "_broadpeaks.bed",
-    "gem": ".GEM_events.narrowPeak",
-    "MANorm": "_all_MA.bed",
-    "DiffbindEdgeR": "_DiffbindEdgeR_fullList.bed",
-    "DiffbindDeseq2": "_DiffbindDeseq2_fullList.bed",
-    "DiffbindEdgeRBlock": "_DiffbindEdgeRBlock_fullList.bed",
-    "DiffbindDeseq2Block": "_DiffbindDeseq2Block_fullList.bed",
-    "Genrich": ".narrowPeak",
-    "DiffBindQC": "_DiffBindQC_TMMcounts.bed",
-}
-
-FileTypesDiffBind = {
-    "macsNarrow": "narrowPeak",
-    "macsBroad": "narrowPeak",
-    "sicer": "bed",
-    "gem": "narrowPeak",
-    "Genrich": "narrowPeak",
-}
-
-PeakExtensionsIDR = {
-    "macsNarrow": "_peaks.narrowPeak",
-    "macsBroad": "",
-    "sicer": "_sicer.broadPeak",
-}
-
-FileTypesIDR = {
-    "macsNarrow": "narrowPeak",
-    "macsBroad": "broadPeak",
-    "sicer": "broadPeak",
-}
-
-RankColIDR = {"macsNarrow": "q.value", "macsBroad": "q.value", "sicer": "q.value"}
-IDRgroup, IDRsample1, IDRsample2, IDRpeaktool = outputIDR(groupswreps, groupdata, chip2input, PeakToolsNG)
-zipSample, zipTool, zipExt = zip_peak_files(chips, PeakTools, PeakExtensions)
-contrastBlock = test_for_block(groupdata, contrast, blocks)
-zipGroup1B, zipGroup2B, zipToolCB, contrastsB = zip_contrasts(contrastBlock, PeakTools)
-
-localrules: UROPA_prep_in_db, UROPA_prep_in_macsN, diffbind_csv_macsN
+localrules: UROPA_prep_in_macsB, UROPA_prep_in_macsN, \
+                diffbind_csv_macsN, diffbind_csv_macsB, \
+                UROPA_prep_in_diffbind
 
 
 # ~~ differential binding analysis ~~ #
@@ -238,8 +197,26 @@ rule diffbind_edger:
                                           ),
     params:
         rname                           = "diffbind_edger",
-        this_peakextension              = lambda w: PeakExtensions[w.PeakTool],
-        peakcaller                      = lambda w: FileTypesDiffBind[w.PeakTool],
+        this_peakextension              = lambda w: {
+                                                        "macsNarrow": "_peaks.narrowPeak",
+                                                        "macsBroad": "_peaks.broadPeak",
+                                                        "sicer": "_broadpeaks.bed",
+                                                        "gem": ".GEM_events.narrowPeak",
+                                                        "MANorm": "_all_MA.bed",
+                                                        "DiffbindEdgeR": "_DiffbindEdgeR_fullList.bed",
+                                                        "DiffbindDeseq2": "_DiffbindDeseq2_fullList.bed",
+                                                        "DiffbindEdgeRBlock": "_DiffbindEdgeRBlock_fullList.bed",
+                                                        "DiffbindDeseq2Block": "_DiffbindDeseq2Block_fullList.bed",
+                                                        "Genrich": ".narrowPeak",
+                                                        "DiffBindQC": "_DiffBindQC_TMMcounts.bed",
+                                                    }[w.PeakTool],
+        peakcaller                      = lambda w: {
+                                                        "macsNarrow": "narrowPeak",
+                                                        "macsBroad": "narrowPeak",
+                                                        "sicer": "bed",
+                                                        "gem": "narrowPeak",
+                                                        "Genrich": "narrowPeak",
+                                                    }[w.PeakTool],
         rscript                         = join(bin_path, "DiffBind_v2_EdgeR.Rmd"),
         outdir                          = join(diffbind_dir, "{contrast}-{PeakTool}"),
     container:
@@ -358,8 +335,26 @@ rule diffbind_deseq:
                                           ),
     params:
         rname                           = "diffbind_deseq2",
-        this_peakextension              = lambda w: PeakExtensions[w.PeakTool],
-        peakcaller                      = lambda w: FileTypesDiffBind[w.PeakTool],
+        this_peakextension              = lambda w: {
+                                                        "macsNarrow": "_peaks.narrowPeak",
+                                                        "macsBroad": "_peaks.broadPeak",
+                                                        "sicer": "_broadpeaks.bed",
+                                                        "gem": ".GEM_events.narrowPeak",
+                                                        "MANorm": "_all_MA.bed",
+                                                        "DiffbindEdgeR": "_DiffbindEdgeR_fullList.bed",
+                                                        "DiffbindDeseq2": "_DiffbindDeseq2_fullList.bed",
+                                                        "DiffbindEdgeRBlock": "_DiffbindEdgeRBlock_fullList.bed",
+                                                        "DiffbindDeseq2Block": "_DiffbindDeseq2Block_fullList.bed",
+                                                        "Genrich": ".narrowPeak",
+                                                        "DiffBindQC": "_DiffBindQC_TMMcounts.bed",
+                                                    }[w.PeakTool],
+        peakcaller                      = lambda w: {
+                                                        "macsNarrow": "narrowPeak",
+                                                        "macsBroad": "narrowPeak",
+                                                        "sicer": "bed",
+                                                        "gem": "narrowPeak",
+                                                        "Genrich": "narrowPeak",
+                                                    }[w.PeakTool],
         rscript                         = join(bin_path, "DiffBind_v2_Deseq2.Rmd"),
         outdir                          = join(diffbind_dir, "{contrast}-{PeakTool}"),
     container:
