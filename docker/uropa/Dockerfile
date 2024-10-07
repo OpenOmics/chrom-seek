@@ -1,5 +1,7 @@
-FROM quay.io/biocontainers/uropa:4.0.3--pyhdfd78af_0
-ENV LANG C.UTF-8
-ENV LC_ALL C.UTF-8
-RUN apt-get update -y --quiet
-RUN conda update uropa
+FROM conda/miniconda3
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
+RUN conda config --add channels bioconda
+RUN conda config --add channels conda-forge
+RUN conda config --set channel_priority strict
+RUN conda install bioconda::uropa
