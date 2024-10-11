@@ -1,6 +1,8 @@
 #!/usr/bin/env Rscript
 library(argparse)
 library(stringi)
+library(DiffBind)
+library(parallel)
 
 cleanup_arg <- function(arg) {
     arg <- stri_replace_all_fixed(arg, '"', '')                    # remote double quotes
@@ -21,10 +23,6 @@ counts <- cleanup_arg(xargs$counts)
 list <- cleanup_arg(xargs$list)
 threads <- as.numeric(cleanup_arg(xargs$threads))
 peakcaller <- cleanup_arg(xargs$peakcaller)
-
-suppressMessages(library(DiffBind))
-suppressMessages(library(parallel))
-
 samples <- dba(sampleSheet=csvfile)
 
 if ( peakcaller == "macsNarrow" ) {

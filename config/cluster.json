@@ -11,7 +11,8 @@
     },
     "trim": {
         "mem": "64g",
-        "threads": "32"
+        "threads": "32",
+        "time": "1-12:00:00"
     },
     "kraken": {
         "cpus-per-task": "24",
@@ -109,16 +110,26 @@
         "threads": "28",
         "mem": "120g"
     },
-    "UROPA_macsNarrow": {
-        "threads": "16",
-        "mem": "120g"
+    "UROPA_macsN": {
+        "threads": "28",
+        "mem": "200g",
+        "time": "1-00:00:00"
+    },
+    "UROPA_macsB": {
+        "threads": "28",
+        "mem": "200g",
+        "time": "1-00:00:00"
+    },
+    "UROPA_diffbind": {
+        "threads": "28",
+        "mem": "200g",
+        "time": "1-00:00:00"
     },
     "MEME": {
         "threads": "2",
         "mem": "32g",
         "time": "3-00:00:00",
-        "ntasks": "--ntasks=28",
-        "ntasks_per_core": "--ntasks-per-core=1",
-        "exclusive": "--exclusive"
+        "ntasks": "28",
+        "ntasks_per_core": "1"
     }
 }

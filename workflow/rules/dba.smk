@@ -1,5 +1,4 @@
-# Differential binding analysis rules
-# ~~~~
+# ~~ Differential binding analysis rules ~~
 from os.path import join
 from textwrap import dedent
 from itertools import combinations
@@ -19,6 +18,7 @@ contrast                        = config["project"]["contrast"]
 uropaver                        = config["tools"]["UROPAVER"]
 gtf                             = config["references"][genome]["GTFFILE"]
 chips                           = config['project']['peaks']['chips']
+local_log_dir                   = join(workpath, "logfiles", "local")
 diffbind_dir2                   = join(workpath, "DiffBind_block")
 diffbind_dir                    = join(workpath, "DiffBind")
 uropa_dir                       = join(workpath, "UROPA_annotations")
@@ -34,6 +34,7 @@ downstream_dir                  = join(workpath, "Downstream")
 otherDirs                       = [qc_dir, homer_dir, uropa_dir]
 cfTool_dir                      = join(workpath, "cfChIPtool")
 cfTool_subdir2                  = join(cfTool_dir, "BED", "H3K4me3")
+         
 group_combos                    = []
 
 # ~~ workflow config ~~
@@ -73,7 +74,7 @@ rule diffbind_count:
         this_contrast                   = "{group1}_vs_{group2}",
         this_peaktool                   = "{PeakTool}",
         this_script                     = join(bin_path, "DiffBind_v2_load.R"),
-    threads: 6
+    container: config["images"]["cfchip"]
     shell:
         dedent("""
         {params.this_script} \\
@@ -86,7 +87,7 @@ rule diffbind_count:
 
 # ~~  macs Narrow peak annotation  ~~ #
 rule UROPA_prep_in_macsN:
-    input: 
+    input:
         join(macsN_dir, "{name}", "{name}_peaks.narrowPeak")
     params:
         rname                           = "UROPA_prep_in_macsN",
@@ -100,6 +101,7 @@ rule UROPA_prep_in_macsN:
                                             "macsNarrow", 
                                             "{name}.macsNarrow." + pktype + ".json"
                                           ) for pktype in peak_types],
+    log: join(local_log_dir, "UROPA_prep_in_macsN", "{name}_uropa_prep.log")
     shell:
         dedent("""
         {params.this_script} \\
@@ -113,15 +115,13 @@ rule UROPA_prep_in_macsN:
 
 rule UROPA_macsN:
     input: join(uropa_dir, "macsNarrow", "{name}.macsNarrow.{_type}.json")
-    params:
+    params: 
         rname                           = "UROPA_macsN",
-        outroot                         = join(uropa_dir, "macsNarrow"),
     output: join(uropa_dir, "macsNarrow", "{name}_uropa_{_type}_allhits.txt"),
-    threads: int(allocated("threads", "UROPA_macsNarrow", cluster)),
-    log: join(uropa_dir, "macsNarrow", "{name}.macsNarrow.{_type}.log"),
+    threads: int(allocated("threads", "UROPA_macsN", cluster)),
+    log: join(local_log_dir, "UROPA_macsN", "{name}.macsNarrow.{_type}.log"),
     container: config["images"]["uropa"]
-    shell: "uropa -i {input} -p {params.outroot} -l {log} -t {threads} -s"
-        
+    shell: "uropa -i {input} -l {log} -p {wildcards.name}_uropa_{wildcards._type} -t {threads} -s"
 
 
 # ~~  macs Broad peak annotation  ~~ #
@@ -140,6 +140,7 @@ rule UROPA_prep_in_macsB:
                                             "macsBroad", 
                                             "{name}.macsBroad." + pktype + ".json"
                                           ) for pktype in peak_types],
+    log: join(local_log_dir, "UROPA_prep_in_macsB", "{name}_uropa_prep.log"),
     shell:
         dedent("""
         {params.this_script} \\
@@ -158,9 +159,9 @@ rule UROPA_macsB:
         outroot                         = join(uropa_dir, "macsBroad"),
     output: join(uropa_dir, "macsBroad", "{name}_uropa_{_type}_allhits.txt"),
     threads: int(allocated("threads", "UROPA_macsB", cluster)),
-    log: join(uropa_dir, "macsBroad", "{name}.macsBroad.{_type}.log"),
+    log: join(local_log_dir, "UROPA_macsB", "{name}.macsBroad.{_type}.log"),
     container: config["images"]["uropa"]
-    shell: "uropa -i {input} -p {params.outroot} -l {log} -t {threads} -s"
+    shell: "uropa -i {input} -l {log} -p {name}_uropa_{wildcards._type} -t {threads} -s"
 
 
 # ~~ diffbind EdgeR DE analysis ~~ #
@@ -338,18 +339,18 @@ rule diffbind_deseq:
     params:
         rname                           = "diffbind_deseq2",
         this_peakextension              = lambda w: {
-                                                        "macsNarrow": "_peaks.narrowPeak",
-                                                        "macsBroad": "_peaks.broadPeak",
-                                                        "sicer": "_broadpeaks.bed",
-                                                        "gem": ".GEM_events.narrowPeak",
-                                                        "MANorm": "_all_MA.bed",
-                                                        "DiffbindEdgeR": "_DiffbindEdgeR_fullList.bed",
-                                                        "DiffbindDeseq2": "_DiffbindDeseq2_fullList.bed",
-                                                        "DiffbindEdgeRBlock": "_DiffbindEdgeRBlock_fullList.bed",
-                                                        "DiffbindDeseq2Block": "_DiffbindDeseq2Block_fullList.bed",
-                                                        "Genrich": ".narrowPeak",
-                                                        "DiffBindQC": "_DiffBindQC_TMMcounts.bed",
-                                                    }[w.PeakTool],
+                                                "macsNarrow": "_peaks.narrowPeak",
+                                                "macsBroad": "_peaks.broadPeak",
+                                                "sicer": "_broadpeaks.bed",
+                                                "gem": ".GEM_events.narrowPeak",
+                                                "MANorm": "_all_MA.bed",
+                                                "DiffbindEdgeR": "_DiffbindEdgeR_fullList.bed",
+                                                "DiffbindDeseq2": "_DiffbindDeseq2_fullList.bed",
+                                                "DiffbindEdgeRBlock": "_DiffbindEdgeRBlock_fullList.bed",
+                                                "DiffbindDeseq2Block": "_DiffbindDeseq2Block_fullList.bed",
+                                                "Genrich": ".narrowPeak",
+                                                "DiffBindQC": "_DiffBindQC_TMMcounts.bed",
+                                            }[w.PeakTool],
         peakcaller                      = lambda w: {
                                                         "macsNarrow": "narrowPeak",
                                                         "macsBroad": "narrowPeak",
@@ -363,9 +364,9 @@ rule diffbind_deseq:
         config["images"]["cfchip"]
     shell:
         dedent("""
-        if [ ! -d \"{tmpdir}\" ]; then mkdir -p \"{tmpdir}\"; fi
-        tmp=$(mktemp -d -p \"{tmpdir}\")
-        trap 'rm -rf "{tmpdir}"' EXIT
+        if [ ! -d \"{tmpdir}\\diffbind_deseq\" ]; then mkdir -p \"{tmpdir}\\diffbind_deseq\"; fi
+        tmp=$(mktemp -d -p \"{tmpdir}\\diffbind_deseq")
+        trap 'rm -rf "{tmpdir}\\diffbind_deseq"' EXIT
 
         mkdir -p {params.outdir}
         cd {params.outdir}
@@ -456,7 +457,7 @@ rule diffbind_csv_macsN:
         pythonscript                    = join(bin_path, "prep_diffbind.py"),
         bam_dir                         = bam_dir,
         workpath                        = workpath,
-    threads: 32
+    log: join(local_log_dir, "diffbind_csv_macsN", "{group1}_vs_{group2}_diffbind_csv.log")
     run:
         for i, contrast in enumerate(group_combos):
             shell(dedent(
@@ -485,12 +486,12 @@ rule diffbind_csv_macsB:
     params:
         rname                           = "diffbind_csv_macsB",
         this_peaktool                   = "macsBroad",
-        peakcaller                      = "broadPeak",
+        peakcaller                      = "narrowPeak", # diff bind does not support broadPeak?
         this_peakextension              = "_peaks.broadPeak",
         pythonscript                    = join(bin_path, "prep_diffbind.py"),
         bam_dir                         = bam_dir,
         workpath                        = workpath,
-    threads: 32
+    log: join(local_log_dir, "diffbind_csv_macsB", "{group1}_vs_{group2}_diffbind_csv.log")
     run:
         for i, contrast in enumerate(group_combos):
             shell(dedent(
@@ -522,6 +523,7 @@ rule UROPA_prep_in_diffbind:
                                             "DiffBind", 
                                             "{group1}_vs_{group2}.{PeakTool}.DiffBind." + pktype + ".json"
                                           ) for pktype in peak_types],
+    log: join(local_log_dir, "UROPA_prep_in_diffbind", "{group1}_vs_{group2}-{PeakTool}_diffbind_prep.log")
     shell:
         dedent("""
         {params.this_script} \\
@@ -540,6 +542,6 @@ rule UROPA_diffbind:
         outroot                         = join(uropa_dir, "DiffBind"),
     output: join(uropa_dir, "DiffBind", "{group1}_vs_{group2}_{PeakTool}_uropa_{_type}_allhits.txt"),
     threads: int(allocated("threads", "UROPA_diffbind", cluster)),
-    log: join(uropa_dir, "DiffBind", "{group1}_vs_{group2}.{PeakTool}.DiffBind.{_type}.log"),
+    log: join(local_log_dir, "UROPA_diffbind", "{group1}_vs_{group2}.{PeakTool}.DiffBind.{_type}.log")
     container: config["images"]["uropa"]
-    shell: "uropa -i {input} -p {params.outroot} -l {log} -t {threads} -s"
+    shell: "uropa -i {input} -l {log} -p {wildcards.group1}_vs_{wildcards.group2}_{wildcards.PeakTool}_uropa_{wildcards._type} -t {threads} -s"
