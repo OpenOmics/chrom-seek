@@ -98,36 +98,39 @@
         "mem": "50g"
     },
     "diffbindQC": {
+        "threads": "16",
         "mem": "120g"
     },
     "diffbind": {
+        "threads": "16",
         "mem": "120g"
     },
     "diffbind_blocking": {
+        "threads": "16",
         "mem": "120g"
     },
     "diffbind_count": {
-        "threads": "28",
+        "threads": "16",
         "mem": "120g"
     },
     "UROPA_macsN": {
-        "threads": "28",
-        "mem": "200g",
+        "threads": "16",
+        "mem": "32g",
         "time": "1-00:00:00"
     },
-    "UROPA_macsB": {
-        "threads": "28",
-        "mem": "200g",
+    "UROPA_macsBroad": {
+        "threads": "16",
+        "mem": "32g",
         "time": "1-00:00:00"
     },
     "UROPA_diffbind": {
-        "threads": "28",
-        "mem": "200g",
+        "threads": "16",
+        "mem": "32g",
         "time": "1-00:00:00"
     },
     "MEME": {
         "threads": "2",
-        "mem": "32g",
+        "mem": "32g",   
         "time": "3-00:00:00",
         "ntasks": "28",
         "ntasks_per_core": "1"
