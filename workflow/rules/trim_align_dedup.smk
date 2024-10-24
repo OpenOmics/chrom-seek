@@ -270,7 +270,7 @@ rule dedup:
         tmp=$(mktemp -d -p \"""" + tmpdir + """\")
         trap 'rm -rf "${{tmp}}"' EXIT
         
-        if [ "{assay}" == "cfchip" ];then
+        if [ "{assay}" == "cfchip" ]; then
             java -Xmx{params.javaram} \\
                 -jar $PICARDJARPATH/picard.jar MarkDuplicates \\
                 -I {input.bam2} \\
