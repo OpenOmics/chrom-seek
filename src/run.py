@@ -13,7 +13,8 @@ from utils import (
     fatal,
     which,
     exists,
-    err
+    err, 
+    sanitize_slurm_env
 )
 
 from . import version as __version__
@@ -235,9 +236,13 @@ def unpacked(nested_dict):
     """
     # Iterate over all values of 
     # given dictionary
-    for value in nested_dict.values():
+    for key, value in nested_dict.items():
         # Check if value is of dict type
-        if isinstance(value, dict):
+        # also exclude certain directories
+        dontcheck = ('userhome',)
+        # we exclude the /home directory so it does not interfere with 
+        # container system
+        if isinstance(value, dict) and key not in dontcheck:
             # If value is dict then iterate 
             # over all its values recursively
             for v in unpacked(value):
@@ -677,22 +682,13 @@ def runner(mode, outdir, alt_cache, logger, additional_bind_paths = None,
     if temp not in additional_bind_paths.split(','):
         addpaths.append(temp)
     bindpaths = ','.join(addpaths)
-
+    
     # Set ENV variable 'SINGULARITY_CACHEDIR' 
     # to output directory
     my_env = {}; my_env.update(os.environ)
     cache = os.path.join(outdir, ".singularity")
     my_env['SINGULARITY_CACHEDIR'] = cache
     my_env['APPTAINER_CACHEDIR'] = cache
-    # Removing R_SITE_LIB environment variable
-    # due to issue: https://github.com/OpenOmics/chrom-seek/issues/28
-    # Using SINGULARITY_CONTAINALL or APPTAINER_CONTAINALL
-    # causes downstream using where $SLURM_JOBID is 
-    # NOT exported within a container.
-    if 'R_LIBS_SITE' in my_env:
-        # functionally equivalent:
-        # unset R_LIBS_SITE
-        del my_env['R_LIBS_SITE']
 
     if alt_cache:
         # Override the pipeline's default 
@@ -701,6 +697,8 @@ def runner(mode, outdir, alt_cache, logger, additional_bind_paths = None,
         my_env['APPTAINER_CACHEDIR'] = alt_cache
         cache = alt_cache
 
+    my_env = sanitize_slurm_env(my_env)
+    
     if additional_bind_paths:
         # Add Bind PATHs for outdir and tmp dir
         if bindpaths:
@@ -730,7 +728,7 @@ def runner(mode, outdir, alt_cache, logger, additional_bind_paths = None,
         masterjob = subprocess.Popen([
                 'snakemake', '-pr', '--rerun-incomplete',
                 '--use-singularity',
-                '--singularity-args', "'-B {}'".format(bindpaths),
+                '--singularity-args', "\\-c \\-B '{}'".format(bindpaths),
                 '--cores', str(threads),
                 '--configfile=config.json'
             ], cwd = outdir, stderr=subprocess.STDOUT, stdout=logger, env=my_env)

@@ -73,22 +73,6 @@ def calc_effective_genome_fraction(effectivesize, genomefile):
     return(str(float(effectivesize)/ genomelen))
 
 
-def getMacChip(bam_dir, name, paired_end): 
-    if paired_end:
-        chip = join(bam_dir, name + ".Q5DD.bam")
-    else:
-        chip = join(bam_dir, name + ".Q5DD_tagAlign.gz")
-    return chip
-
-
-def getMacTXT(ppqt_dir, name, paired_end): 
-    if paired_end:
-        txt = join(ppqt_dir, name + ".Q5DD.ppqt.txt")
-    else:
-        txt = join(ppqt_dir, name + ".Q5DD_tagAlign.ppqt.txt")
-    return txt
-
-
 def getSicerChips(bam_dir, name, paired_end):
     if paired_end:
         chip = join(bam_dir, name + ".Q5DD.bam")
