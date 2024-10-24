@@ -2,12 +2,14 @@
 import os
 import argparse
 import json
+import csv
+import shutil
 
 def main(args):
     base_query = {
         "feature": ["gene"],
         "filter_attribute": "gene_type",
-        "attribute_values": ["protein_coding"], 
+        "attribute_values": ["protein_coding"],
         "feature_anchor": ["start"],
         "relative_location": 
             ["PeakInsideFeature", "FeatureInsidePeak", "Upstream",
@@ -22,9 +24,10 @@ def main(args):
         json_construct['queries'] = []
         json_construct['show_attributes'] = ["gene_id", "gene_name", "gene_type"]
         json_construct["priority"] = "Yes"
-        json_construct["outdir"] = os.path.dirname(args.output_json[i])
+        # don't put outdir in json, leave to specify on command line execution
+        # json_construct["outdir"] = os.path.dirname(args.output_json[i])
         json_construct['gtf'] = args.gtf
-        json_construct['bed'] = args.bed
+        json_construct['bed'] = str(args.bed)
 
         if args.assay == 'cfchip':
             if peak_type == 'protTSS':
