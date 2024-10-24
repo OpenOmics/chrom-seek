@@ -44,7 +44,7 @@ if reps == "yes": otherDirs.append(diffbind_dir)
 mk_dir_if_not_exist(PeakTools + otherDirs)
 
 
-localrules: diffbind_csv_macsN, diffbind_csv_macsB
+localrules: diffbind_csv_macsN, diffbind_csv_macsB, diffbind_csv_genrich
 
 
 # ~~ differential binding analysis ~~ #
@@ -101,6 +101,40 @@ rule diffbind_csv_macsN:
         bam_dir                         = bam_dir,
         workpath                        = workpath,
     log: join(local_log_dir, "diffbind_csv_macsN", "{group1}_vs_{group2}_diffbind_csv.log")
+    run:
+        for i, contrast in enumerate(group_combos):
+            shell(dedent(
+                """
+                python {params.pythonscript} \\
+                    --con \"""" + contrast + """\" \\
+                    --wp {params.workpath} \\
+                    --pt {params.this_peaktool} \\
+                    --pe {params.this_peakextension} \\
+                    --bd {params.bam_dir} \\
+                    --pc {params.peakcaller} \\
+                    --csv {output.csvfile}
+                """
+            ))
+
+
+rule diffbind_csv_genrich:
+    input:
+        bed                            = expand(join(genrich_dir, "{name}", "{name}.narrowPeak"), name=chips)
+    output:
+        csvfile                         = join(
+                                            diffbind_dir,
+                                            "{group1}_vs_{group2}-Genrich",
+                                            "{group1}_vs_{group2}-Genrich_Diffbind_prep.csv",
+                                          ),
+    params:
+        rname                           = "diffbind_csv_genrich",
+        this_peaktool                   = "Genrich",
+        peakcaller                      = "narrowPeak",
+        this_peakextension              = "_peaks.narrowPeak",
+        pythonscript                    = join(bin_path, "prep_diffbind.py"),
+        bam_dir                         = bam_dir,
+        workpath                        = workpath,
+    log: join(local_log_dir, "diffbind_csv_genrich", "{group1}_vs_{group2}_diffbind_csv.log")
     run:
         for i, contrast in enumerate(group_combos):
             shell(dedent(

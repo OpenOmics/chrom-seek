@@ -426,6 +426,37 @@ rule FRiP_macsN:
         """
 
 
+rule FRiP_Genrich:
+    input:
+        bed                     = expand(join(genrich_dir, "{name}", "{name}.narrowPeak"), name=chips),
+        bam                     = join(bam_dir, "{name}.Q5DD.bam"),
+    output:
+        join(workpath, "PeakQC", "Genrich.{name}.Q5DD.FRiP_table.txt"),
+    params:
+        rname                   = "FRiP_macsN",
+        outroot                 = join(peakqc_dir, "macsNarrow"),
+        script                  = join(bin_path, "frip.py"),
+        genome                  = config['references'][genome]['REFLEN'],
+        tmpdir                  = tmpdir,
+    container: 
+        config['images']['python']
+    shell: 
+        """
+        # Setups temporary directory for
+        # intermediate files with built-in 
+        # mechanism for deletion on exit
+        if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
+        tmp=$(mktemp -d -p "{params.tmpdir}")
+        trap 'rm -rf "${{tmp}}"' EXIT
+
+        python {params.script} \\
+            -p {input.bed} \\
+            -b {input.bam} \\
+            -g {params.genome} \\
+            -o {params.outroot}
+        """
+
+
 rule FRiP_macsB:
     input:
         bed                     = expand(join(macsB_dir, "{name}", "{name}_peaks.broadPeak"), name=chips),
