@@ -8,6 +8,10 @@ folder <- args[1]
 
 library(ggplot2)
 library(rjson)
+# these are used but called directly by the function
+#library(ComplexHeatmap)
+#library(tidyr)
+#library(circlize)
 
 merge_files <- function(folder) {
   files <- list.files(path=paste0(folder,"/PeakQC"), pattern="FRiP_table.txt", 
@@ -63,8 +67,6 @@ plot_barplots_self <- function(inData2, folder) {
   }
 }
 
-
-
 plot_scatterplots_self <- function(inData2, folder) {
   p <- ggplot(inData2,aes(x=n_basesM, y=FRiP, shape=bedtool, color=groupInfo))
   p <- p + geom_point(size=2.5) +
@@ -77,6 +79,25 @@ plot_scatterplots_self <- function(inData2, folder) {
   pdf(paste0(folder, "/PeakQC/FRiP_scatterplot.pdf"))
   print(p)
   dev.off()
+}
+
+PeakQCHeatmap<-function(PeakQC.dir, peakcaller, plot_data){
+# From Subrata Paul and adapted for this script
+#  files<-grep(peakcaller, list.files(PeakQC.dir, full.names = T), value = T)
+#  plot_data = lapply(files, function(file) read.table(file, sep = '\t', header = T))
+#  plot_data = do.call('rbind', plot_data)
+  plot_data = plot_data[which(plot_data$bedtool == peakcaller),]
+  plot_data = plot_data[,c('bedsample', 'bamsample', 'FRiP')]
+  plot_data = tidyr::pivot_wider(plot_data,names_from = bamsample, values_from=FRiP)
+  plot_data = data.frame(plot_data, check.names = F)
+  rownames(plot_data)<-plot_data$bedsample
+  plot_data = as.matrix(plot_data[, -1])
+
+  ComplexHeatmap::Heatmap(plot_data, na_col="grey",
+                          col = circlize::colorRamp2(c(0, 0.1, max(plot_data)), c('red', 'orange', 'blue')), 
+                          heatmap_legend_param = list(title = 'FRiP'), 
+                          row_title = 'Sample of peaks', 
+                          column_title = 'Sample of reads')  
 }
 
 process_json <- function(injson) {
@@ -97,6 +118,16 @@ process_json <- function(injson) {
 }
 
 allData <- merge_files(folder)
+
+bedtools <- unique(allData$bedtool)
+
+for (i in 1:length(bedtools) ) {
+    ht <- PeakQCHeatmap(PeakQC.dir=folder, peakcaller=bedtools[i], plot_data=allData)
+    pdf(paste0(folder, "/PeakQC/",bedtools[i],".FRiP_heatmap.pdf"))
+    print(ht)
+    dev.off()
+}
+
 groupList <- process_json(paste0(folder,"/config.json"))
 
 for (i in 1:length(groupList)) {
