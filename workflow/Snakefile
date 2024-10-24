@@ -25,9 +25,13 @@ blocking                        = False if set(blocks.values()) in ({None}, {''}
 paired_end                      = False if config['project']['nends'] == 1 else True
 chips                           = config['project']['peaks']['chips']
 contrast                        = config['project']['contrast']
+
+# list of contrasts in {group1}_vs_{group2}
 contrasts                       = []
-for (g1, g2) in list(combinations(config['project']['groups'].keys(), 2)):
-    contrasts.append(f"{g1}_vs_{g2}")
+for group_list in contrast:
+    for combo in combinations(group_list, 2):
+        contrasts.append(f"{combo[0]}_vs_{combo[1]}")
+
 chip2input                      = config['project']['peaks']['inputs']
 has_inputs                      = False if set(chip2input.values()) in ({''}, {None}) else True
 groupdata                       = config['project']['groups']
@@ -81,19 +85,28 @@ if assay == "cfchip":
         join(cfTool_dir, "Output", "H3K4me3", "Signatures", "{name}.Q5DD.csv"), 
         name=chips
     ))
-    rule_all_ins.extend(expand(
-        join(uropa_dir, "promoterTable1", "{PeakTool}_promoter_overlap_summaryTable.txt"), 
-        PeakTool=['macsNarrow']
-    ))
+
     if has_inputs:
         rule_all_ins.append(
             join(qc_dir, "AllSamples-macsNarrow", "AllSamples-macsNarrow_DiffBindQC_TMMcounts.bed")
         )
-    if reps and contrast:
-        rule_all_ins.append(expand(
-            join(uropa_dir, "promoterTable2", '{contrast}-{PeakTool}_DiffbindDeseq2_promoter_overlap_summaryTable.txt'),
-            contrast=contrasts, PeakTool=PeakTools
-        ))
+    if reps:
+        # promotertable 1
+        # rule_all_ins.extend(expand(
+        #     join(uropa_dir, "promoterTable1", "{PeakTool}_promoter_overlap_summaryTable.txt"), 
+        #     PeakTool=['macsNarrow']
+        # ))
+        if contrast:
+            # promotertable 2
+            # rule_all_ins.append(expand(
+            #     join(uropa_dir, "promoterTable2", '{contrast}-{PeakTool}_DiffbindDeseq2_promoter_overlap_summaryTable.txt'),
+            #     contrast=contrasts, PeakTool=PeakTools
+            # ))
+            # rule_all_ins.append(expand(
+            #     join(uropa_diffbind_dir, "{contrast}-{PeakTool}-{diff_app}", '{contrast}-{PeakTool}_Diffbind_{diff_app}_promoter_overlap_summaryTable.txt'),
+            #     contrast=contrasts, PeakTool=PeakTools, diff_app=['DeSeq2']
+            # ))
+            pass
     else:
         # remove manorm for now
         # rule_all_ins.extend(expand(
@@ -133,20 +146,6 @@ elif assay in ["atac", "chip"]:
             rule_all_ins.extend(expand(join(ppqt_dir, "{name}.{ext}.ppqt"), name=samples, ext=tag_ext))
             rule_all_ins.extend(expand(join(ppqt_dir, "{name}.{ext}.pdf"), name=samples, ext=tag_ext))
             rule_all_ins.extend(expand(join(ppqt_dir, "{name}.{ext}.ppqt.txt"), name=samples, ext=tag_ext))
-            if reps:
-                rule_all_ins.extend(expand(
-                    join(uropa_dir, "{application}", "{name}_uropa_{_type}_allhits.txt"), 
-                    name=chips,
-                    application="macsBroad",
-                    _type=peak_types,
-                ))
-                if contrast:
-                    rule_all_ins.extend(expand(
-                        join(uropa_dir, "DiffBind", "{contrast}_{application}_uropa_{_type}_allhits.txt"), 
-                        contrast=contrasts,
-                        application="macsBroad",
-                        _type=peak_types,
-                    ))
     elif assay == "atac":
         rule_all_ins.extend(expand(
             join(genrich_dir, "{name}", "{name}.narrowPeak"), name=chips
@@ -172,45 +171,41 @@ rule_all_ins.extend(
     expand(join(peakqc_dir, "{PeakTool}.{name}.Q5DD.FRiP_table.txt"), PeakTool=PeakTools, name=chips)
 )
 rule_all_ins.extend(expand(join(bam_dir, "{name}.{ext}"), name=samples, ext=extaln))
-# rule_all_ins.extend(expand(join(macsN_dir, "{name}","{name}_peaks.narrowPeak"), name=chips))
 rule_all_ins.extend(expand(join(bw_dir, "{name}.{ext}.RPGC.bw"), name=samples, ext=["sorted", "Q5DD"]))
 
 if has_inputs:
     rule_all_ins.extend(expand(join(bw_dir, "{name}.Q5DD.RPGC.inputnorm.bw"), name=sampleswinput))
 
+rule_all_ins.extend(expand(
+    join(uropa_dir, "{application}", "{name}_uropa_{_type}_allhits.txt"), 
+    name=chips,
+    application=["macsNarrow", "macsBroad"],
+    _type=peak_types,
+))
 
-if reps:
+if reps and contrast:
     rule_all_ins.extend(expand(
-        join(uropa_dir, "{application}", "{name}_uropa_{_type}_allhits.txt"), 
-        name=chips,
-        application="macsNarrow",
-        _type=peak_types,
+        join(diffbind_dir, "{contrast}-{PeakTool}", "{contrast}-{PeakTool}_Diffbind_EdgeR.html"), 
+        contrast=contrasts, PeakTool=PeakTools
     ))
-    if contrast:
-        rule_all_ins.extend(expand(
-            join(uropa_dir, "DiffBind", "{contrast}_{application}_uropa_{_type}_allhits.txt"), 
-            contrast=contrasts,
-            application="macsNarrow",
-            _type=peak_types,
-        ))
-        rule_all_ins.extend(expand(
-            join(diffbind_dir, "{contrast}-{PeakTool}", "{contrast}-{PeakTool}_Diffbind_EdgeR.html"), 
-            contrast=contrasts, PeakTool=PeakTools
-        ))
-        rule_all_ins.extend(expand(
-            join(diffbind_dir, "{contrast}-{PeakTool}", "{contrast}-{PeakTool}_Diffbind_DeSeq2.html"), 
-            contrast=contrasts, PeakTool=PeakTools
-        ))
-        if blocking:
-            rule_all_ins.extend(expand(
-                join(diffbind_dir, "{contrast}-{PeakTool}", "{contrast}-{PeakTool}_Diffbind_blocking_EdgeR.html"),
-                contrast=contrasts, PeakTool=PeakTools
-            ))
-            rule_all_ins.extend(expand(
-                join(diffbind_dir, "{contrast}-{PeakTool}", "{contrast}-{PeakTool}_Diffbind_blocking_DeSeq2.html"),
-                contrast=contrasts, PeakTool=PeakTools
-            ))
+    rule_all_ins.extend(expand(
+        join(diffbind_dir, "{contrast}-{PeakTool}", "{contrast}-{PeakTool}_Diffbind_DeSeq2.html"), 
+        contrast=contrasts, PeakTool=PeakTools
+    ))
+    rule_all_ins.extend(expand(
+        join(uropa_dir, "DiffBind", "{contrast}-{PeakTool}-{differential_app}", "{contrast}_{PeakTool}_{differential_app}_{_type}_uropa_allhits.txt"), 
+        contrast=contrasts, PeakTool=PeakTools, differential_app=['EdgeR'], _type=peak_types
+    )),
 
+    if blocking:
+        rule_all_ins.extend(expand(
+            join(diffbind_dir, "{contrast}-{PeakTool}", "{contrast}-{PeakTool}_Diffbind_blocking_EdgeR.html"),
+            contrast=contrasts, PeakTool=PeakTools
+        ))
+        rule_all_ins.extend(expand(
+            join(diffbind_dir, "{contrast}-{PeakTool}", "{contrast}-{PeakTool}_Diffbind_blocking_DeSeq2.html"),
+            contrast=contrasts, PeakTool=PeakTools
+        ))
 
 rule all:
     input:
@@ -222,4 +217,5 @@ include: join("rules", "trim_align_dedup.smk")
 include: join("rules", "qc.smk")
 include: join("rules", "peakcall.smk")
 include: join("rules", "dba.smk")
+include: join("rules", "uropa.smk")
 include: join("rules", "cfChIP.smk")

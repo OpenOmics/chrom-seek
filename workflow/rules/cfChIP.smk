@@ -86,11 +86,23 @@ rule promoterTable1_macsN:
 
 rule promoterTable2:
     input:
-        join(diffbind_dir, "{contrast}-{PeakTool}", "{contrast}-{PeakTool}_Diffbind_Deseq2_full_list.txt"),
+        full_list               = join(
+                                    diffbind_dir, 
+                                    "{group1}_vs_{group2}-{PeakTool}", 
+                                    "{group1}_vs_{group2}-{PeakTool}_Diffbind_fullList.bed"
+                                  ),
+        peak_annos              = [join(uropa_diffbind_dir, 
+                                        "{group1}_vs_{group2}-{PeakTool}-DeSeq2",
+                                        "{group1}_vs_{group2}_{PeakTool}_DeSeq2_protTSS_uropa_allhits.txt") 
+                                    for pk_type in peak_types],
     output:
-        txt                     = join(uropa_dir, "promoterTable2", '{contrast}-{PeakTool}_DiffbindDeseq2_promoter_overlap_summaryTable.txt'),
+        join(
+            uropa_diffbind_dir,
+            "{group1}_vs_{group2}-{PeakTool}-DeSeq2",
+            "{group1}_vs_{group2}-{PeakTool}_Diffbind_DeSeq2_promoter_overlap_summaryTable.txt"
+        ),
     params:
-        rname                   = "promoter2",
+        rname                   = "promoterTable2",
         script1                 = join(bin_path, "promoterAnnotation_by_Gene.R"),
         script2                 = join(bin_path, "significantPathways.R"),
         infolder                = workpath,
@@ -99,9 +111,9 @@ rule promoterTable2:
         config['images']['cfchip']
     shell: 
         """
-        Rscript -e "source('{params.script1}'); diffbindVersion('{params.infolder}', '{output.txt}')";
-        Rscript -e "source('{params.script2}'); promoterAnnotationWrapper('{output.txt}', '{params.gtf}', 'KEGG')";
-        Rscript -e "source('{params.script2}'); promoterAnnotationWrapper('{output.txt}', '{params.gtf}', 'Reactome')";
+        Rscript -e "source('{params.script1}'); diffbindVersion('{params.infolder}', '{output}')";
+        Rscript -e "source('{params.script2}'); promoterAnnotationWrapper('{output}', '{params.gtf}', 'KEGG')";
+        Rscript -e "source('{params.script2}'); promoterAnnotationWrapper('{output}', '{params.gtf}', 'Reactome')";
         """
 
 
