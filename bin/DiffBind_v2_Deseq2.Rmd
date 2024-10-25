@@ -1,5 +1,6 @@
 ---
 title: "DiffBind: chrom-seek pipeline"
+subtitle: "Deseq2"
 output: 
    html_document:
       toc: true
