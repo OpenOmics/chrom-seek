@@ -3,7 +3,6 @@
         "cfchip": "docker://skchronicles/cfchip_toolkit:v0.5.0",
         "uropa": "docker://rroutsong/uropa:4.0.3",
         "python": "docker://asyakhleborodova/chrom_seek_python:v0.1.0",
-        "ppqt": "docker://asyakhleborodova/ppqt:v0.2.0",
-        "dedup": "docker://rroutsong/chrom_seek_dedup:0.0.1"
+        "ppqt": "docker://asyakhleborodova/ppqt:v0.2.0"
     }
 }

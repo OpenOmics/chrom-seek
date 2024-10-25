@@ -182,7 +182,7 @@ rule UROPA_prep_in_macsN:
         """)
 
 
-rule UROPA_macsN:
+rule UROPA_macsNarrow:
     input: join(uropa_dir, "macsNarrow", "{name}.macsNarrow.{_type}.json")
     params: 
         rname                           = "UROPA_macsN",

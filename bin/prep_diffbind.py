@@ -5,7 +5,7 @@ from csv import DictWriter
 from os.path import join
 
 
-def main(condition, peaktool, peakext, peakcaller, csvfile, wp, bam_dir):
+def main(contrast, peaktool, peakext, peakcaller, csvfile, wp, bam_dir):
     config = json.load(open(join(wp, "config.json")))
     chip2input = config['project']['peaks']['inputs']
     groupdata = config['project']['groups']
@@ -21,7 +21,7 @@ def main(condition, peaktool, peakext, peakcaller, csvfile, wp, bam_dir):
     
     samplesheet = []
     # {group1}_vs_{group2} == condition
-    g1, g2 = condition.split('_')[0], condition.split('_')[2]
+    g1, g2 = contrast.split('_')[0], contrast.split('_')[2]
     for group in [g1, g2]:
         for chip in groupdata[group]:
             replicate = str([ i + 1 for i in range(len(groupdata[group])) if groupdata[group][i]== chip ][0])
