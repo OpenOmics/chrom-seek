@@ -8,6 +8,10 @@ log_filesize_limit: 100000000
 
 fn_ignore_files:
     - '*.preseq.dat'
+    - 'spearman_readcounts.Q5DD.tab'
+
+fn_ignore_dirs:
+    - macsNarrow
 
 top_modules: 
     - 'QC_Table'
