@@ -67,6 +67,8 @@ cfTool_dir                      = join(workpath, "cfChIPtool")
 genrich_dir                     = join(workpath, "Genrich")
 MEME_dir                        = join(workpath, "MEME")
 manorm_dir                      = join(workpath, "MANorm")
+dba_anno_path                   = join(workpath, 'dba_annotations')
+
 
 # Read in resource information
 with open(join('config', 'cluster.json')) as fh:
@@ -195,7 +197,10 @@ if reps and contrast:
         join(uropa_dir, "DiffBind", "{contrast}-{PeakTool}-{differential_app}", "{contrast}_{PeakTool}_{differential_app}_{_type}_uropa_allhits.txt"), 
         contrast=contrasts, PeakTool=PeakTools, differential_app=['EdgeR'], _type=peak_types
     )),
-
+    rule_all_ins.extend(expand(
+        join(dba_anno_path, "{contrast}_{PeakTool}_{_type}_uropa_allhits.txt"), 
+        contrast=contrasts, PeakTool=PeakTools, _type=peak_types
+    )),
     if blocking:
         rule_all_ins.extend(expand(
             join(diffbind_dir, "{contrast}-{PeakTool}", "{contrast}-{PeakTool}_Diffbind_blocking_EdgeR.html"),

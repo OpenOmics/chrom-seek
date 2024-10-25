@@ -3,7 +3,16 @@ from os.path import join, sep
 from textwrap import dedent
 
 localrules: UROPA_prep_in_macsB, UROPA_prep_in_macsN, \
-    UROPA_prep_diffbind_edgeR, UROPA_prep_diffbind_DeSeq2
+    UROPA_prep_diffbind_edgeR, UROPA_prep_diffbind_DeSeq2, \
+    rename_edger_dba_uropa
+
+
+workpath                        = config['project']['workpath']
+uropa_dir                       = join(workpath, "UROPA_annotations")
+uropa_diffbind_dir              = join(uropa_dir, "DiffBind")
+diffbind_dir                    = join(workpath, "DiffBind")
+dba_anno_path                   = join(workpath, 'dba_annotations')
+
 
 rule UROPA_prep_diffbind_edgeR:
     input: 
@@ -78,11 +87,24 @@ rule UROPA_diffbind:
         outroot                         = join(uropa_diffbind_dir, "{group1}_vs_{group2}-{PeakTool}-{differential_app}"),
         uropa_prefix                    = "{group1}_vs_{group2}_{PeakTool}_{differential_app}_{_type}_uropa",
     output: 
-        join(
-            uropa_diffbind_dir, 
-            "{group1}_vs_{group2}-{PeakTool}-{differential_app}",
-            "{group1}_vs_{group2}_{PeakTool}_{differential_app}_{_type}_uropa_allhits.txt"
-        ),
+        allhits_txt                     = join(uropa_diffbind_dir, 
+                                               "{group1}_vs_{group2}-{PeakTool}-{differential_app}", 
+                                               "{group1}_vs_{group2}_{PeakTool}_{differential_app}_{_type}_uropa_allhits.txt"),
+        allhits_bed                     = join(uropa_diffbind_dir, 
+                                               "{group1}_vs_{group2}-{PeakTool}-{differential_app}", 
+                                               "{group1}_vs_{group2}_{PeakTool}_{differential_app}_{_type}_uropa_allhits.bed"),
+        finalhits_txt                   = join(uropa_diffbind_dir, 
+                                               "{group1}_vs_{group2}-{PeakTool}-{differential_app}", 
+                                               "{group1}_vs_{group2}_{PeakTool}_{differential_app}_{_type}_uropa_finalhits.txt"),
+        finalhits_bed                   = join(uropa_diffbind_dir, 
+                                                "{group1}_vs_{group2}-{PeakTool}-{differential_app}", 
+                                                "{group1}_vs_{group2}_{PeakTool}_{differential_app}_{_type}_uropa_finalhits.bed"),
+        summary                         = join(uropa_diffbind_dir, 
+                                                "{group1}_vs_{group2}-{PeakTool}-{differential_app}", 
+                                                "{group1}_vs_{group2}_{PeakTool}_{differential_app}_{_type}_uropa_summary.pdf"),
+        json                            = join(uropa_diffbind_dir, 
+                                                "{group1}_vs_{group2}-{PeakTool}-{differential_app}", 
+                                                "{group1}_vs_{group2}_{PeakTool}_{differential_app}_{_type}_uropa.json"),
     threads: int(allocated("threads", "UROPA_diffbind", cluster)),
     container: config["images"]["uropa"]
     shell: 
@@ -93,6 +115,44 @@ rule UROPA_diffbind:
                 -p {params.uropa_prefix} \\
                 -t {threads} -s
             """)
+
+rule rename_edger_dba_uropa:
+    input:
+        allhits_txt                     = join(uropa_diffbind_dir, 
+                                               "{group1}_vs_{group2}-{PeakTool}-EdgeR", 
+                                               "{group1}_vs_{group2}_{PeakTool}_EdgeR_{_type}_uropa_allhits.txt"),
+        allhits_bed                     = join(uropa_diffbind_dir, 
+                                               "{group1}_vs_{group2}-{PeakTool}-EdgeR", 
+                                               "{group1}_vs_{group2}_{PeakTool}_EdgeR_{_type}_uropa_allhits.bed"),
+        finalhits_txt                   = join(uropa_diffbind_dir, 
+                                               "{group1}_vs_{group2}-{PeakTool}-EdgeR", 
+                                               "{group1}_vs_{group2}_{PeakTool}_EdgeR_{_type}_uropa_finalhits.txt"),
+        finalhits_bed                   = join(uropa_diffbind_dir, 
+                                                "{group1}_vs_{group2}-{PeakTool}-EdgeR", 
+                                                "{group1}_vs_{group2}_{PeakTool}_EdgeR_{_type}_uropa_finalhits.bed"),
+        summary                         = join(uropa_diffbind_dir, 
+                                                "{group1}_vs_{group2}-{PeakTool}-EdgeR", 
+                                                "{group1}_vs_{group2}_{PeakTool}_EdgeR_{_type}_uropa_summary.pdf"),
+        json                            = join(uropa_diffbind_dir, 
+                                                "{group1}_vs_{group2}-{PeakTool}-EdgeR", 
+                                                "{group1}_vs_{group2}_{PeakTool}_EdgeR_{_type}_uropa.json"),
+    output:
+        allhits_txt                     = join(dba_anno_path, "{group1}_vs_{group2}_{PeakTool}_{_type}_uropa_allhits.txt"),
+        allhits_bed                     = join(dba_anno_path, "{group1}_vs_{group2}_{PeakTool}_{_type}_allhits.bed"),
+        finalhits_txt                   = join(dba_anno_path, "{group1}_vs_{group2}_{PeakTool}_{_type}_finalhits.txt"),
+        finalhits_bed                   = join(dba_anno_path, "{group1}_vs_{group2}_{PeakTool}_{_type}_finalhits.bed"),
+        summary                         = join(dba_anno_path, "{group1}_vs_{group2}_{PeakTool}_{_type}_summary.pdf"),
+        json                            = join(dba_anno_path, "{group1}_vs_{group2}_{PeakTool}_{_type}.json")
+    shell:
+        """
+        cp {input.allhits_txt} {output.allhits_txt}
+        cp {input.allhits_bed} {output.allhits_bed}
+        cp {input.finalhits_txt} {output.finalhits_txt}
+        cp {input.finalhits_bed} {output.finalhits_bed}
+        cp {input.summary} {output.summary}
+        cp {input.json} {output.json}
+        """
+
 
 # ~~ macs Narrow peak annotation  ~~ #
 rule UROPA_prep_in_macsN:
@@ -127,7 +187,11 @@ rule UROPA_macsN:
     params: 
         rname                           = "UROPA_macsN",
         outroot                         = join(uropa_dir, "macsNarrow"),
-    output: join(uropa_dir, "macsNarrow", "{name}_uropa_{_type}_allhits.txt"),
+    output: 
+        allhits_txt                     = join(uropa_dir, "macsNarrow", "{name}_uropa_{_type}_allhits.txt"),
+        allhits_bed                     = join(uropa_dir, "macsNarrow", "{name}_uropa_{_type}_allhits.bed"),
+        finalhits_txt                   = join(uropa_dir, "macsNarrow", "{name}_uropa_{_type}_finalhits.txt"),
+        finalhits_bed                   = join(uropa_dir, "macsNarrow", "{name}_uropa_{_type}_finalhits.bed"),
     threads: int(allocated("threads", "UROPA_macsN", cluster)),
     container: config["images"]["uropa"]
     shell: "uropa -i {input} -p {wildcards.name}_uropa_{wildcards._type} -o {params.outroot} -t {threads} -s"
@@ -165,7 +229,11 @@ rule UROPA_macsBroad:
     params:
         rname = "UROPA_macsB",
         outroot = join(uropa_dir, "macsBroad"),
-    output: join(uropa_dir, "macsBroad", "{name}_uropa_{_type}_allhits.txt"),
+    output: 
+        allhits_txt                     = join(uropa_dir, "macsBroad", "{name}_uropa_{_type}_allhits.txt"),
+        allhits_bed                     = join(uropa_dir, "macsBroad", "{name}_uropa_{_type}_allhits.bed"),
+        finalhits_txt                   = join(uropa_dir, "macsBroad", "{name}_uropa_{_type}_finalhits.txt"),
+        finalhits_bed                   = join(uropa_dir, "macsBroad", "{name}_uropa_{_type}_finalhits.bed"),
     threads: int(allocated("threads", "UROPA_macsBroad", cluster)),
     container: config["images"]["uropa"],
     shell: "uropa -i {input} -p {wildcards.name}_uropa_{wildcards._type} -o {params.outroot} -t {threads} -s"
