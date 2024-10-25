@@ -12,7 +12,7 @@
     "trim": {
         "mem": "64g",
         "threads": "32",
-        "time": "1-12:00:00"
+        "time": "1-18:00:00"
     },
     "kraken": {
         "cpus-per-task": "24",
