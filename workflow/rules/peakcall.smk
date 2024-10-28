@@ -4,7 +4,7 @@
 # Common quality-control rules: preseq, NRF, rawfastqc,
 #   fastqc, fastq_screen, multiQC
 from os.path import join
-from scripts.peakcall import get_control_input, getMacTXT, getMacChip, \
+from scripts.peakcall import get_control_input, \
     getSicerChips, getSicerFragLen, get_control_input
 
 
@@ -89,8 +89,10 @@ rule genrich:
 
 rule MACS2_narrow:
     input:
-        chip                            = lambda w: getMacChip(bam_dir, w.name, paired_end),
-        txt                             = lambda w: getMacTXT(ppqt_dir, w.name, paired_end),
+        chip                            = join(bam_dir, "{name}.Q5DD.bam") if paired_end \
+                                            else join(bam_dir, "{name}.Q5DD_tagAlign.gz"),
+        txt                             = join(ppqt_dir, "{name}.Q5DD.ppqt.txt") if paired_end \
+                                            else join(ppqt_dir, "{name}.Q5DD_tagAlign.ppqt.txt"),
         c_option                        = lambda w: get_control_input(chip2input[w.name], paired_end, bam_dir),
     output:
         join(macsN_dir, "{name}", "{name}_peaks.narrowPeak"),
@@ -98,7 +100,7 @@ rule MACS2_narrow:
         rname                           = 'MACS2_narrow',
         gsize                           = config['references'][genome]['EFFECTIVEGENOMESIZE'],
         macsver                         = config['tools']['MACSVER'],
-        flag                            = lambda w: "-c" if chip2input[w.name] else ""
+        flag                            = lambda w: "-c" if chip2input[w.name] else "",
     shell: 
         """
         module load {params.macsver};
@@ -128,8 +130,10 @@ rule MACS2_narrow:
 
 rule MACS2_broad:
     input:
-        chip                            = lambda w: getMacChip(bam_dir, w.name, paired_end),
-        txt                             = lambda w: getMacTXT(ppqt_dir, w.name, paired_end),
+        chip                            = join(bam_dir, "{name}.Q5DD.bam") if paired_end \
+                                            else join(bam_dir, "{name}.Q5DD_tagAlign.gz"),
+        txt                             = join(ppqt_dir, "{name}.Q5DD.ppqt.txt") if paired_end \
+                                            else join(ppqt_dir, "{name}.Q5DD_tagAlign.ppqt.txt"),
         c_option                        = lambda w: get_control_input(chip2input[w.name], paired_end, bam_dir),
     output:
         join(macsB_dir, "{name}", "{name}_peaks.broadPeak"),
@@ -137,7 +141,7 @@ rule MACS2_broad:
         rname                           = 'MACS2_broad',
         gsize                           = config['references'][genome]['EFFECTIVEGENOMESIZE'],
         macsver                         = config['tools']['MACSVER'],
-        flag                            = lambda w: "-c" if chip2input[w.name] else ""
+        flag                            = lambda w: "-c" if chip2input[w.name] else "",
     shell: 
         """
         module load {params.macsver};

@@ -275,26 +275,6 @@ def check_cache(parser, cache, *args, **kwargs):
     return cache
 
 
-def unpacked(nested_dict):
-    """Generator to recursively retrieves all values in a nested dictionary.
-    @param nested_dict dict[<any>]:
-        Nested dictionary to unpack
-    @yields value in dictionary 
-    """
-    # Iterate over all values of given dictionary
-    for value in nested_dict.values():
-        # Check if value is of dict type
-        if isinstance(value, dict):
-            # If value is dict then iterate over
-            # all its values recursively
-            for v in unpacked(value):
-                yield v
-        else:
-            # If value is not dict type then
-            # yield the value
-            yield value
-
-
 class Colors():
     """Class encoding for ANSI escape sequeces for styling terminal text.
     Any string that is formatting with these styles must be terminated with
@@ -358,10 +338,33 @@ def hashed(l):
     return h
 
 
+def sanitize_slurm_env(my_env):
+    # Don't inherit TERM_PROGRAM cause its usually set by vscode
+    if 'TERM_PROGRAM' in my_env:
+        del my_env['TERM_PROGRAM']
+
+    # unset user locale, can't guarantee the user's locale on the 
+    # container system
+    if 'LC_ALL' in my_env:
+        del my_env['LC_ALL']
+
+    # Removing R_SITE_LIB & R_LIBS_USER environment variable
+    # due to issue: https://github.com/OpenOmics/chrom-seek/issues/28
+    # Using SINGULARITY_CONTAINALL or APPTAINER_CONTAINALL
+    # causes downstream using where $SLURM_JOBID is 
+    # NOT exported within a container.
+    if 'R_LIBS_SITE' in my_env:
+        del my_env['R_LIBS_SITE']
+    if 'R_LIBS_USER' in my_env:
+        del my_env['R_LIBS_USER']
+    
+    return my_env
+
+
 if __name__ == '__main__':
     # Calculate MD5 checksum of entire file 
     print('{}  {}'.format(md5sum(sys.argv[0]), sys.argv[0]))
-    # Calcualte MD5 cehcksum of 512 byte chunck of file,
+    # Calcualte MD5 cehcksum of 512 byte chunk of file,
     # which is similar to following unix command: 
     # dd if=utils.py bs=512 count=1 2>/dev/null | md5sum 
     print('{}  {}'.format(md5sum(sys.argv[0], first_block_only = True, blocksize = 512), sys.argv[0]))

@@ -5,7 +5,7 @@ from csv import DictWriter
 from os.path import join
 
 
-def main(group1, group2, peaktool, peakext, peakcaller, csvfile, wp, bam_dir):
+def main(contrast, peaktool, peakext, peakcaller, csvfile, wp, bam_dir):
     config = json.load(open(join(wp, "config.json")))
     chip2input = config['project']['peaks']['inputs']
     groupdata = config['project']['groups']
@@ -20,9 +20,11 @@ def main(group1, group2, peaktool, peakext, peakcaller, csvfile, wp, bam_dir):
                 "bamControl", "Peaks", "PeakCaller"]
     
     samplesheet = []
-    for condition in group1, group2:
-        for chip in groupdata[condition]:
-            replicate = str([ i + 1 for i in range(len(groupdata[condition])) if groupdata[condition][i]== chip ][0])
+    # {group1}_vs_{group2} == condition
+    g1, g2 = contrast.split('_')[0], contrast.split('_')[2]
+    for group in [g1, g2]:
+        for chip in groupdata[group]:
+            replicate = str([ i + 1 for i in range(len(groupdata[group])) if groupdata[group][i]== chip ][0])
             bamReads = join(bam_dir, chip + ".Q5DD.bam")
             controlID = chip2input[chip]
             if controlID != "":
@@ -32,10 +34,10 @@ def main(group1, group2, peaktool, peakext, peakcaller, csvfile, wp, bam_dir):
             peaks = join(wp, peaktool, chip, chip + peakext)
             if blocking:
                 block = blocks[chip]
-                this_row = dict(zip(cols, [chip, condition, block, replicate, bamReads, 
+                this_row = dict(zip(cols, [chip, group, block, replicate, bamReads, 
                     controlID, bamControl, peaks, peakcaller]))
             else:
-                this_row = dict(zip(cols, [chip, condition, replicate, bamReads, 
+                this_row = dict(zip(cols, [chip, group, replicate, bamReads, 
                     controlID, bamControl, peaks, peakcaller]))
             samplesheet.append(this_row)
                 
@@ -49,8 +51,7 @@ def main(group1, group2, peaktool, peakext, peakcaller, csvfile, wp, bam_dir):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Script to prepare the DiffBind input csv')
-    parser.add_argument('--g1', dest='group1', required=True, help='Name of the first group')
-    parser.add_argument('--g2', dest='group2', required=True, help='Name of the second group')
+    parser.add_argument('--con', dest='contrast', required=True, help='Contrast string in [GROUP1]_vs_[GROUP2] format')
     parser.add_argument('--wp', dest='wp', required=True, help='Full path of the working directory')
     parser.add_argument('--pt', dest='peaktool', required=True, 
                         help='Name of the the peak calling tool, also the directory where the peak file will be located')
@@ -61,4 +62,4 @@ if __name__ == "__main__":
                         help='Name of the directory where the bam files are located')
     parser.add_argument('--csv', dest='csvfile', required=True, help='Name of the output csv file')
     args = parser.parse_args()
-    main(args.group1, args.group2, args.peaktool, args.peakext, args.peakcaller, args.csvfile, args.wp, args.bam_dir)
+    main(args.contrast, args.peaktool, args.peakext, args.peakcaller, args.csvfile, args.wp, args.bam_dir)

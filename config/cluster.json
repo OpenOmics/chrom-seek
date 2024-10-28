@@ -11,7 +11,8 @@
     },
     "trim": {
         "mem": "64g",
-        "threads": "32"
+        "threads": "32",
+        "time": "1-18:00:00"
     },
     "kraken": {
         "cpus-per-task": "24",
@@ -97,14 +98,47 @@
         "mem": "50g"
     },
     "diffbindQC": {
+        "threads": "16",
         "mem": "150g"
     },
-    "diffbind": {
+    "diffbind_deseq": {
+        "threads": "16",
         "mem": "150g"
+    },
+    "diffbind_edger": {
+        "threads": "16",
+        "mem": "150g"
+    },
+    "diffbind_edger_blocking": {
+        "threads": "16",
+        "mem": "150g"
+    },
+    "diffbind_deseq_blocking": {
+        "threads": "16",
+        "mem": "150g"
+    },
+    "diffbind_count": {
+        "threads": "16",
+        "mem": "120g"
+    },
+    "UROPA_macsNarrow": {
+        "threads": "16",
+        "mem": "32g",
+        "time": "1-00:00:00"
+    },
+    "UROPA_macsBroad": {
+        "threads": "16",
+        "mem": "32g",
+        "time": "1-00:00:00"
+    },
+    "UROPA_diffbind": {
+        "threads": "16",
+        "mem": "32g",
+        "time": "1-00:00:00"
     },
     "MEME": {
-        "threads": "2",
-        "mem": "32g",
+        "threads": "28",
+        "mem": "32g",   
         "time": "3-00:00:00",
         "ntasks": "--ntasks=28",
         "ntasks_per_core": "--ntasks-per-core=1",
