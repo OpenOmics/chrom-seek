@@ -51,26 +51,12 @@ def group_output_files(extensions, groupslist, inputnorm):
     return dtoolgroups, dtoolext
 
 
-def zip_contrasts(contrast, PeakTools):
-    """
-        making output file names for differential binding analyses
-    """
-    zipGroup1, zipGroup2, zipTool, contrasts = [], [], [], []
-    for g1, g2 in contrast:
-        for PeakTool in PeakTools:
-            zipGroup1.append(g1)
-            zipGroup2.append(g2)
-            zipTool.append(PeakTool)
-            contrasts.append( g1 + "_vs_" + g2 + "-" + PeakTool )
-    return(zipGroup1, zipGroup2, zipTool, contrasts)
-
-
 def get_peaktools(assay_type):
     tools = ["macsNarrow"]
     if assay_type == "atac": 
         tools.append("Genrich") 
     elif assay_type == "chip":
-        tools.extend(["macsBroad"])
+        tools.append("macsBroad")
         # turn sicer off for now
         # tools.extend(["macsBroad", "sicer"])
     return tools
