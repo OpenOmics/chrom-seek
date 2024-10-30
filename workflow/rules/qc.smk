@@ -318,7 +318,9 @@ rule multiqc:
         expand(join(kraken_dir, "{name}.trim.kraken_bacteria.krona.html"), name=samples),
         expand(join(bam_dir, "{name}.Q5DD.bam.flagstat"), name=samples),
         expand(join(bam_dir, "{name}.Q5.bam.flagstat"), name=samples),
-        join(deeptools_dir, "spearman_heatmap.Q5DD_mqc.png")
+        join(deeptools_dir, "spearman_readcounts.Q5DD.tab"),
+        join(deeptools_dir, "fingerprint.raw.Q5DD.tab"),
+	join(deeptools_dir,"TSS_profile.Q5DD.tab")
     output:
         join(workpath, "multiqc_report.html")
     params:
@@ -368,15 +370,15 @@ rule insert_size:
             -H {output.pdf}
         """
 
-
 rule deeptools_QC:
     input:
         [ join(bw_dir, name + ".Q5DD.RPGC.bw") for name in samples ] 
     output:
         heatmap                 = join(deeptools_dir, "spearman_heatmap.Q5DD.pdf"),
         pca                     = join(deeptools_dir, "pca.Q5DD.pdf"),
-	    npz                     = temp(join(deeptools_dir, "Q5DD.npz")),
-	    png                     = join(deeptools_dir, "spearman_heatmap.Q5DD_mqc.png")
+        npz                     = temp(join(deeptools_dir, "Q5DD.npz")),
+	mqc                     = join(deeptools_dir, "spearman_readcounts.Q5DD.tab"),
+	png                     = join(deeptools_dir, "spearman_heatmap.Q5DD_mqc.png")
     params:
         rname                   = "deeptools_QC",
         parent_dir              = deeptools_dir,
@@ -389,9 +391,70 @@ rule deeptools_QC:
         module load {params.deeptoolsver}
         if [ ! -d "{params.parent_dir}" ]; then mkdir "{params.parent_dir}"; fi
         multiBigwigSummary bins -b {input} -p {threads} -l {params.labels} -out {output.npz}
-        plotCorrelation -in {output.npz} -o {output.heatmap} -c 'spearman' -p 'heatmap' --skipZeros --removeOutliers
+        plotCorrelation -in {output.npz} -o {output.heatmap} -c 'spearman' -p 'heatmap' \\
+               --skipZeros --removeOutliers --outFileCorMatrix {output.mqc}
         plotCorrelation -in {output.npz} -o {output.png} -c 'spearman' -p 'heatmap' --skipZeros --removeOutliers
         plotPCA -in {output.npz} -o {output.pca}
+        """
+
+rule deeptools_fingerprint:
+    input:
+        [ join(bam_dir, name + ".Q5DD.bam") for name in samples ] 
+    output:
+        image=join(deeptools_dir, "fingerprint.Q5DD.pdf"),
+        raw=temp(join(deeptools_dir, "fingerprint.raw.Q5DD.tab")),
+        metrics=join(deeptools_dir, "fingerprint.metrics.Q5DD.tsv"),
+    params:
+        rname                   = "deeptools_fingerprint",
+        parent_dir              = deeptools_dir,
+        deeptoolsver            = config['tools']['DEEPTOOLSVER'],
+        # this should be the sample names to match the bigwigs in the same order
+        labels                  = samples
+    threads: int(allocated("threads", "deeptools_fingerprint", cluster)),
+    shell: 
+        """    
+        module load {params.deeptoolsver}
+        if [ ! -d "{params.parent_dir}" ]; then mkdir "{params.parent_dir}"; fi
+        if [ \"""" + str(paired_end) + """\" == False ]; then
+           extension_option="-e 200"
+        else
+           extension_option=""
+        fi
+        
+        plotFingerprint -b {input} --labels {params.labels} -p {threads} --skipZeros \\
+                        --outQualityMetrics {output.metrics} --plotFile {output.image} --outRawCounts {output.raw} \\
+                        ${{extension_option}}
+        """
+
+
+rule deeptools_gene_all:
+    input:
+        [ join(bw_dir, name + ".Q5DD.RPGC.bw") for name in samples ] 
+    output:
+        TSSline=join(deeptools_dir,"TSS_profile.Q5DD.pdf"),
+        TSSmat=temp(join(deeptools_dir,"TSS.Q5DD.mat.gz")),
+        bed=temp(join(deeptools_dir,"geneinfo.Q5DD.bed")),
+	mqc=join(deeptools_dir,"TSS_profile.Q5DD.tab")
+    params:
+        rname                   = "deeptools_gene_all",
+        parent_dir              = deeptools_dir,
+        deeptoolsver            = config['tools']['DEEPTOOLSVER'],
+        # this should be the sample names to match the bigwigs in the same order
+        labels                  = samples,
+        prebed                  = config['references'][genome]['GENEINFO'],
+    threads: 4
+    # eventually threads should be 16
+    shell: 
+        """    
+        module load {params.deeptoolsver}
+        if [ ! -d "{params.parent_dir}" ]; then mkdir "{params.parent_dir}"; fi
+        grep --line-buffered 'protein_coding' {params.prebed} | awk -v OFS='\t' -F'\t' '{{print $1, $2, $3, $5, ".", $4}}' > {output.bed}
+       computeMatrix reference-point -S {input} -R {output.bed} -p {threads} \\
+                     --referencePoint TSS --upstream 3000 --downstream 3000 --skipZeros \\
+                     -o {output.TSSmat} --samplesLabel {params.labels}
+       plotProfile -m {output.TSSmat} -out {output.TSSline} \\
+                   --yAxisLabel 'average RPGC' --plotType 'se' --legendLocation upper-left \\
+                   --numPlotsPerRow 5 --outFileNameData {output.mqc}
         """
 
 

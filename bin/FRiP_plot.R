@@ -1,14 +1,17 @@
 ## FRIP_plot.R
 ## Created by Tovah Markowitz
 ## June 19, 2020
-## Updated: Jan 19, 2022
-## Updated: Novemeber 4, 2022
+## Most recent update: October 17, 2024
 
 args <- commandArgs(trailingOnly = TRUE)
 folder <- args[1]
 
 library(ggplot2)
 library(rjson)
+# these are used but called directly by the function
+#library(ComplexHeatmap)
+#library(tidyr)
+#library(circlize)
 
 merge_files <- function(folder) {
   files <- list.files(path=paste0(folder,"/PeakQC"), pattern="FRiP_table.txt", 
@@ -49,16 +52,19 @@ plot_scatterplots <- function(inData, groupName, folder) {
 }
 
 plot_barplots_self <- function(inData2, folder) {
-  p <- ggplot(inData2,aes(x=bamsample, y=FRiP, fill=groupInfo))
-  p <- p + geom_bar(position="dodge",stat = "identity") +
-    facet_wrap(.~bedtool) +
-    theme_bw() +
-    theme(axis.text.x=element_text(angle = -15, hjust = 0)) +
-    labs(title="All Samples",x="bam file", y ="Fraction of Reads in Peaks (FRiP)", 
-         fill ="Group")
-  pdf(paste0(folder, "/PeakQC/FRiP_barplot.pdf"))
-  print(p)
-  dev.off()
+  bedtools <- unique(inData2$bedtool)
+  for (i in 1:length(bedtools)) {
+    inData3 <- inData2[which(inData2$bedtool == bedtools[i]),]
+    p <- ggplot(inData3,aes(x=bamsample, y=FRiP, fill=groupInfo))
+      p <- p + geom_bar(position="dodge",stat = "identity") +
+        theme_bw() +
+        theme(axis.text.x=element_text(angle = -15, hjust = 0)) +
+        labs(title="All Samples",x="bam file", y ="Fraction of Reads in Peaks (FRiP)", 
+           fill ="Group")
+    pdf(paste0(folder, "/PeakQC/",bedtools[i],".FRiP_barplot.pdf"))
+    print(p)
+    dev.off()
+  }
 }
 
 plot_scatterplots_self <- function(inData2, folder) {
@@ -75,12 +81,31 @@ plot_scatterplots_self <- function(inData2, folder) {
   dev.off()
 }
 
+PeakQCHeatmap<-function(PeakQC.dir, peakcaller, plot_data){
+# From Subrata Paul and adapted for this script
+#  files<-grep(peakcaller, list.files(PeakQC.dir, full.names = T), value = T)
+#  plot_data = lapply(files, function(file) read.table(file, sep = '\t', header = T))
+#  plot_data = do.call('rbind', plot_data)
+  plot_data = plot_data[which(plot_data$bedtool == peakcaller),]
+  plot_data = plot_data[,c('bedsample', 'bamsample', 'FRiP')]
+  plot_data = tidyr::pivot_wider(plot_data,names_from = bamsample, values_from=FRiP)
+  plot_data = data.frame(plot_data, check.names = F)
+  rownames(plot_data)<-plot_data$bedsample
+  plot_data = as.matrix(plot_data[, -1])
+
+  ComplexHeatmap::Heatmap(plot_data, na_col="grey",
+                          col = circlize::colorRamp2(c(0, 0.1, max(plot_data)), c('red', 'orange', 'blue')), 
+                          heatmap_legend_param = list(title = 'FRiP'), 
+                          row_title = 'Sample of peaks', 
+                          column_title = 'Sample of reads')  
+}
+
 process_json <- function(injson) {
 # to get the identities of the groups and the list of samples (ChIP and input)
 # associated with it
   json  <- fromJSON(file = injson)
   groupsInfo <- json$project$groups
-  inputs <- as.data.frame(json$project$peaks$inputs)
+  inputs <- unlist(json$project$peaks$inputs)
   for (i in 1:length(groupsInfo)) {
     tmp <- unique(unlist(inputs[names(inputs) %in% groupsInfo[[i]]]))
     if (length(tmp) > 1) {
@@ -93,6 +118,16 @@ process_json <- function(injson) {
 }
 
 allData <- merge_files(folder)
+
+bedtools <- unique(allData$bedtool)
+
+for (i in 1:length(bedtools) ) {
+    ht <- PeakQCHeatmap(PeakQC.dir=folder, peakcaller=bedtools[i], plot_data=allData)
+    pdf(paste0(folder, "/PeakQC/",bedtools[i],".FRiP_heatmap.pdf"))
+    print(ht)
+    dev.off()
+}
+
 groupList <- process_json(paste0(folder,"/config.json"))
 
 for (i in 1:length(groupList)) {
@@ -100,7 +135,6 @@ for (i in 1:length(groupList)) {
   groupName <- names(groupList)[i]
   inData <- allData[which((allData$bedsample %in% group) & 
   	    	          (allData$bamsample %in% group)),]
-  plot_barplots(inData, groupName, folder)
   plot_scatterplots(inData, groupName, folder)
 }
 
@@ -109,4 +143,5 @@ groupInfo <- reshape2::melt(groupList)
 names(groupInfo) <- c("bamsample","groupInfo")
 selfData2 <- merge(selfData,groupInfo)
 plot_barplots_self(selfData2, folder)
-plot_scatterplots_self(selfData2, folder)
+write.table(selfData2, paste0(folder, "/PeakQC/FRiP_table.txt"), quote=F,
+                row.names=F, sep="\t")
