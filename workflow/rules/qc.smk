@@ -460,13 +460,12 @@ rule deeptools_gene_all:
 
 rule FRiP_macsN:
     input:
-        bed                     = expand(join(macsN_dir, "{name}", "{name}_peaks.narrowPeak"), name=chips),
+        bed                     = join(macsN_dir, "{name}", "{name}_peaks.narrowPeak"),
         bam                     = join(bam_dir, "{name}.Q5DD.bam"),
     output:
-        join(workpath, "PeakQC", "macsNarrow.{name}.Q5DD.FRiP_table.txt"),
+        join(peakqc_dir, "macsNarrow", "macsNarrow.{name}.Q5DD.FRiP_table.txt"),
     params:
         rname                   = "FRiP_macsN",
-        outroot                 = join(peakqc_dir, "macsNarrow"),
         script                  = join(bin_path, "frip.py"),
         genome                  = config['references'][genome]['REFLEN'],
         tmpdir                  = tmpdir,
@@ -479,25 +478,26 @@ rule FRiP_macsN:
         # mechanism for deletion on exit
         if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
         tmp=$(mktemp -d -p "{params.tmpdir}")
+        export TMPDIR="${{tmp}}"
         trap 'rm -rf "${{tmp}}"' EXIT
 
         python {params.script} \\
             -p {input.bed} \\
             -b {input.bam} \\
             -g {params.genome} \\
-            -o {params.outroot}
+            -o {output} \\
+            -x 16
         """
 
 
 rule FRiP_Genrich:
     input:
-        bed                     = expand(join(genrich_dir, "{name}", "{name}.narrowPeak"), name=chips),
+        bed                     = join(genrich_dir, "{name}", "{name}.narrowPeak"),
         bam                     = join(bam_dir, "{name}.Q5DD.bam"),
     output:
-        join(workpath, "PeakQC", "Genrich.{name}.Q5DD.FRiP_table.txt"),
+        join(peakqc_dir, "Genrich", "Genrich.{name}.Q5DD.FRiP_table.txt"),
     params:
-        rname                   = "FRiP_macsN",
-        outroot                 = join(peakqc_dir, "macsNarrow"),
+        rname                   = "FRiP_Genrich",
         script                  = join(bin_path, "frip.py"),
         genome                  = config['references'][genome]['REFLEN'],
         tmpdir                  = tmpdir,
@@ -510,25 +510,26 @@ rule FRiP_Genrich:
         # mechanism for deletion on exit
         if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
         tmp=$(mktemp -d -p "{params.tmpdir}")
+        export TMPDIR="${{tmp}}"
         trap 'rm -rf "${{tmp}}"' EXIT
 
         python {params.script} \\
             -p {input.bed} \\
             -b {input.bam} \\
             -g {params.genome} \\
-            -o {params.outroot}
+            -o {output} \\
+            -x 16
         """
 
 
 rule FRiP_macsB:
     input:
-        bed                     = expand(join(macsB_dir, "{name}", "{name}_peaks.broadPeak"), name=chips),
+        bed                     = join(macsB_dir, "{name}", "{name}_peaks.broadPeak"),
         bam                     = join(bam_dir, "{name}.Q5DD.bam"),
     output:
-        join(workpath, "PeakQC", "macsBroad.{name}.Q5DD.FRiP_table.txt"),
+        join(peakqc_dir, "macsBroad", "macsBroad.{name}.Q5DD.FRiP_table.txt"),
     params:
         rname                   = "FRiP_macsB",
-        outroot                 = join(peakqc_dir, "macsBroad"),
         script                  = join(bin_path, "frip.py"),
         genome                  = config['references'][genome]['REFLEN'],
         tmpdir                  = tmpdir,
@@ -541,13 +542,15 @@ rule FRiP_macsB:
         # mechanism for deletion on exit
         if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
         tmp=$(mktemp -d -p "{params.tmpdir}")
+        export TMPDIR="${{tmp}}"
         trap 'rm -rf "${{tmp}}"' EXIT
 
         python {params.script} \\
             -p {input.bed} \\
             -b {input.bam} \\
             -g {params.genome} \\
-            -o {params.outroot}
+            -o {output} \\
+            -x 16
         """
 
 
