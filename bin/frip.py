@@ -102,10 +102,18 @@ def process_files(bamfile, bedfiles, genome, filetypes, threads):
     """
     bedfileL = bedfiles
     filetypesL = filetypes
-    out = [["bedtool", "bedsample",
-            "bamsample","bamcondition",
-            "n_reads","n_overlap_reads",
-            "FRiP","n_basesM",]]
+    out = [
+        [
+            "bedtool",
+            "bedsample",
+            "bamsample",
+            "bamcondition",
+            "n_reads",
+            "n_overlap_reads",
+            "FRiP",
+            "n_basesM",
+        ]
+    ]
     nreads = count_reads_in_bam(bamfile, threads)
     (bamsample, condition) = clip_bamfile_name(bamfile)
     for i in range(len(bedfileL)):
@@ -125,15 +133,6 @@ def process_files(bamfile, bedfiles, genome, filetypes, threads):
     return out2
 
 
-def create_outfile_name(bamfile, outroot):
-    """uses outroot to create the output file name"""
-    (bamsample, condition) = clip_bamfile_name(bamfile)
-    outtable = bamsample + "." + condition + "." + "FRiP_table.txt"
-    if outroot != "":
-        outtable = outroot + "." + outtable
-    return outtable
-
-
 def write_table(out2, outtable):
     out2.to_csv(outtable, sep="\t", index=False)
 
@@ -143,7 +142,8 @@ def write_table(out2, outtable):
 
 
 def main():
-    desc = dedent("""
+    desc = dedent(
+        """
                     This function takes a space-delimited or semi-colon delimited list
                     of bed-like files (extensions must be recognizable by bedtools)
                     and a single bam file. It will then calculate the FRiP score for
@@ -151,7 +151,8 @@ def main():
                     txt file. It will also calculate the number of bases covered by 
                     each bed-like file. Note: this function assumes that the file 
                     naming system of the input files matches that of Pipeliner.
-                    """)
+                    """
+    )
 
     parser = argparse.ArgumentParser(
         description=desc, formatter_class=RawTextHelpFormatter
@@ -182,11 +183,13 @@ def main():
     )
 
     parser.add_argument(
-        '-x', '--threads',
+        "-x",
+        "--threads",
         required=False,
+        dest="threads",
         type=int,
         default=1,
-        help='Number of threads available to use for pysam.AlignmentFile',
+        help="Number of threads available to use for pysam.AlignmentFile",
     )
     parser.add_argument(
         "-t",
@@ -202,15 +205,14 @@ def main():
     bedfiles = args.p
     bamfile = args.b
     genomefile = args.g
-    outroot = args.o
+    outfile = args.o
     filetypes = args.t
-    threads = args.x
-    if 'TMPDIR' in os.environ:
-        set_tempdir(os.environ['TMPDIR'])
-    
+    threads = args.threads
+    if "TMPDIR" in os.environ:
+        set_tempdir(os.environ["TMPDIR"])
+
     out2 = process_files(bamfile, bedfiles, genomefile, filetypes, threads)
-    outtable = create_outfile_name(bamfile, outroot)
-    write_table(out2, outtable)
+    write_table(out2, outfile)
 
 
 if __name__ == "__main__":
