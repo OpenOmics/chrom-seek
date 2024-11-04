@@ -143,5 +143,17 @@
         "ntasks": "--ntasks=28",
         "ntasks_per_core": "--ntasks-per-core=1",
         "exclusive": "--exclusive"
+    }, 
+    "FRiP_macsN": {
+        "threads": "16",
+        "gres": "lscratch:400"
+    },
+    "FRiP_macsB": {
+        "threads": "16",
+        "gres": "lscratch:400"
+    },
+    "FRiP_Genrich": {
+        "threads": "16",
+        "gres": "lscratch:400"
     }
 }

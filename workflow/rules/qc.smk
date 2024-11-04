@@ -478,6 +478,7 @@ rule FRiP_macsN:
         # intermediate files with built-in 
         # mechanism for deletion on exit
         if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
+        export TMPDIR="{params.tmpdir}"
         tmp=$(mktemp -d -p "{params.tmpdir}")
         trap 'rm -rf "${{tmp}}"' EXIT
 
@@ -485,7 +486,8 @@ rule FRiP_macsN:
             -p {input.bed} \\
             -b {input.bam} \\
             -g {params.genome} \\
-            -o {params.outroot}
+            -o {params.outroot} \\
+            -x {threads}
         """
 
 
@@ -510,13 +512,15 @@ rule FRiP_Genrich:
         # mechanism for deletion on exit
         if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
         tmp=$(mktemp -d -p "{params.tmpdir}")
+        export TMPDIR="${{tmp}}"
         trap 'rm -rf "${{tmp}}"' EXIT
 
         python {params.script} \\
             -p {input.bed} \\
             -b {input.bam} \\
             -g {params.genome} \\
-            -o {params.outroot}
+            -o {params.outroot} \\
+            -x {threads}
         """
 
 
@@ -541,13 +545,15 @@ rule FRiP_macsB:
         # mechanism for deletion on exit
         if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
         tmp=$(mktemp -d -p "{params.tmpdir}")
+        export TMPDIR="{params.tmpdir}"
         trap 'rm -rf "${{tmp}}"' EXIT
 
         python {params.script} \\
             -p {input.bed} \\
             -b {input.bam} \\
             -g {params.genome} \\
-            -o {params.outroot}
+            -o {params.outroot} \\
+            -x {threads}
         """
 
 
