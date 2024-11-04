@@ -478,8 +478,8 @@ rule FRiP_macsN:
         # intermediate files with built-in 
         # mechanism for deletion on exit
         if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
-        export TMPDIR="{params.tmpdir}"
         tmp=$(mktemp -d -p "{params.tmpdir}")
+        export TMPDIR="${{tmp}}"
         trap 'rm -rf "${{tmp}}"' EXIT
 
         python {params.script} \\
@@ -545,7 +545,7 @@ rule FRiP_macsB:
         # mechanism for deletion on exit
         if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
         tmp=$(mktemp -d -p "{params.tmpdir}")
-        export TMPDIR="{params.tmpdir}"
+        export TMPDIR="${{tmp}}"
         trap 'rm -rf "${{tmp}}"' EXIT
 
         python {params.script} \\
