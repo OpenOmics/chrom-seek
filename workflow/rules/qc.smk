@@ -460,7 +460,7 @@ rule deeptools_gene_all:
 
 rule FRiP_macsN:
     input:
-        bed                     = join(macsN_dir, "{name}", "{name}_peaks.narrowPeak"),
+        peaks                   = expand(join(macsN_dir, "{SID}", "{SID}_peaks.narrowPeak"), SID=chips),
         bam                     = join(bam_dir, "{name}.Q5DD.bam"),
     output:
         join(peakqc_dir, "macsNarrow", "macsNarrow.{name}.Q5DD.FRiP_table.txt"),
@@ -482,7 +482,7 @@ rule FRiP_macsN:
         trap 'rm -rf "${{tmp}}"' EXIT
 
         python {params.script} \\
-            -p {input.bed} \\
+            -p {input.peaks} \\
             -b {input.bam} \\
             -g {params.genome} \\
             -o {output} \\
@@ -492,7 +492,7 @@ rule FRiP_macsN:
 
 rule FRiP_Genrich:
     input:
-        bed                     = join(genrich_dir, "{name}", "{name}.narrowPeak"),
+        peaks                   = expand(join(genrich_dir, "{SID}", "{SID}.narrowPeak"), SID=chips),
         bam                     = join(bam_dir, "{name}.Q5DD.bam"),
     output:
         join(peakqc_dir, "Genrich", "Genrich.{name}.Q5DD.FRiP_table.txt"),
@@ -514,7 +514,7 @@ rule FRiP_Genrich:
         trap 'rm -rf "${{tmp}}"' EXIT
 
         python {params.script} \\
-            -p {input.bed} \\
+            -p {input.peaks} \\
             -b {input.bam} \\
             -g {params.genome} \\
             -o {output} \\
@@ -524,7 +524,7 @@ rule FRiP_Genrich:
 
 rule FRiP_macsB:
     input:
-        bed                     = join(macsB_dir, "{name}", "{name}_peaks.broadPeak"),
+        peaks                   = expand(join(macsB_dir, "{SID}", "{SID}_peaks.broadPeak"), SID=chips),
         bam                     = join(bam_dir, "{name}.Q5DD.bam"),
     output:
         join(peakqc_dir, "macsBroad", "macsBroad.{name}.Q5DD.FRiP_table.txt"),
@@ -546,7 +546,7 @@ rule FRiP_macsB:
         trap 'rm -rf "${{tmp}}"' EXIT
 
         python {params.script} \\
-            -p {input.bed} \\
+            -p {input.peaks} \\
             -b {input.bam} \\
             -g {params.genome} \\
             -o {output} \\
