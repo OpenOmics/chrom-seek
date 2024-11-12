@@ -83,8 +83,8 @@ if (nrow(samples$samples) < 5) {
    dba.plotVenn(samples, 1:nrow(samples$samples)) 
 } else {
    dba.plotVenn(consensus, consensus$masks$Consensus, main="Binding Site Overlaps: 'consensus', comparing between groups")
-   dba.plotVenn(samples, samples$masks[[3]], main="Binding Site Overlaps: samples in Group1")
-   dba.plotVenn(samples, samples$masks[[4]], main="Binding Site Overlaps: samples in Group2")
+   try(dba.plotVenn(samples, samples$masks[[3]], main="Binding Site Overlaps: samples in Group1"),silent=TRUE)
+   try(dba.plotVenn(samples, samples$masks[[4]], main="Binding Site Overlaps: samples in Group2"),silent=TRUE)
 }
 ```
 
