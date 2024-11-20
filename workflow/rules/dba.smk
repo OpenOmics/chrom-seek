@@ -130,7 +130,7 @@ rule diffbind_csv_genrich:
         rname                           = "diffbind_csv_genrich",
         this_peaktool                   = "Genrich",
         peakcaller                      = "narrowPeak",
-        this_peakextension              = "_peaks.narrowPeak",
+        this_peakextension              = ".narrowPeak",
         pythonscript                    = join(bin_path, "prep_diffbind.py"),
         bam_dir                         = bam_dir,
         workpath                        = workpath,
@@ -146,7 +146,7 @@ rule diffbind_csv_genrich:
                     --pe {params.this_peakextension} \\
                     --bd {params.bam_dir} \\
                     --pc {params.peakcaller} \\
-                    --csv {output.csvfile}
+                    --csv {output.csvfile} &> {log}
                 """
             ))
 

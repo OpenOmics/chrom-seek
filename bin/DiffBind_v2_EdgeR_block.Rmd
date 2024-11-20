@@ -147,7 +147,7 @@ DBReportEdgeR <- dba.report(DBAnalysisEdgeR, method=DBA_EDGER_BLOCK)
 Variance of differential peaks only
 
 ```{r PCA3, fig.height=5,fig.width=5}
-dba.plotPCA(DBAnalysisEdgeR, contrast=1, method=DBA_EDGER_BLOCK)
+try(dba.plotPCA(DBAnalysisEdgeR, contrast=1, method=DBA_EDGER_BLOCK),silent=TRUE)
 ```
 
 ## MA plot
@@ -155,14 +155,14 @@ dba.plotPCA(DBAnalysisEdgeR, contrast=1, method=DBA_EDGER_BLOCK)
 Each dot is a consensus peak.
 
 ```{r MA_D}
-dba.plotMA(DBAnalysisEdgeR, method=DBA_EDGER_BLOCK)
+try(dba.plotMA(DBAnalysisEdgeR, method=DBA_EDGER_BLOCK),silent=TRUE)
 ```
 
 ## Volcano plot
 Each dot is a consensus peak.
 
 ```{r Volcano1}
-dba.plotVolcano(DBAnalysisEdgeR, method=DBA_EDGER_BLOCK)
+try(dba.plotVolcano(DBAnalysisEdgeR, method=DBA_EDGER_BLOCK),silent=TRUE)
 ```
 
 
