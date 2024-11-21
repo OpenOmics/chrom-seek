@@ -37,8 +37,6 @@ cfTool_subdir2                  = join(cfTool_dir, "BED", "H3K4me3")
 group_combos                    = []
 
 # ~~ workflow config ~~
-for (g1, g2) in list(combinations(config['project']['groups'].keys(), 2)):
-    group_combos.append(f"{g1}_vs_{g2}")
 blocking = False if set(blocks.values()) in ({None}, {""}) else True
 if reps == "yes": otherDirs.append(diffbind_dir)
 mk_dir_if_not_exist(PeakTools + otherDirs)
@@ -100,13 +98,13 @@ rule diffbind_csv_macsN:
         pythonscript                    = join(bin_path, "prep_diffbind.py"),
         bam_dir                         = bam_dir,
         workpath                        = workpath,
+        contrast                        = "{group1}_vs_{group2}",
     log: join(local_log_dir, "diffbind_csv_macsN", "{group1}_vs_{group2}_diffbind_csv.log")
     run:
-        for i, contrast in enumerate(group_combos):
             shell(dedent(
                 """
                 python {params.pythonscript} \\
-                    --con \"""" + contrast + """\" \\
+                    --con {params.contrast} \\
                     --wp {params.workpath} \\
                     --pt {params.this_peaktool} \\
                     --pe {params.this_peakextension} \\
@@ -134,13 +132,13 @@ rule diffbind_csv_genrich:
         pythonscript                    = join(bin_path, "prep_diffbind.py"),
         bam_dir                         = bam_dir,
         workpath                        = workpath,
+        contrast                        = "{group1}_vs_{group2}",
     log: join(local_log_dir, "diffbind_csv_genrich", "{group1}_vs_{group2}_diffbind_csv.log")
     run:
-        for i, contrast in enumerate(group_combos):
             shell(dedent(
                 """
                 python {params.pythonscript} \\
-                    --con \"""" + contrast + """\" \\
+                    --con {params.contrast} \\
                     --wp {params.workpath} \\
                     --pt {params.this_peaktool} \\
                     --pe {params.this_peakextension} \\
@@ -168,13 +166,13 @@ rule diffbind_csv_macsB:
         pythonscript                    = join(bin_path, "prep_diffbind.py"),
         bam_dir                         = bam_dir,
         workpath                        = workpath,
+        contrast                        = "{group1}_vs_{group2}",
     log: join(local_log_dir, "diffbind_csv_macsB", "{group1}_vs_{group2}_diffbind_csv.log")
     run:
-        for i, contrast in enumerate(group_combos):
             shell(dedent(
                 """
                 python {params.pythonscript} \\
-                    --con "{wildcards.group1}_vs_{wildcards.group2}" \\
+                    --con {params.contrast} \\
                     --wp {params.workpath} \\
                     --pt {params.this_peaktool} \\
                     --pe {params.this_peakextension} \\
