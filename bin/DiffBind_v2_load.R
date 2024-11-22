@@ -11,6 +11,17 @@ cleanup_arg <- function(arg) {
     return(arg)
 }
 
+remove_negative_coordinates <- function(dbaOBJ) {
+  negCoordIdx <- which(dbaOBJ$merged[,2] < 0)
+  dbaOBJ$merged[negCoordIdx,2] <- 1
+  dbaOBJ$binding[negCoordIdx,2] <- 1
+  for ( i in 1:length(dbaOBJ$peaks) ) {
+      dbaOBJ$peaks[[i]]$Start[negCoordIdx] <- 1
+  }
+  return(dbaOBJ)
+}
+
+
 parser <- ArgumentParser(description= 'Load diffbind csv process with R::dba return RDS and BED')
 parser$add_argument('--csvfile', '-c', help='CSV input file from `diffbind_csv`')
 parser$add_argument('--counts', '-n', help='Peak count RDS output file', default=file.path(getwd(), "peak_counts.rds"))
@@ -37,6 +48,11 @@ if ( peakcaller == "macsNarrow" ) {
 
 # count
 DBdataCounts <- dba.count(samples, summits=summits_arg, bParallel=T)
+
+# remove negative coordinates when summits_arg is not FALSE
+if ( summits_arg != FALSE ) {
+    DBdataCounts <- remove_negative_coordinates(DBdataCounts)
+}
 
 # save counts
 saveRDS(DBdataCounts, counts)

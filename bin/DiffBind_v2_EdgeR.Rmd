@@ -83,8 +83,8 @@ if (nrow(samples$samples) < 5) {
    dba.plotVenn(samples, 1:nrow(samples$samples)) 
 } else {
    dba.plotVenn(consensus, consensus$masks$Consensus, main="Binding Site Overlaps: 'consensus', comparing between groups")
-   dba.plotVenn(samples, samples$masks[[3]], main="Binding Site Overlaps: samples in Group1")
-   dba.plotVenn(samples, samples$masks[[4]], main="Binding Site Overlaps: samples in Group2")
+   try(dba.plotVenn(samples, samples$masks[[3]], main="Binding Site Overlaps: samples in Group1"),silent=TRUE)
+   try(dba.plotVenn(samples, samples$masks[[4]], main="Binding Site Overlaps: samples in Group2"),silent=TRUE)
 }
 ```
 
@@ -145,7 +145,7 @@ DBReportEdgeR <- dba.report(DBAnalysisEdgeR, method = DBA_EDGER)
 Variance of differential peaks only
 
 ```{r PCA3, fig.height=5,fig.width=5}
-dba.plotPCA(DBAnalysisEdgeR, contrast=1, method=DBA_EDGER)
+try(dba.plotPCA(DBAnalysisEdgeR, contrast=1, method=DBA_EDGER),silent=TRUE)
 ```
 
 ## MA plot
@@ -153,22 +153,22 @@ dba.plotPCA(DBAnalysisEdgeR, contrast=1, method=DBA_EDGER)
 Each dot is a consensus peak.
 
 ```{r MA_D}
-dba.plotMA(DBAnalysisEdgeR, method=DBA_EDGER)
+try(dba.plotMA(DBAnalysisEdgeR, method=DBA_EDGER),silent=TRUE)
 ```
 
 ## Volcano plot
 Each dot is a consensus peak.
 
 ```{r Volcano1}
-dba.plotVolcano(DBAnalysisEdgeR, method=DBA_EDGER)
+try(dba.plotVolcano(DBAnalysisEdgeR, method=DBA_EDGER),silent=TRUE)
 ```
 
 
 ## Heatmap: Differential
-1000 most significant differential peaks (EdgeR or EdgeR normalized)
+1000 most significant differential peaks
 
 ```{r heatmap4D}
-dba.plotHeatmap(DBAnalysisEdgeR, contrast=1, method=DBA_EDGER, correlations=FALSE, margin=20, cexRow=1, cexCol=1)
+try(dba.plotHeatmap(DBAnalysisEdgeR, contrast=1, method=DBA_EDGER, correlations=FALSE, margin=20, cexRow=1, cexCol=1),silent=TRUE)
 ```
 
 ## Top 500 or less differentially bound peaks 

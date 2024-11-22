@@ -45,7 +45,7 @@ Each of the following arguments are required. Failure to provide a required argu
 > **Reference genome.**  
 > *type: string*  
 > 
-> This option defines the reference genome of the samples for alignment and annotation. There are prebuilt reference files for human and mouse data. Please select one of the following options: `hg19`, `hg38`, `mm10`.
+> This option defines the reference genome of the samples for alignment and annotation. There are prebuilt reference files for human, mouse, and rhesus data. Please select one of the following options: `hg19`, `hg38`, `mm10`, `rheMac10`.
 > 
 > ***Example:*** `--genome hg19`
 
@@ -54,7 +54,7 @@ Each of the following arguments are required. Failure to provide a required argu
 > **Input FastQ or BAM file(s).**  
 > *type: file(s)*  
 > 
-> One or more FastQ files can be provided. The pipeline does NOT support single-end data. From the command-line, each input file should seperated by a space. Globbing is supported! This makes selecting FastQ files easy. Input FastQ files should always be gzipp-ed.
+> One or more FastQ files can be provided. From the command-line, each input file should seperated by a space. Globbing is supported! This makes selecting FastQ files easy. FastQ files should always be gzipp-ed. Only list files you want processed as all files in the list will be run through the initial pipeline steps. All file merging must be done before running the pipeline.
 > 
 > ***Example:*** `--input .tests/*.R?.fastq.gz`
 
@@ -72,7 +72,7 @@ Each of the following arguments are required. Failure to provide a required argu
 > **Peakcall file.**   
 > *type: file*
 >   
-> This tab delimited (TSV) file is used to pair each ChIP sample to its corresponding input sample and to assign any groups that are associated with said sample. Please note that multiple groups can be assigned to a given sample using a comma. Group information is used to setup comparsions within groups of samples. This file consists of three columns containing the name of each ChIP sample, the name of each Input sample, and the name of any of its groups. The header of this file needs to be `ChIP` for the chips column, `Input` for the inputs column, and `Group` for the groups column. The base name of each sample should be listed in the `ChIP` and `Input` columns. The base name of a given sample can be determined by removing its file extension from the sample's R1 FastQ file, example: `WT_S4.R1.fastq.gz` becomes `WT_S4` in the peakcall file.   
+> This tab delimited (TSV) file is used to pair each ChIP sample to its corresponding input sample and to assign any groups that are associated with said sample. Please note that multiple groups can be assigned to a given sample using a comma. Group information is used to setup comparsions within groups of samples. This file consists of three columns containing the name of each ChIP sample, the name of each Input (control) sample, and the name of its groups. Each sample must be assigned to at least one group. The header of this file needs to be `ChIP` for the chips column, `Input` for the inputs column, and `Group` for the groups column. Group names currently cannot include ".", "-", or "_". The base name of each sample should be listed in the `ChIP` and `Input` columns. The base name of a given sample can be determined by removing its file extension from the sample's R1 FastQ file, example: `WT_S4.R1.fastq.gz` becomes `WT_S4` in the peakcall file. `WT_S4_R1_001.fastq.gz` also becomes `WT_S4`. An optional column, called Block, can also be provided to block duplicate correlations between repeated observations. Typically, blocks are biological replicates or multiple samples from same indivdual.  
 > 
 > **Contents of example peakcalls file:** 
 > ```
@@ -206,11 +206,11 @@ Each of the following arguments are optional, and do not need to be provided.
 > 
 > ***Example:*** `--help`
 
-## 3. Example
+## 3. Example usage on Biowulf
 ```bash 
 # Step 1.) Grab an interactive node,
 # do not run on head node!
-srun -N 1 -n 1 --time=1:00:00 --mem=8gb  --cpus-per-task=2 --pty bash
+sinteractive -n 1 --time=1:00:00 --mem=8gb  --cpus-per-task=2 --pty bash
 module purge
 module load singularity snakemake
 
@@ -220,6 +220,7 @@ module load singularity snakemake
                   --input .tests/*.R?.fastq.gz \
                   --output /data/$USER/output \
                   --peakcall .tests/peakcall.tsv \
+                  --sif-cache /data/OpenOmics/SIFs/ \
                   --mode slurm \
                   --dry-run
 
@@ -232,5 +233,6 @@ module load singularity snakemake
                   --input .tests/*.R?.fastq.gz \
                   --output /data/$USER/output \
                   --peakcall .tests/peakcall.tsv \
+                  --sif-cache /data/OpenOmics/SIFs/ \
                   --mode slurm
 ```
