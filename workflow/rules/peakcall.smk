@@ -4,8 +4,6 @@
 # Common quality-control rules: preseq, NRF, rawfastqc,
 #   fastqc, fastq_screen, multiQC
 from os.path import join
-from scripts.peakcall import get_control_input, \
-    getSicerChips, getSicerFragLen, get_control_input
 
 
 # ~~ workflow configuration
