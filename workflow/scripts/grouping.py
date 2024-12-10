@@ -62,41 +62,6 @@ def get_peaktools(assay_type):
     return tools
 
 
-def dedup_out7(input, assay, paired_end):
-    dd = []
-    if assay == "cfchip":
-        dd.append(input + ".Q5DD_tagAlign")
-    elif paired_end == False and assay == "chip":
-        dd.append(input + ".Q5DD_tagAlign.gz")
-    return dd
-
-
-def get_ppqt_input(ppqt_dir, wildcards, paired_end):
-    ppqt = []
-    if paired_end:
-        ppqt.append(join(ppqt_dir, "{0}.{1}.ppqt.txt".format(wildcards.name, wildcards.ext)))
-    else:
-        if wildcards.ext == "Q5DD":
-            ppqt.append(join(ppqt_dir, "{0}.Q5DD_tagAlign.ppqt.txt".format(wildcards.name)))
-        elif wildcards.ext == "sorted":
-            ppqt.append(join(ppqt_dir, "{0}.sorted.ppqt.txt".format(wildcards.name)))
-        else:
-            raise ValueError(f'Unknown alignment file extension, name: {wildcards.name}, ext: {wildcards.ext}.')
-    return ppqt
-
-
-def get_bam_input(bam_dir, wildcards, paired_end):
-    bams = []
-    if paired_end:
-        bams.append(join(bam_dir, "{0}.{1}.bam".format(wildcards.name, wildcards.ext)))
-    else:
-        if wildcards.ext == "Q5DD":
-            bams.append(join(bam_dir, "{0}.Q5DD.bam".format(wildcards.name)))
-        elif wildcards.ext == "sorted":
-            bams.append(join(bam_dir, "{0}.sorted.bam".format(wildcards.name)))
-    return bams
-
-
 def test_for_block(groupdata, contrast, blocks):
     """ only want to run blocking on contrasts where all
     individuals are on both sides of the contrast """
@@ -110,15 +75,3 @@ def test_for_block(groupdata, contrast, blocks):
             if len(set(block1).intersection(block2)) == len(block1):
                 contrastBlock.append(con)
     return contrastBlock
-
-
-def ctrl_test(ctrl_dict, input_name, in_dir, mode=None):
-    sample = join(in_dir, f"{input_name}.Q5DD.RPGC.bw")
-    assert mode in ('chip', 'ctrl'), 'Unrecognized input file mode.'
-    
-    if input_name in ctrl_dict:
-        norm = join(in_dir, ctrl_dict[input_name] + ".Q5DD.RPGC.bw")
-    else:
-        raise ValueError(f'ChIP sample {input_name} missing from input lookup: \n{str(ctrl_dict)}')
-    outs = {'chip': sample, 'ctrl': norm}
-    return outs[mode]

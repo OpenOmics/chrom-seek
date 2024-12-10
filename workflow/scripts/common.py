@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python3
 # ~~~ Common helper functions shared across the entire workflow
 import os
@@ -14,9 +13,9 @@ def provided(samplelist, condition):
     """
 
     if not condition:
-        # If condition is False, 
-        # returns an empty list 
-        # to prevent rule from 
+        # If condition is False,
+        # returns an empty list
+        # to prevent rule from
         # running
         samplelist = []
 
@@ -27,14 +26,14 @@ def ignore(samplelist, condition):
     """
     Determines if optional rules should run. If an empty list is provided to rule all,
     snakemake will not try to generate that set of target files. If a given condition
-    is met (i.e. True) then it will not try to run that rule. This function is the 
-    inverse to provided(). 
+    is met (i.e. True) then it will not try to run that rule. This function is the
+    inverse to provided().
     """
 
     if condition:
-        # If condition is True, 
-        # returns an empty list 
-        # to prevent rule from 
+        # If condition is True,
+        # returns an empty list
+        # to prevent rule from
         # running
         samplelist = []
 
@@ -58,7 +57,7 @@ def s3_configured(uri):
     import re
 
     # Get bucket and key from s3 uri
-    parsed = re.match(r's3:\/\/(.+?)\/(.+)', uri)
+    parsed = re.match(r"s3:\/\/(.+?)\/(.+)", uri)
     bucket, key = parsed.groups()
     accessible = True
 
@@ -88,7 +87,11 @@ def abstract_location(file_address, *args, **kwargs):
 
     # Check if user provided any input
     if not file_address or file_address is None:
-        raise IOError("Failed to provide any input files! Input(s) are required to resolve required files.".format(file_address))
+        raise IOError(
+            "Failed to provide any input files! Input(s) are required to resolve required files.".format(
+                file_address
+            )
+        )
 
     # If given file path to one file, convert it a list[<str>]
     file_list = [file_address] if isinstance(file_address, str) else file_address
@@ -96,7 +99,7 @@ def abstract_location(file_address, *args, **kwargs):
     # Loop through list of provided files, and if a remote storage option
     # is given, convert its index to a remote file object.
     for i, uri in enumerate(file_list):
-        if uri.lower().startswith('s3://'):
+        if uri.lower().startswith("s3://"):
             # Remote option for S3 storage
             import snakemake.remote.S3
             import botocore.session
@@ -112,18 +115,22 @@ def abstract_location(file_address, *args, **kwargs):
                 # s3 bucket are configured correctly.
                 # If a file in provieded as input to a Snakemake rule, only read
                 # access is needed to access the remote S3 object.
-                remote_provider = snakemake.remote.S3.RemoteProvider(config=botocore.client.Config(signature_version=botocore.UNSIGNED))
+                remote_provider = snakemake.remote.S3.RemoteProvider(
+                    config=botocore.client.Config(signature_version=botocore.UNSIGNED)
+                )
             file_list[i] = remote_provider.remote(uri, *args, **kwargs)
 
-        elif uri.lower().startswith('gs://'):
+        elif uri.lower().startswith("gs://"):
             # Remote option for Google Cloud Storage
             import snakemake.remote.GS
+
             remote_provider = snakemake.remote.GS.RemoteProvider()
             file_list[i] = remote_provider.remote(uri, *args, **kwargs)
 
-        elif uri.lower().startswith('sftp://'):
+        elif uri.lower().startswith("sftp://"):
             # Remote option for SFTP transfers
             import snakemake.remote.SFTP
+
             remote_provider = snakemake.remote.SFTP.RemoteProvider()
             file_list[i] = remote_provider.remote(uri, *args, **kwargs)
 
@@ -142,60 +149,62 @@ def references(config, reflist):
 
     _all = True
     for ref in reflist:
-        try: tmp = config['references'][ref]
+        try:
+            tmp = config["references"][ref]
         # Check if ref exists in config
         except KeyError:
             _all = False
             break
         # Check if ref is empty key string
-        if not tmp: _all = False
+        if not tmp:
+            _all = False
 
     return _all
 
 
 def allocated(resource, rule, lookup, default="__default__"):
-    """Pulls resource information for a given rule. If a rule does not have any information 
+    """Pulls resource information for a given rule. If a rule does not have any information
     for a given resource type, then it will pull from the default. Information is pulled from
-    definitions in the cluster.json (which is used a job submission). This ensures that any 
+    definitions in the cluster.json (which is used a job submission). This ensures that any
     resources used at runtime mirror the resources that were allocated.
     :param resource <str>: resource type to look in cluster.json (i.e. threads, mem, time, gres)
     :param rule <str>: rule to lookup its information
     :param lookup <dict>: Lookup containing allocation information (i.e. cluster.json)
     :param default <str>: default information to use if rule information cannot be found
-    :return allocation <str>: 
+    :return allocation <str>:
         allocation information for a given resource type for a given rule
     """
 
-    try: 
+    try:
         # Try to get allocation information
         # for a given rule
         allocation = lookup[rule][resource]
     except KeyError:
         # Use default allocation information
         allocation = lookup[default][resource]
-    
+
     return allocation
 
 
 def str_bool(s):
     """Converts a string to boolean. It is dangerous to try to
-    typecast a string into a boolean value using the built-in 
+    typecast a string into a boolean value using the built-in
     `bool()` function. This function avoids any issues that can
-    arise when using `bool()`. 
+    arise when using `bool()`.
     Example:
       boolean('True') returns True
       boolean('False') returns False
       boolean('asdas') raises TypeError
     """
     val = s.lower()
-    if val in ['true', '1', 'y', 'yes']:
+    if val in ["true", "1", "y", "yes"]:
         return True
-    elif val in ['false', '0', 'n', 'no', '']:
+    elif val in ["false", "0", "n", "no", ""]:
         return False
     else:
         # Provided value could not be
         # type casted into a boolean
-        raise TypeError('Fatal: cannot type cast {} into a boolean'.format(val))
+        raise TypeError("Fatal: cannot type cast {} into a boolean".format(val))
 
 
 def joint_option(prefix, valueslist):
@@ -214,7 +223,7 @@ def joint_option(prefix, valueslist):
 def mk_dir_if_not_exist(dirs):
     if isinstance(dirs, str):
         dirs = [dirs]
-    assert isinstance(dirs, list), 'Supplied directories should be in a list'
+    assert isinstance(dirs, list), "Supplied directories should be in a list"
     for _dir in dirs:
         if not os.path.exists(_dir):
             os.mkdir(_dir, mode=0o775)
@@ -224,38 +233,9 @@ def mk_dir_if_not_exist(dirs):
 def get_file_components(pair_ended):
     alnexts = []
     if pair_ended:
-        alnexts.extend(['sorted.bam', 'Q5DD.bam'])
+        alnexts.extend(["sorted.bam", "Q5DD.bam"])
     else:
-        alnexts.extend(['sorted.bam', 'Q5DD_tagAlign.gz'])
-    stems = list(map(lambda x: x.split('.')[0], alnexts))
-    rpgc_exts = list(map(lambda x: x.split('.')[0] + '.RPGC', alnexts))
+        alnexts.extend(["sorted.bam", "Q5DD_tagAlign.gz"])
+    stems = list(map(lambda x: x.split(".")[0], alnexts))
+    rpgc_exts = list(map(lambda x: x.split(".")[0] + ".RPGC", alnexts))
     return stems, rpgc_exts, alnexts
-        
-
-def get_bam_ext(ext, pair_ended):
-    if pair_ended:
-        if ext.lower() == 'sorted':
-            return "bam"
-        elif ext == 'Q5DD':
-            return "bam"
-    else:
-        if ext.lower() == 'sorted':
-            return "bam"
-        elif ext == "Q5DD_tagAlign":
-            return "gz"
-    raise ValueError(f'Unknown file component. Pair ended: {str(pair_ended)}. Ext: {str(ext)}')
-
-
-def get_fqscreen_outputs(paired_end, samples, qc_dir):
-    outs = []
-    if paired_end:
-        outs.extend(expand(join(qc_dir, "FQscreen", "{name}.R{rn}.trim_screen.txt"), name=samples, rn=[1, 2])),
-        outs.extend(expand(join(qc_dir, "FQscreen", "{name}.R{rn}.trim_screen.png"), name=samples, rn=[1, 2])),
-        outs.extend(expand(join(qc_dir, "FQscreen2", "{name}.R{rn}.trim_screen.txt"), name=samples, rn=[1, 2])),
-        outs.extend(expand(join(qc_dir, "FQscreen2", "{name}.R{rn}.trim_screen.png"), name=samples, rn=[1, 2])),
-    else:
-        outs.extend(expand(join(qc_dir, "FQscreen", "{name}.R1.trim_screen.txt"), name=samples)),
-        outs.extend(expand(join(qc_dir, "FQscreen", "{name}.R1.trim_screen.png"), name=samples)),
-        outs.extend(expand(join(qc_dir, "FQscreen2", "{name}.R1.trim_screen.txt"), name=samples)),
-        outs.extend(expand(join(qc_dir, "FQscreen2", "{name}.R1.trim_screen.png"), name=samples)),
-    return outs
