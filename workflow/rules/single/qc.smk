@@ -7,6 +7,7 @@ ends                            = [1]
 
 # ~~ directories
 trim_dir                        = join(workpath, 'trim')
+kraken_dir                      = join(workpath, 'kraken')
 
 
 rule fastq_screen:
@@ -126,7 +127,8 @@ rule insert_size:
         Number of reads per insert size and their histogram
     """
     input:
-        bam                     = lambda w : join(bam_dir, f"{w.name}.{w.ext}." + get_bam_ext(w.ext, paired_end))
+        bam                     = lambda w : join(bam_dir, f"{w.name}.{w.ext}." + 
+                                    "bam" if w.ext.lower() == 'sorted' else "gz"),
     output:
         txt                     = join(qc_dir, "{name}.{ext}.insert_size_metrics.txt"),
         pdf                     = join(qc_dir, "{name}.{ext}.insert_size_histogram.pdf"),
