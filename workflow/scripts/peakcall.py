@@ -13,6 +13,15 @@ def get_input_bam(input_sample, bam_dir):
     return []
 
 
+def get_control_input(ext, paired_end, bam_dir):
+    i = []
+    if paired_end and ext != "":
+        i = [join(bam_dir, "{0}.Q5DD.bam".format(ext))]
+    elif not paired_end and ext != "":
+        i = [join(bam_dir, "{0}.Q5DD_tagAlign.gz".format(ext))]
+    return i
+
+
 def outputIDR(groupswreps, groupdata, chip2input, tools):
     """
     Produces the correct output files for IDR. All supposed replicates
@@ -62,6 +71,22 @@ def calc_effective_genome_fraction(effectivesize, genomefile):
         if not "_" in chrom and chrom!="chrX" and chrom!="chrM" and chrom!="chrY":
             genomelen+=int(l)
     return(str(float(effectivesize)/ genomelen))
+
+
+def getSicerChips(bam_dir, name, paired_end):
+    if paired_end:
+        chip = join(bam_dir, name + ".Q5DD.bam")
+    else:
+        chip = join(bam_dir, name + ".Q5DD_tagAlign.gz")
+    return chip
+
+
+def getSicerFragLen(ppqt_dir, qc_dir, name, paired_end):
+    if paired_end:
+        fragLen = join(qc_dir, name + ".Q5DD.insert_size_metrics.txt")
+    else:
+        fragLen = join(ppqt_dir, name + ".Q5DD_tagAlign.ppqt.txt")
+    return fragLen
 
 
 def get_manorm_sizes(g1, g2, group_data, ppqt_in):
