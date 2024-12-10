@@ -11,6 +11,7 @@ genome                          = config['options']['genome']
 paired_end                      = False if config['project']['nends'] == 1 else True
 chip2input                      = config['project']['peaks']['inputs']
 tmpdir                          = config['options']['tmp_dir']
+assay                           = config['options']['assay']
 
 # Directory end points
 bam_dir                         = join(workpath, "bam")
@@ -32,8 +33,9 @@ rule inputnorm:
        bigWig file of treatmment sample normalizes with its input control
     """
     input:
-        chip                                = lambda wc: ctrl_test(chip2input, wc.name, bw_dir, 'chip'),
-        ctrl                                = lambda wc: ctrl_test(chip2input, wc.name, bw_dir, 'ctrl')
+        chip                                = lambda wc: join(bw_dir, f"{wc.name}.Q5DD.RPGC.bw"),
+        ctrl                                = lambda wc: join(bw_dir, f"{chip2input[wc.name]}.Q5DD.RPGC.bw") 
+                                                if wc.name in chip2input and chip2input[wc.name] else []
     output:
         join(bw_dir, "{name}.Q5DD.RPGC.inputnorm.bw")
     params:

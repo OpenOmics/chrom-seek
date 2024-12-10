@@ -87,10 +87,9 @@ if assay == "cfchip":
         join(cfTool_dir, "Output", "H3K4me3", "Signatures", "{name}.Q5DD.csv"), 
         name=chips
     ))
-    exit(assay)
-    rule_all_ins.extend(expand(join(ppqt_dir, "{name}.Q5DD_tagAlign.ppqt"), name=samples))
-    rule_all_ins.extend(expand(join(ppqt_dir, "{name}.Q5DD_tagAlign.pdf"), name=samples))
-    rule_all_ins.extend(expand(join(ppqt_dir, "{name}.Q5DD_tagAlign.ppqt.txt"), name=samples))
+    # rule_all_ins.extend(expand(join(ppqt_dir, "{name}.Q5DD_tagAlign.ppqt"), name=samples))
+    # rule_all_ins.extend(expand(join(ppqt_dir, "{name}.Q5DD_tagAlign.pdf"), name=samples))
+    # rule_all_ins.extend(expand(join(ppqt_dir, "{name}.Q5DD_tagAlign.ppqt.txt"), name=samples))
     if has_inputs:
         rule_all_ins.append(
             join(qc_dir, "AllSamples-macsNarrow", "AllSamples-macsNarrow_DiffBindQC_TMMcounts.bed")
@@ -221,6 +220,8 @@ rule all:
 
 # Include endedness rules
 if paired_end:
+    if assay == 'cfchip':
+        include: join("rules", "cfChIP.smk")
     include: join("rules", "paired", "peakcall.smk")
     include: join("rules", "paired", "qc.smk")
     include: join("rules", "paired", "trim_align_dedup.smk")
@@ -229,10 +230,10 @@ else:
     include: join("rules", "single", "qc.smk")
     include: join("rules", "single", "trim_align_dedup.smk")
 
+
 # Include general rules
 include: join("rules", "hooks.smk")
 include: join("rules", "qc.smk")
 include: join("rules", "peakcall.smk")
 include: join("rules", "dba.smk")
 include: join("rules", "uropa.smk")
-include: join("rules", "cfChIP.smk")

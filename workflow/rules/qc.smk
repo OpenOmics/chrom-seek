@@ -20,6 +20,7 @@ kraken_dir                      = join(workpath, 'kraken')
 deeptools_dir                   = join(workpath, 'deeptools')
 peakqc_dir                      = join(workpath, "PeakQC")
 extra_fingerprint_dir           = join(deeptools_dir, 'sorted_fingerprint')
+tmpdir                          = config['options']['tmp_dir']
 
 
 rule preseq:
