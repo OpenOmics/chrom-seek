@@ -221,7 +221,17 @@ rule all:
     input:
         rule_all_ins
 
-# Include child rules
+# Include endedness rules
+if paired_end:
+    include: join("rules", "paired", "peakcall.smk")
+    include: join("rules", "paired", "qc.smk")
+    include: join("rules", "paired", "trim.smk")
+else:
+    include: join("rules", "single", "peakcall.smk")
+    include: join("rules", "single", "qc.smk")
+    include: join("rules", "single", "trim.smk")
+
+# Include general rules
 include: join("rules", "hooks.smk")
 include: join("rules", "trim_align_dedup.smk")
 include: join("rules", "qc.smk")
