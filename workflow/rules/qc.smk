@@ -1,4 +1,4 @@
-# Quality control rules
+# Quality control metrics and reports
 # ~~~~
 # Generally applicable quality control rules
 from scripts.common import allocated
@@ -185,118 +185,6 @@ rule fastqc:
         """
 
 
-rule fastq_screen:
-    """
-    Quality-control step to screen for different sources of contamination.
-    FastQ Screen compares your sequencing data to a set of different reference
-    genomes to determine if there is contamination. It allows a user to see if
-    the composition of your library matches what you expect.
-    @Input:
-        Trimmed FastQ files (scatter)
-    @Output:
-        FastQ Screen report and logfiles
-    """
-    input:
-        expand(join(trim_dir, "{name}.R{rn}.trim.fastq.gz"), name=samples, rn=ends)
-    output:
-        get_fqscreen_outputs(paired_end, samples, qc_dir)
-    params:
-        rname                   = 'fqscreen',
-        outdir                  = join(qc_dir, "FQscreen"),
-        outdir2                 = join(qc_dir, "FQscreen2"),
-        fastq_screen            = config['bin']['FASTQ_SCREEN'],
-        fastq_screen_config1    = config['shared_resources']['FASTQ_SCREEN_CONFIG_P1'],
-        fastq_screen_config2    = config['shared_resources']['FASTQ_SCREEN_CONFIG_P2'],
-    envmodules:
-        config['tools']['BOWTIE2VER'],
-        config['tools']['PERLVER'],
-    threads: 
-        int(allocated("threads", "fastq_screen", cluster))
-    shell: 
-        """
-        # First pass of contamination screening
-        {params.fastq_screen} \\
-            --conf {params.fastq_screen_config1} \\
-            --outdir {params.outdir} \\
-            --threads {threads} \\
-            --subset 1000000 \\
-            --aligner bowtie2 \\
-            --force \\
-            {input}
-        # Second pass of contamination screening
-        {params.fastq_screen} \\
-            --conf {params.fastq_screen_config2} \\
-            --outdir {params.outdir2} \\
-            --threads {threads} \\
-            --subset 1000000 \\
-            --aligner bowtie2 \\
-            --force \\
-            {input}
-        """
-
-
-rule kraken:
-    """
-    Quality-control step to assess for potential sources of microbial contamination.
-    If there are high levels of microbial contamination, Kraken will provide an
-    estimation of the taxonomic composition. Kraken is used in conjunction with
-    Krona to produce an interactive reports.
-    @Input:
-        Trimmed FastQ files (scatter)
-    @Output:
-        Kraken logfile and interative krona report
-    """
-    input:
-        fq1                     = join(trim_dir, "{name}.R1.trim.fastq.gz"),
-        fq2                     = provided(join(trim_dir,"{name}.R2.trim.fastq.gz"), paired_end)
-    output:
-        krakenout               = join(kraken_dir, "{name}.trim.kraken_bacteria.out.txt"),
-        krakentaxa              = join(kraken_dir, "{name}.trim.kraken_bacteria.taxa.txt"),
-        kronahtml               = join(kraken_dir, "{name}.trim.kraken_bacteria.krona.html"),
-    params:
-        rname                   = 'kraken',
-        outdir                  = kraken_dir,
-        bacdb                   = config['shared_resources']['KRAKENBACDB'],
-        tmpdir                  = tmpdir,
-        paired_end              = paired_end
-    threads: 
-        int(allocated("threads", "kraken_pe", cluster)),
-    envmodules:
-        config['tools']['KRAKENVER'],
-        config['tools']['KRONATOOLSVER'],
-    shell: 
-        """
-        # Setups temporary directory for
-        # intermediate files with built-in 
-        # mechanism for deletion on exit
-        if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
-        tmp=$(mktemp -d -p "{params.tmpdir}")
-        trap 'rm -rf "${{tmp}}"' EXIT
-        
-        # Copy kraken2 db to /lscratch or temp 
-        # location to reduce filesystem strain
-        cp -rv {params.bacdb} ${{tmp}}/;
-        kdb_base=$(basename {params.bacdb})
-        if [ '{params.paired_end}' == True ]; then
-            kraken2 --db ${{tmp}}/${{kdb_base}} \\
-                --threads {threads} --report {output.krakentaxa} \\
-                --output {output.krakenout} \\
-                --gzip-compressed \\
-                --paired {input.fq1} {input.fq2}
-        else
-            kraken2 --db ${{tmp}}/${{kdb_base}} \\
-                --threads {threads} --report {output.krakentaxa} \\
-                --output {output.krakenout} \\
-                --gzip-compressed \\
-                {input.fq1}
-        fi
-        
-        # Generate Krona Report
-        cut -f2,3 {output.krakenout} | \\
-            ktImportTaxonomy - -o {output.kronahtml}
-        """
-
-
 rule multiqc:
     """
     Reporting step to aggregate sample statistics and quality-control information
@@ -347,8 +235,8 @@ rule deeptools_QC:
         heatmap                 = join(deeptools_dir, "spearman_heatmap.Q5DD.pdf"),
         pca                     = join(deeptools_dir, "pca.Q5DD.pdf"),
         npz                     = temp(join(deeptools_dir, "Q5DD.npz")),
-	mqc                     = join(deeptools_dir, "spearman_readcounts.Q5DD.tab"),
-	png                     = join(deeptools_dir, "spearman_heatmap.Q5DD_mqc.png")
+	    mqc                     = join(deeptools_dir, "spearman_readcounts.Q5DD.tab"),
+	    png                     = join(deeptools_dir, "spearman_heatmap.Q5DD_mqc.png")
     params:
         rname                   = "deeptools_QC",
         parent_dir              = deeptools_dir,
@@ -367,6 +255,7 @@ rule deeptools_QC:
         plotPCA -in {output.npz} -o {output.pca}
         """
 
+
 rule deeptools_fingerprint:
     input:
         [ join(bam_dir, name + ".Q5DD.bam") for name in samples ] 
@@ -379,21 +268,17 @@ rule deeptools_fingerprint:
         parent_dir              = deeptools_dir,
         deeptoolsver            = config['tools']['DEEPTOOLSVER'],
         # this should be the sample names to match the bigwigs in the same order
-        labels                  = samples
+        labels                  = samples,
+        ext                     = "" if paired_end else "-e 200",
     threads: int(allocated("threads", "deeptools_fingerprint", cluster)),
     shell: 
         """    
         module load {params.deeptoolsver}
         if [ ! -d "{params.parent_dir}" ]; then mkdir "{params.parent_dir}"; fi
-        if [ \"""" + str(paired_end) + """\" == False ]; then
-           extension_option="-e 200"
-        else
-           extension_option=""
-        fi
-        
+\
         plotFingerprint -b {input} --labels {params.labels} -p {threads} --skipZeros \\
                         --outQualityMetrics {output.metrics} --plotFile {output.image} --outRawCounts {output.raw} \\
-                        ${{extension_option}}
+                        {params.ext}
         """
 
 
@@ -404,7 +289,7 @@ rule deeptools_gene_all:
         TSSline=join(deeptools_dir,"TSS_profile.Q5DD.pdf"),
         TSSmat=temp(join(deeptools_dir,"TSS.Q5DD.mat.gz")),
         bed=temp(join(deeptools_dir,"geneinfo.Q5DD.bed")),
-	mqc=join(deeptools_dir,"TSS_profile.Q5DD.tab")
+	    mqc=join(deeptools_dir,"TSS_profile.Q5DD.tab")
     params:
         rname                   = "deeptools_gene_all",
         parent_dir              = deeptools_dir,
@@ -419,12 +304,12 @@ rule deeptools_gene_all:
         module load {params.deeptoolsver}
         if [ ! -d "{params.parent_dir}" ]; then mkdir "{params.parent_dir}"; fi
         grep --line-buffered 'protein_coding' {params.prebed} | awk -v OFS='\t' -F'\t' '{{print $1, $2, $3, $5, ".", $4}}' > {output.bed}
-       computeMatrix reference-point -S {input} -R {output.bed} -p {threads} \\
-                     --referencePoint TSS --upstream 3000 --downstream 3000 --skipZeros \\
-                     -o {output.TSSmat} --samplesLabel {params.labels}
-       plotProfile -m {output.TSSmat} -out {output.TSSline} \\
-                   --yAxisLabel 'average RPGC' --plotType 'se' --legendLocation upper-left \\
-                   --numPlotsPerRow 5 --outFileNameData {output.mqc}
+        computeMatrix reference-point -S {input} -R {output.bed} -p {threads} \\
+                        --referencePoint TSS --upstream 3000 --downstream 3000 --skipZeros \\
+                        -o {output.TSSmat} --samplesLabel {params.labels}
+        plotProfile -m {output.TSSmat} -out {output.TSSline} \\
+                    --yAxisLabel 'average RPGC' --plotType 'se' --legendLocation upper-left \\
+                    --numPlotsPerRow 5 --outFileNameData {output.mqc}
         """
 
 

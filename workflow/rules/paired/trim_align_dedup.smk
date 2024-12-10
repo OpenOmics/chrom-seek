@@ -13,6 +13,7 @@ tmpdir                          = config['options']['tmp_dir']
 bam_dir                         = join(workpath, "bam")
 bw_dir                          = join(workpath, "bigwig")
 ppqt_dir                        = join(bam_dir, "ppqt")
+chip2input                      = config['project']['peaks']['inputs']
 
 
 rule trim:

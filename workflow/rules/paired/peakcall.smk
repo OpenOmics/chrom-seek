@@ -11,9 +11,10 @@ tmpdir                          = config['options']['tmp_dir']
 
 rule MACS2_broad:
     input:
-        chip                            = join(bam_dir, "{name}.Q5DD_tagAlign.gz"),
-        txt                             = join(ppqt_dir, "{name}.Q5DD_tagAlign.ppqt.txt"),
-        c_option                        = lambda w: join(bam_dir, f"{chip2input[w.name]}.Q5DD.bam"),
+        chip                            = join(bam_dir, "{name}.Q5DD.bam"),
+        txt                             = join(ppqt_dir, "{name}.Q5DD.ppqt.txt"),
+        c_option                        = lambda w: join(bam_dir, f"{chip2input[w.name]}.Q5DD.bam") 
+                                            if chip2input[w.name] else [],
     output:
         join(macsB_dir, "{name}", "{name}_peaks.broadPeak"),
     params:
@@ -40,7 +41,8 @@ rule SICER:
     input:
         chip                            = lambda w: join(bam_dir, w.name + ".Q5DD.bam"),
         fragLen                         = lambda w: join(qc_dir, name + ".Q5DD.insert_size_metrics.txt"),
-        c_option                        = lambda w: join(bam_dir, f"{chip2input[w.name]}.Q5DD.bam"),
+        c_option                        = lambda w: join(bam_dir, f"{chip2input[w.name]}.Q5DD.bam")
+                                                        if chip2input[w.name] else [],
     output:
         bed                             = join(sicer_dir, "{name}", "{name}_broadpeaks.bed") if has_inputs else [],
     params:
@@ -114,9 +116,10 @@ rule SICER:
 
 rule MACS2_narrow:
     input:
-        chip                            = join(bam_dir, "{name}.Q5DD_tagAlign.gz"),
-        txt                             = join(ppqt_dir, "{name}.Q5DD_tagAlign.ppqt.txt"),
-        c_option                        = lambda w: join(bam_dir, f"{chip2input[w.name]}.Q5DD.bam"),
+        chip                            = join(bam_dir, "{name}.Q5DD.bam"),
+        txt                             = join(ppqt_dir, "{name}.Q5DD.ppqt.txt"),
+        c_option                        = lambda w: join(bam_dir, f"{chip2input[w.name]}.Q5DD.bam")
+                                            if chip2input[w.name] else [],
     output:
         join(macsN_dir, "{name}", "{name}_peaks.narrowPeak"),
     params:
