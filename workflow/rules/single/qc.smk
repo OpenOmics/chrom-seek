@@ -1,6 +1,7 @@
 # Quality control metrics and reports
 # ~~~~
 # Single-ended quality control rules
+from scripts.common import allocated
 
 # ~~ workflow configuration
 ends                            = [1]
