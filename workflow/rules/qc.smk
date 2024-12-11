@@ -2,6 +2,7 @@
 # ~~~~
 # Generally applicable quality control rules
 from scripts.common import allocated
+from textwrap import dedent
 from os.path import join
 
 
@@ -273,14 +274,19 @@ rule deeptools_fingerprint:
         ext                     = "" if paired_end else "-e 200",
     threads: int(allocated("threads", "deeptools_fingerprint", cluster)),
     shell: 
-        """    
+        dedent("""    
         module load {params.deeptoolsver}
         if [ ! -d "{params.parent_dir}" ]; then mkdir "{params.parent_dir}"; fi
 \
-        plotFingerprint -b {input} --labels {params.labels} -p {threads} --skipZeros \\
-                        --outQualityMetrics {output.metrics} --plotFile {output.image} --outRawCounts {output.raw} \\
-                        {params.ext}
-        """
+        plotFingerprint \\
+         -b {input} \\
+         --labels {params.labels} \\
+         -p {threads} \\
+         --skipZeros \\
+         --outQualityMetrics {output.metrics} \\
+         --plotFile {output.image} \\
+         --outRawCounts {output.raw} {params.ext}
+        """)
 
 
 rule deeptools_gene_all:
