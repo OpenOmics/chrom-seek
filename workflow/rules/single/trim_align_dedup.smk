@@ -33,11 +33,9 @@ rule trim:
         Trimmed and blacklist-sequences-free FastQ files
     """
     input:
-        file1                               = join(workpath, "{name}.R1.fastq.gz"),
-        file2                               = provided(join(workpath, "{name}.R2.fastq.gz"), paired_end)
+        join(workpath, "{name}.R1.fastq.gz"),
     output:
-        outfq1                              = temp(join(trim_dir, "{name}.R1.trim.fastq.gz")),
-        outfq2                              = provided(temp(join(trim_dir, "{name}.R2.trim.fastq.gz")), paired_end)
+        temp(join(trim_dir, "{name}.R1.trim.fastq.gz")),
     params:
         rname                               = "trim",
         cutadaptver                         = config['tools']['CUTADAPTVER'],
@@ -75,7 +73,7 @@ rule trim:
             -b file:{params.fastawithadaptersetd} \\
             -j {threads} \\
             -o ${{tmp}}/{params.sample}.R1.trim.fastq.gz \\
-            {input.file1}
+            {input}
         
         if [ "{params.blacklistbwaindex}" != "" ]; then 
             bwa mem -t {threads} \\
@@ -93,7 +91,7 @@ rule trim:
             rm ${{tmp}}/{params.sample}.bam;
             pigz -p {threads} ${{tmp}}/{params.sample}.R1.trim.fastq;
         fi
-        mv ${{tmp}}/{params.sample}.R1.trim.fastq.gz {output.outfq1};
+        mv ${{tmp}}/{params.sample}.R1.trim.fastq.gz {output};
         """
 
 
@@ -168,14 +166,13 @@ rule dedup:
 
     """
     input:
-        join(bam_dir,"{name}.Q5.bam")
+        join(bam_dir, "{name}.Q5.bam")
     output:
         out_bam                             = join(bam_dir, "{name}.Q5DD.bam"),
         flagstat                            = join(bam_dir, "{name}.Q5DD.bam.flagstat"),
         idxstat                             = join(bam_dir, "{name}.Q5DD.bam.idxstat"),
         bwadups                             = join(bam_dir, "{name}.bwa.Q5.duplic"),
-        tagalign                            = join(bam_dir, "{name}.Q5DD_tagAlign") if assay == "cfchip" \
-                                                else join(bam_dir, "{name}.Q5DD_tagAlign.gz")
+        tagalign                            = join(bam_dir, "{name}.Q5DD_tagAlign.gz")
     params:
         rname                               = 'dedup',
         picardver                           = config['tools']['PICARDVER'],
@@ -200,52 +197,32 @@ rule dedup:
         tmp=$(mktemp -d -p "{params.tmpdir}")
         trap 'rm -rf "${{tmp}}"' EXIT
         
-        if [ "{assay}" == "cfchip" ]; then
-            java -Xmx{params.javaram} \\
-                -jar $PICARDJARPATH/picard.jar MarkDuplicates \\
-                -I {input} \\
-                -O {params.tmpBam} \\
-                -TMP_DIR ${{tmp}} \\
-                -VALIDATION_STRINGENCY SILENT \\
-                -REMOVE_DUPLICATES true
-                -METRICS_FILE {output.bwadups};
-            samtools index {params.tmpBam};
-            samtools view -b {params.tmpBam} chr{{1..22}} > {output.out_bam};
-            Rscript {params.rscript} {params.tmpBam} {output.tagalign};
-            rm {params.tmpBam} {params.tmpBam}.bai;
-            samtools index {output.out_bam};
-            samtools flagstat {output.out_bam} > {output.flagstat};
-            samtools idxstats {output.out_bam} > {output.idxstat}; 
-        else
-            java -Xmx{params.javaram} \\
-                -jar $PICARDJARPATH/picard.jar MarkDuplicates \\
-                -I {input} \\
-                -O {output.out_bam} \\
-                -TMP_DIR ${{tmp}} \\
-                -VALIDATION_STRINGENCY SILENT \\
-                -REMOVE_DUPLICATES true \\
-                -METRICS_FILE {output.bwadups};
-            samtools index {output.out_bam};
-            samtools flagstat {output.outout_bam5} > {output.flagstat};
-            samtools idxstats {output.out_bam} > {output.idxstat};
-        fi
+        macs2 filterdup -i {input} -g {params.gsize} --keep-dup="auto" -o ${{tmp}}/TmpTagAlign;
+        awk -F"\\t" -v OFS="\\t" '{{if ($2>0 && $3>0) {{print}}}}' ${{tmp}}/TmpTagAlign > ${{tmp}}/TmpTagAlign2;
+        awk -F"\\t" -v OFS="\\t" '{{print $1,1,$2}}' {params.genomefile} | sort -k1,1 -k2,2n > ${{tmp}}/GenomeFileBed;
+        bedtools intersect -wa -f 1.0 -a ${{tmp}}/TmpTagAlign2 -b ${{tmp}}/GenomeFileBed > ${{tmp}}/TmpTagAlign3;
+        bedtools bedtobam -i ${{tmp}}/TmpTagAlign3 -g {params.genomefile} | samtools sort -@4 -o {output.out_bam};
+        gzip ${{tmp}}/TmpTagAlign3;
+        mv ${{tmp}}/TmpTagAlign3.gz {output.tagalign};
+        samtools index {output.out_bam};
+        samtools flagstat {output.out_bam} > {output.flagstat}
+        samtools idxstats {output.out_bam} > {output.idxstat}
         """
 
 
 rule ppqt:
     input:
-        bam                                 = lambda w : join(bam_dir, f"{w.name}.{w.ext}." + 
-                                                "bam" if w.ext.lower() == 'sorted' else "gz"),
+        bam                                 = join(bam_dir, "{name}.{ext}.bam")
     output:                                          
-        ppqt                                = join(ppqt_dir, "{name}.{ext}.ppqt"),
+        ppqt                                = join(ppqt_dir, "{name}.{ext}.ppqt.txt"),
         pdf                                 = join(ppqt_dir, "{name}.{ext}.pdf"),
-        txt                                 = join(ppqt_dir, "{name}.{ext}.ppqt.txt"),
+        txt                                 = join(ppqt_dir, "{name}.{ext}.txt"),
     params:
         rname                               = "ppqt",
         samtoolsver                         = config['tools']['SAMTOOLSVER'],
         rver                                = config['tools']['RVER'],
         scriptPy                            = join(bin_path, "ppqt_process.py"),
-        file_name                           = "{name}"
+        tmpdir                              = tmpdir,
     container: 
         config['images']['ppqt']
     shell: 
@@ -254,16 +231,39 @@ rule ppqt:
         tmp=$(mktemp -d -p "{params.tmpdir}")
         trap 'rm -rf "${{tmp}}"' EXIT
 
-        if [[ '{input.bam}' == *.gz ]]; then 
-            ln -s {input.bam} ${{tmp}}/{params.file_name}.Q5DD.tagAlign.gz;
-            run_spp.R -c=${{tmp}}/{params.file_name}.Q5DD.tagAlign.gz \
-                    -savp={output.pdf} -out={output.ppqt} \
-                    -tmpdir=/lscratch/$SLURM_JOBID -rf
-        else
-            run_spp.R -c={input.bam} \
-                    -savp={output.pdf} -out={output.ppqt} \
-                    -tmpdir=/lscratch/$SLURM_JOBID -rf
-        fi
+        run_spp.R -c={input.bam} \
+                -savp={output.pdf} -out={output.ppqt} \
+                -tmpdir=/lscratch/$SLURM_JOBID -rf
+        python {params.scriptPy} -i {output.ppqt} -o {output.txt}
+        """
+
+
+rule ppqt_tagalign:
+    input:
+        bam                                 = join(bam_dir, "{name}.Q5DD_tagAlign.gz")
+    output:                                          
+        ppqt                                = join(ppqt_dir, "{name}.Q5DD_tagAlign.ppqt.txt"),
+        pdf                                 = join(ppqt_dir, "{name}.Q5DD_tagAlign.pdf"),
+        txt                                 = join(ppqt_dir, "{name}.Q5DD_tagAlign.txt"),
+    params:
+        rname                               = "ppqt",
+        samtoolsver                         = config['tools']['SAMTOOLSVER'],
+        rver                                = config['tools']['RVER'],
+        scriptPy                            = join(bin_path, "ppqt_process.py"),
+        tmpdir                              = tmpdir,
+    container: 
+        config['images']['ppqt']
+    shell: 
+        """
+        if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
+        tmp=$(mktemp -d -p "{params.tmpdir}")
+        trap 'rm -rf "${{tmp}}"' EXIT
+
+        ln -s {input.bam} ${{tmp}}/{wildcards.name}.Q5DD_tagAlign.gz;
+        run_spp.R -c=${{tmp}}/{wildcards.name}.Q5DD_tagAlign.gz \
+                -savp={output.pdf} -out={output.ppqt} \
+                -tmpdir=/lscratch/$SLURM_JOBID -rf
+
         python {params.scriptPy} -i {output.ppqt} -o {output.txt}
         """
 
@@ -280,25 +280,23 @@ rule bam2bw:
        an associated score, RPGC
     """
     input:
-        bam                                 = lambda w: join(bam_dir, "{w.name}." + 
-                                                "Q5DD.bam" if w.ext == "Q5DD" else "sorted.bam"),
-        ppqt                                = lambda w: join(ppqt_dir, "{w.name}." + 
-                                                "Q5DD_tagAlign.ppqt.txt" if w.ext == "Q5DD" else
-                                                "sorted.ppqt.txt")
+        bam                                 = lambda w: join(bam_dir, f"{w.name}.{w.ext}.bam"),
+        ppqt                                = lambda w: join(ppqt_dir, f"{w.name}.{w.ext}.ppqt.txt")
     output:
         outbw                               = join(bw_dir, "{name}.{ext}.RPGC.bw"),
     params:
         rname                               = "bam2bw",
         name                                = "{name}",
         effectivegenomesize                 = config['references'][genome]['EFFECTIVEGENOMESIZE'],
+        tmpdir                              = tmpdir,
     threads: 
         int(allocated("threads", "bam2bw", cluster)),
     envmodules: 
         config['tools']['DEEPTOOLSVER'],
     shell: 
         """
-        if [ ! -d \"""" + tmpdir + """\" ]; then mkdir -p \"""" + tmpdir + """\"; fi
-        tmp=$(mktemp -d -p \"""" + tmpdir + """\")
+        if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
+        tmp=$(mktemp -d -p "{params.tmpdir}")
         trap 'rm -rf "${{tmp}}"' EXIT
 
         bam_cov_option=--centerReads

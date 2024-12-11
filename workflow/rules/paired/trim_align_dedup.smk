@@ -247,7 +247,7 @@ rule dedup:
 
 rule ppqt:
     input:
-        lambda w : join(bam_dir, f"{w.name}.{w.ext}.bam")
+        join(bam_dir, "{name}.{ext}.bam")
     output:                                          
         ppqt                                = join(ppqt_dir, "{name}.{ext}.ppqt"),
         pdf                                 = join(ppqt_dir, "{name}.{ext}.pdf"),

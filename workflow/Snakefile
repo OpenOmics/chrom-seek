@@ -6,7 +6,7 @@ from os.path import join
 from os import listdir
 
 # Local imports
-from scripts.common import provided, get_file_components
+from scripts.common import provided
 from scripts.grouping import group_samples_by_reps, \
     group_output_files, get_peaktools
 
@@ -39,7 +39,6 @@ peak_types                      = config['options']['peak_type_base']
 rule_all_ins                    = []
 groupdatawinput, groupswreps    = group_samples_by_reps(groupdata, samples, chip2input)
 PeakTools                       = get_peaktools(assay)
-file_stems, extRPGC, extaln     = get_file_components(paired_end)
 groups                          = list(groupdatawinput.keys())
 reps                            = True if len(groupswreps) > 0 else False
 uniq_inputs                     = list(sorted(set([v for v in chip2input.values() if v])))
@@ -48,7 +47,6 @@ sampleswinput                   = [
     if chip_value != 'NA' and chip_value != ''
 ]
 inputnorm                       = [""] if len(sampleswinput) == 0 else ["", ".inputnorm"]
-deepgroups, deepexts            = group_output_files(extRPGC, groups, inputnorm)
 UropaCats                       = ["protTSS", "prot", "protSEC", "genes"]
 
 # Directory end points
@@ -134,15 +132,16 @@ elif assay in ["atac", "chip"]:
     # if has_inputs:
     #     rule_all_ins.extend(expand(join(MEME_dir, "{PeakTool}", "{name}_meme", "meme-chip.html"), PeakTool=PeakTools, name=chips))
     #     rule_all_ins.extend(expand(join(MEME_dir, "{PeakTool}", "{name}_ame", "ame.html"), PeakTool=PeakTools, name=chips))
-    rule_all_ins.extend(expand(join(qc_dir, "{name}.{stem}.insert_size_metrics.txt"), name=samples, stem=file_stems))
+    rule_all_ins.extend(expand(join(qc_dir, "{name}.sorted.insert_size_metrics.txt"), name=samples))
     if assay == "chip":
         rule_all_ins.extend(expand(join(macsB_dir, "{name}", "{name}_peaks.broadPeak"), name=chips))
         # sicer outputs turned off for now
         # if has_inputs:
         #     rule_all_ins.extend(expand(join(sicer_dir, "{name}", "{name}_broadpeaks.bed"), name=chips))
-        rule_all_ins.extend(expand(join(ppqt_dir, "{name}.sorted.ppqt"), name=samples))
-        rule_all_ins.extend(expand(join(ppqt_dir, "{name}.sorted.pdf"), name=samples))
-        rule_all_ins.extend(expand(join(ppqt_dir, "{name}.sorted.ppqt.txt"), name=samples))
+        # if not paired_end:
+        #     rule_all_ins.extend(expand(join(ppqt_dir, "{name}.sorted.ppqt"), name=samples))
+        #     rule_all_ins.extend(expand(join(ppqt_dir, "{name}.sorted.pdf"), name=samples))
+        #     rule_all_ins.extend(expand(join(ppqt_dir, "{name}.sorted.ppqt.txt"), name=samples))
             
         rule_all_ins.extend(expand(
             join(uropa_dir, "{application}", "{name}_uropa_{_type}_allhits.txt"), 
@@ -174,7 +173,7 @@ rule_all_ins.extend(expand(join(qc_dir, "{name}.preseq.dat"), name=samples))
 rule_all_ins.extend(
     expand(join(peakqc_dir, "{PeakTool}", "{PeakTool}.{name}.Q5DD.FRiP_table.txt"), PeakTool=PeakTools, name=chips)
 )
-rule_all_ins.extend(expand(join(bam_dir, "{name}.{ext}"), name=samples, ext=extaln))
+rule_all_ins.extend(expand(join(bam_dir, "{name}.sorted.bam"), name=samples))
 rule_all_ins.extend(expand(join(bw_dir, "{name}.{ext}.RPGC.bw"), name=samples, ext=["sorted", "Q5DD"]))
 
 if has_inputs:

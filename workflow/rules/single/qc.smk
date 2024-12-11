@@ -128,8 +128,7 @@ rule insert_size:
         Number of reads per insert size and their histogram
     """
     input:
-        bam                     = lambda w : join(bam_dir, f"{w.name}.{w.ext}." + 
-                                    "bam" if w.ext.lower() == 'sorted' else "gz"),
+        bam                     = join(bam_dir, "{name}.sorted.bam"),
     output:
         txt                     = join(qc_dir, "{name}.{ext}.insert_size_metrics.txt"),
         pdf                     = join(qc_dir, "{name}.{ext}.insert_size_histogram.pdf"),
