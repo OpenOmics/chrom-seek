@@ -11,10 +11,10 @@ tmpdir                          = config['options']['tmp_dir']
 
 rule MACS2_broad:
     input:
-        chip                            = join(bam_dir, "{name}.Q5DD_tagAlign.gz"),
-        txt                             = join(ppqt_dir, "{name}.Q5DD_tagAlign.ppqt.txt"),
-        c_option                        = lambda w: join(bam_dir, f"{chip2input[w.name]}.Q5DD_tagAlign.gz")
-                                            if chip2input[w.name] else [],
+        chip                                = join(bam_dir, "{name}.Q5DD_tagAlign.gz"),
+        txt                                 = join(ppqt_dir, "{name}.Q5DD_tagAlign.ppqt.txt"),
+        c_option                            = lambda w: join(bam_dir, f"{chip2input[w.name]}.Q5DD_tagAlign.gz")
+                                                if w.name and chip2input[w.name] else [],
     output:
         join(macsB_dir, "{name}", "{name}_peaks.broadPeak"),
     params:
@@ -115,7 +115,8 @@ rule MACS2_narrow:
     input:
         chip                            = join(bam_dir, "{name}.Q5DD.bam"),
         txt                             = join(ppqt_dir, "{name}.Q5DD.ppqt.txt"),
-        c_option                        = lambda w: join(bam_dir, f"{chip2input[w.name]}.Q5DD_tagAlign.gz"),
+        c_option                        = lambda w: join(bam_dir, f"{chip2input[w.name]}.Q5DD_tagAlign.gz")
+                                            if w.name and chip2input[w.name] else [],
     output:
         join(macsN_dir, "{name}", "{name}_peaks.narrowPeak"),
     params:
