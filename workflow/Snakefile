@@ -79,7 +79,7 @@ if assay == "cfchip":
     rule_all_ins.extend(expand(
         join(qc_dir, "{name}.{stem}.insert_size_metrics.txt"), 
         name=samples, 
-        stem=file_stems
+        stem=['sorted', 'Q5DD'],
     ))
     rule_all_ins.extend(expand(
         join(cfTool_dir, "Output", "H3K4me3", "Signatures", "{name}.Q5DD.csv"), 
