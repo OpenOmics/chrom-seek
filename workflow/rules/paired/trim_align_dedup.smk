@@ -187,8 +187,7 @@ rule dedup:
         flagstat                            = join(bam_dir, "{name}.Q5DD.bam.flagstat"),
         idxstat                             = join(bam_dir, "{name}.Q5DD.bam.idxstat"),
         bwadups                             = join(bam_dir, "{name}.bwa.Q5.duplic"),
-        tagalign                            = join(bam_dir, "{name}.Q5DD_tagAlign") if assay == "cfchip" \
-                                                else join(bam_dir, "{name}.Q5DD_tagAlign.gz")
+        tagalign                            = join(bam_dir, "{name}.Q5DD_tagAlign") if assay == "cfchip" else []
     params:
         rname                               = 'dedup',
         picardver                           = config['tools']['PICARDVER'],
