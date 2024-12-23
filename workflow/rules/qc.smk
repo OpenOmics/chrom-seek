@@ -293,10 +293,10 @@ rule deeptools_gene_all:
     input:
         [ join(bw_dir, name + ".Q5DD.RPGC.bw") for name in samples ] 
     output:
-        TSSline=join(deeptools_dir,"TSS_profile.Q5DD.pdf"),
-        TSSmat=temp(join(deeptools_dir,"TSS.Q5DD.mat.gz")),
-        bed=temp(join(deeptools_dir,"geneinfo.Q5DD.bed")),
-	    mqc=join(deeptools_dir,"TSS_profile.Q5DD.tab")
+        TSSline                 = join(deeptools_dir, "TSS_profile.Q5DD.pdf"),
+        TSSmat                  = temp(join(deeptools_dir, "TSS.Q5DD.mat.gz")),
+        bed                     = temp(join(deeptools_dir, "geneinfo.Q5DD.bed")),
+	    mqc                     = join(deeptools_dir, "TSS_profile.Q5DD.tab")
     params:
         rname                   = "deeptools_gene_all",
         parent_dir              = deeptools_dir,
