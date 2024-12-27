@@ -77,11 +77,6 @@ if assay == "cfchip":
         qc_dir, "H3K4me3_cfChIP_signature.txt"
     ))
     rule_all_ins.extend(expand(
-        join(qc_dir, "{name}.{stem}.insert_size_metrics.txt"), 
-        name=samples, 
-        stem=['sorted', 'Q5DD'],
-    ))
-    rule_all_ins.extend(expand(
         join(cfTool_dir, "Output", "H3K4me3", "Signatures", "{name}.Q5DD.csv"), 
         name=chips
     ))
@@ -132,7 +127,6 @@ elif assay in ["atac", "chip"]:
     # if has_inputs:
     #     rule_all_ins.extend(expand(join(MEME_dir, "{PeakTool}", "{name}_meme", "meme-chip.html"), PeakTool=PeakTools, name=chips))
     #     rule_all_ins.extend(expand(join(MEME_dir, "{PeakTool}", "{name}_ame", "ame.html"), PeakTool=PeakTools, name=chips))
-    rule_all_ins.extend(expand(join(qc_dir, "{name}.sorted.insert_size_metrics.txt"), name=samples))
     if assay == "chip":
         rule_all_ins.extend(expand(join(macsB_dir, "{name}", "{name}_peaks.broadPeak"), name=chips))
         # sicer outputs turned off for now
@@ -168,13 +162,41 @@ elif assay in ["atac", "chip"]:
         #     group2=zipGroup2, 
         #     tool=zipToolC
         # ))
+
 rule_all_ins.append(join(workpath, "multiqc_report.html"))
 rule_all_ins.extend(expand(join(qc_dir, "{name}.preseq.dat"), name=samples))
 rule_all_ins.extend(
-    expand(join(peakqc_dir, "{PeakTool}", "{PeakTool}.{name}.Q5DD.FRiP_table.txt"), PeakTool=PeakTools, name=chips)
+    expand(join(peakqc_dir, "{PeakTool}", "{PeakTool}.{name}.Q5DD.FRiP_table.txt"), 
+    PeakTool=PeakTools, 
+    name=chips)
 )
-rule_all_ins.extend(expand(join(bam_dir, "{name}.sorted.bam"), name=samples))
-rule_all_ins.extend(expand(join(bw_dir, "{name}.{ext}.RPGC.bw"), name=samples, ext=["sorted", "Q5DD"]))
+rule_all_ins.extend(expand(
+    join(bam_dir, "{name}.sorted.bam"), 
+    name=samples
+))
+rule_all_ins.extend(expand(
+    join(bw_dir, "{name}.sorted.RPGC.bw"), 
+    name=samples,
+))
+rule_all_ins.extend(expand(join(qc_dir, "{name}.sorted.insert_size_metrics.txt"), name=samples))
+if paired_end:
+    rule_all_ins.extend(expand(
+        join(qc_dir, "{name}.Q5DD.insert_size_metrics.txt"),
+        name=samples,
+    ))
+    rule_all_ins.extend(expand(
+        join(bw_dir, "{name}.Q5DD.RPGC.bw"),
+        name=samples,
+    ))
+else:
+    rule_all_ins.extend(expand(
+        join(qc_dir, "{name}.Q5DD_tagAlign.insert_size_metrics.txt"),
+        name=samples,
+    ))
+    rule_all_ins.extend(expand(
+        join(bw_dir, "{name}.Q5DD_tagAlign.RPGC.bw"), 
+        name=samples,
+    ))
 
 if has_inputs:
     rule_all_ins.extend(expand(join(bw_dir, "{name}.Q5DD.RPGC.inputnorm.bw"), name=sampleswinput))
