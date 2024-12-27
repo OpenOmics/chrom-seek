@@ -77,6 +77,14 @@ if assay == "cfchip":
         qc_dir, "H3K4me3_cfChIP_signature.txt"
     ))
     rule_all_ins.extend(expand(
+        join(qc_dir, "{name}.sorted.insert_size_metrics.txt"), 
+        name=samples,
+    ))
+    rule_all_ins.extend(expand(
+        join(qc_dir, "{name}.Q5DD.insert_size_metrics.txt"), 
+        name=samples,
+    ))
+    rule_all_ins.extend(expand(
         join(cfTool_dir, "Output", "H3K4me3", "Signatures", "{name}.Q5DD.csv"), 
         name=chips
     ))
@@ -123,6 +131,9 @@ elif assay in ["atac", "chip"]:
     # turn off other peak types for now
     # peak_types.extend(["prot", "protSEC", "genes"])
     # peak_types = list(set(peak_types))
+    if paired_end:
+        rule_all_ins.extend(expand(join(qc_dir, "{name}.sorted.insert_size_metrics.txt"), name=samples))
+        rule_all_ins.extend(expand(join(qc_dir, "{name}.Q5DD.insert_size_metrics.txt"), name=samples))
     # meme outputs turned off for now
     # if has_inputs:
     #     rule_all_ins.extend(expand(join(MEME_dir, "{PeakTool}", "{name}_meme", "meme-chip.html"), PeakTool=PeakTools, name=chips))
@@ -178,25 +189,10 @@ rule_all_ins.extend(expand(
     join(bw_dir, "{name}.sorted.RPGC.bw"), 
     name=samples,
 ))
-rule_all_ins.extend(expand(join(qc_dir, "{name}.sorted.insert_size_metrics.txt"), name=samples))
-if paired_end:
-    rule_all_ins.extend(expand(
-        join(qc_dir, "{name}.Q5DD.insert_size_metrics.txt"),
-        name=samples,
-    ))
-    rule_all_ins.extend(expand(
-        join(bw_dir, "{name}.Q5DD.RPGC.bw"),
-        name=samples,
-    ))
-else:
-    rule_all_ins.extend(expand(
-        join(qc_dir, "{name}.Q5DD_tagAlign.insert_size_metrics.txt"),
-        name=samples,
-    ))
-    rule_all_ins.extend(expand(
-        join(bw_dir, "{name}.Q5DD_tagAlign.RPGC.bw"), 
-        name=samples,
-    ))
+rule_all_ins.extend(expand(
+    join(bw_dir, "{name}.Q5DD.RPGC.bw"), 
+    name=samples
+))
 
 if has_inputs:
     rule_all_ins.extend(expand(join(bw_dir, "{name}.Q5DD.RPGC.inputnorm.bw"), name=sampleswinput))
