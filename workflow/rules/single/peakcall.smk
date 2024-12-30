@@ -39,6 +39,35 @@ rule MACS2_broad:
         """
 
 
+rule MACS2_narrow:
+    input:
+        chip                            = join(bam_dir, "{name}.Q5DD.bam"),
+        txt                             = join(ppqt_dir, "{name}.Q5DD.ppqt.txt"),
+        c_option                        = lambda w: join(bam_dir, f"{chip2input[w.name]}.Q5DD_tagAlign.gz")
+                                            if w.name and chip2input[w.name] else [],
+    output:
+        join(macsN_dir, "{name}", "{name}_peaks.narrowPeak"),
+    params:
+        rname                           = 'MACS2_narrow',
+        gsize                           = config['references'][genome]['EFFECTIVEGENOMESIZE'],
+        macsver                         = config['tools']['MACSVER'],
+        flag                            = lambda w: "-c" if chip2input[w.name] else "",
+    shell: 
+        """
+        module load {params.macsver};
+        ppqt_len=$(awk '{{print $1}}' {input.txt})
+        macs2 callpeak \\
+            -t {input.chip} {params.flag} {input.c_option} \\
+            -g {params.gsize} \\
+            -n {wildcards.name} \\
+            --outdir {macsN_dir}/{wildcards.name} \\
+            -q 0.01 \\
+            --keep-dup="all" \\
+            --nomodel \\
+            --extsize $ppqt_len
+        """
+
+
 rule SICER:
     input:
         chip                            = lambda w: join(bam_dir, w.name + ".Q5DD_tagAlign.gz"),
@@ -111,30 +140,3 @@ rule SICER:
         """
 
 
-rule MACS2_narrow:
-    input:
-        chip                            = join(bam_dir, "{name}.Q5DD.bam"),
-        txt                             = join(ppqt_dir, "{name}.Q5DD.ppqt.txt"),
-        c_option                        = lambda w: join(bam_dir, f"{chip2input[w.name]}.Q5DD_tagAlign.gz")
-                                            if w.name and chip2input[w.name] else [],
-    output:
-        join(macsN_dir, "{name}", "{name}_peaks.narrowPeak"),
-    params:
-        rname                           = 'MACS2_narrow',
-        gsize                           = config['references'][genome]['EFFECTIVEGENOMESIZE'],
-        macsver                         = config['tools']['MACSVER'],
-        flag                            = lambda w: "-c" if chip2input[w.name] else "",
-    shell: 
-        """
-        module load {params.macsver};
-        ppqt_len=$(awk '{{print $1}}' {input.txt})
-        macs2 callpeak \\
-            -t {input.chip} {params.flag} {input.c_option} \\
-            -g {params.gsize} \\
-            -n {wildcards.name} \\
-            --outdir {macsN_dir}/{wildcards.name} \\
-            -q 0.01 \\
-            --keep-dup="all" \\
-            --nomodel \\
-            --extsize $ppqt_len
-        """

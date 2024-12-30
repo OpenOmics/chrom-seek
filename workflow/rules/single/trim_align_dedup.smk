@@ -171,7 +171,6 @@ rule dedup:
         out_bam                             = join(bam_dir, "{name}.Q5DD.bam"),
         flagstat                            = join(bam_dir, "{name}.Q5DD.bam.flagstat"),
         idxstat                             = join(bam_dir, "{name}.Q5DD.bam.idxstat"),
-        bwadups                             = join(bam_dir, "{name}.bwa.Q5.duplic"),
         tagalign                            = join(bam_dir, "{name}.Q5DD_tagAlign.gz")
     params:
         rname                               = 'dedup',
@@ -281,7 +280,7 @@ rule bam2bw:
     """
     input:
         bam                                 = lambda w: join(bam_dir, f"{w.name}.{w.ext}.bam"),
-        ppqt                                = lambda w: join(ppqt_dir, f"{w.name}.{w.ext}.ppqt.txt")
+        ppqt                                = lambda w: join(ppqt_dir, f"{w.name}.{w.ext}.ppqt.txt"),
     output:
         outbw                               = join(bw_dir, "{name}.{ext}.RPGC.bw"),
     params:
@@ -299,8 +298,7 @@ rule bam2bw:
         tmp=$(mktemp -d -p "{params.tmpdir}")
         trap 'rm -rf "${{tmp}}"' EXIT
 
-        bam_cov_option=--centerReads
-        echo "printing out value of bam-cov-option $bam_cov_option"
+        ppqt_len=$(awk '{{print $1}}' {input.ppqt})
         
         bamCoverage \\
             --bam {input.bam} \\
@@ -310,5 +308,5 @@ rule bam2bw:
             --numberOfProcessors {threads} \\
             --normalizeUsing RPGC \\
             --effectiveGenomeSize {params.effectivegenomesize} \\
-            ${{bam_cov_option}};  
+            -e ${{ppqt_len}}
         """

@@ -109,7 +109,6 @@ rule kraken:
             --output {output.krakenout} \\
             --gzip-compressed \\
             {input.fq1}
-        fi
         
         # Generate Krona Report
         cut -f2,3 {output.krakenout} | \\

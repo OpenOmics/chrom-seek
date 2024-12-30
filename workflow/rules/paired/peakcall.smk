@@ -12,7 +12,6 @@ tmpdir                          = config['options']['tmp_dir']
 rule MACS2_broad:
     input:
         chip                            = join(bam_dir, "{name}.Q5DD.bam"),
-        txt                             = join(ppqt_dir, "{name}.Q5DD.ppqt.txt"),
         c_option                        = lambda w: join(bam_dir, f"{chip2input[w.name]}.Q5DD.bam") 
                                             if chip2input[w.name] else [],
     output:
@@ -34,6 +33,32 @@ rule MACS2_broad:
             --broad-cutoff 0.01 \\
             --keep-dup="all" \\
             -f "BAMPE"
+        """
+
+
+rule MACS2_narrow:
+    input:
+        chip                            = join(bam_dir, "{name}.Q5DD.bam"),
+        c_option                        = lambda w: join(bam_dir, f"{chip2input[w.name]}.Q5DD.bam")
+                                            if chip2input[w.name] else [],
+    output:
+        join(macsN_dir, "{name}", "{name}_peaks.narrowPeak"),
+    params:
+        rname                           = 'MACS2_narrow',
+        gsize                           = config['references'][genome]['EFFECTIVEGENOMESIZE'],
+        macsver                         = config['tools']['MACSVER'],
+        flag                            = lambda w: "-c" if chip2input[w.name] else "",
+    shell: 
+        """
+        module load {params.macsver};
+        macs2 callpeak \\
+                -t {input.chip} {params.flag} {input.c_option} \\
+                -g {params.gsize} \\
+                -n {wildcards.name} \\
+                --outdir {macsN_dir}/{wildcards.name} \\
+                -q 0.01 \\
+                --keep-dup="all" \\
+                -f "BAMPE"
         """
 
 
@@ -111,31 +136,4 @@ rule SICER:
 
             mv ${{tmp}}/{params.name}.Q5DD-W300-G600.scoreisland {params.this_sicer_dir}
         fi
-        """
-
-
-rule MACS2_narrow:
-    input:
-        chip                            = join(bam_dir, "{name}.Q5DD.bam"),
-        txt                             = join(ppqt_dir, "{name}.Q5DD.ppqt.txt"),
-        c_option                        = lambda w: join(bam_dir, f"{chip2input[w.name]}.Q5DD.bam")
-                                            if chip2input[w.name] else [],
-    output:
-        join(macsN_dir, "{name}", "{name}_peaks.narrowPeak"),
-    params:
-        rname                           = 'MACS2_narrow',
-        gsize                           = config['references'][genome]['EFFECTIVEGENOMESIZE'],
-        macsver                         = config['tools']['MACSVER'],
-        flag                            = lambda w: "-c" if chip2input[w.name] else "",
-    shell: 
-        """
-        module load {params.macsver};
-        macs2 callpeak \\
-                -t {input.chip} {params.flag} {input.c_option} \\
-                -g {params.gsize} \\
-                -n {wildcards.name} \\
-                --outdir {macsN_dir}/{wildcards.name} \\
-                -q 0.01 \\
-                --keep-dup="all" \\
-                -f "BAMPE"
         """
