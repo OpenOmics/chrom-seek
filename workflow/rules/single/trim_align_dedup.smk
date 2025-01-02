@@ -15,6 +15,15 @@ bw_dir                          = join(workpath, "bigwig")
 ppqt_dir                        = join(bam_dir, "ppqt")
 
 
+wildcard_constraints:
+    # - regex to avoid backslashes in name wild cards
+    #   this corrects routing for `ppqt` and 
+    #   `ppqt_tagalign` rules
+    # - also possible to use negative look around regex:
+    #   "^((?!\/).)*$"
+    name                                = "[A-Za-z0-9_-]+"
+
+
 rule trim:
     """
     Data-processing step to remove adapter sequences and perform quality trimming
@@ -215,25 +224,27 @@ rule ppqt:
     output:                                          
         ppqt                                = join(ppqt_dir, "{name}.{ext}.ppqt.txt"),
         pdf                                 = join(ppqt_dir, "{name}.{ext}.pdf"),
-        txt                                 = join(ppqt_dir, "{name}.{ext}.txt"),
     params:
         rname                               = "ppqt",
         samtoolsver                         = config['tools']['SAMTOOLSVER'],
         rver                                = config['tools']['RVER'],
-        scriptPy                            = join(bin_path, "ppqt_process.py"),
         tmpdir                              = tmpdir,
     container: 
         config['images']['ppqt']
+    threads:
+        cluster['ppqt'].get('threads', cluster['__default__']['threads'])
     shell: 
         """
         if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
         tmp=$(mktemp -d -p "{params.tmpdir}")
         trap 'rm -rf "${{tmp}}"' EXIT
 
-        run_spp.R -c={input.bam} \
-                -savp={output.pdf} -out={output.ppqt} \
-                -tmpdir=/lscratch/$SLURM_JOBID -rf
-        python {params.scriptPy} -i {output.ppqt} -o {output.txt}
+        run_spp.R \\
+            -c={input.bam} \\
+            -savp={output.pdf} \\
+            -out={output.ppqt} \\
+            -p={threads} \\
+            -tmpdir=${{tmp}} 
         """
 
 
@@ -245,25 +256,29 @@ rule ppqt_tagalign:
         pdf                                 = join(ppqt_dir, "{name}.Q5DD_tagAlign.pdf"),
         txt                                 = join(ppqt_dir, "{name}.Q5DD_tagAlign.txt"),
     params:
-        rname                               = "ppqt",
+        rname                               = "ppqt_tagalign",
         samtoolsver                         = config['tools']['SAMTOOLSVER'],
         rver                                = config['tools']['RVER'],
-        scriptPy                            = join(bin_path, "ppqt_process.py"),
         tmpdir                              = tmpdir,
     container: 
         config['images']['ppqt']
+        # "docker://seqeralabs/phantompeakqualtools:latest"
+    threads:
+        cluster['ppqt_tagalign'].get('threads', cluster['__default__']['threads'])
     shell: 
         """
         if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
         tmp=$(mktemp -d -p "{params.tmpdir}")
         trap 'rm -rf "${{tmp}}"' EXIT
 
-        ln -s {input.bam} ${{tmp}}/{wildcards.name}.Q5DD_tagAlign.gz;
-        run_spp.R -c=${{tmp}}/{wildcards.name}.Q5DD_tagAlign.gz \
-                -savp={output.pdf} -out={output.ppqt} \
-                -tmpdir=/lscratch/$SLURM_JOBID -rf
-
-        python {params.scriptPy} -i {output.ppqt} -o {output.txt}
+        ln -s {input.bam} ${{tmp}}/{wildcards.name}.Q5DD_tagAlign.gz
+        zcat ${{tmp}}/{wildcards.name}.Q5DD_tagAlign.gz | head
+        run_spp.R \\
+            -c=${{tmp}}/{wildcards.name}.Q5DD_tagAlign.gz \\
+            -savp={output.pdf} \\
+            -out={output.ppqt} \\
+            -p={threads} \\
+            -tmpdir=${{tmp}}
         """
 
 
@@ -271,6 +286,7 @@ rule bam2bw:
     """
     bamCoverage converts bams to bigwig files for read visialization
     in UCSC Genome Browser or IGV.
+
     @Input:
         Files with extensions: sorted.bam and Q5DD.bam,
         for all samples (treatment and input controls)
@@ -288,6 +304,7 @@ rule bam2bw:
         name                                = "{name}",
         effectivegenomesize                 = config['references'][genome]['EFFECTIVEGENOMESIZE'],
         tmpdir                              = tmpdir,
+        frag_len_script                     = join(bin_path, "ppqt_process.py"),
     threads: 
         int(allocated("threads", "bam2bw", cluster)),
     envmodules: 
@@ -298,7 +315,7 @@ rule bam2bw:
         tmp=$(mktemp -d -p "{params.tmpdir}")
         trap 'rm -rf "${{tmp}}"' EXIT
 
-        ppqt_len=$(awk '{{print $1}}' {input.ppqt})
+        ppqt_len=$({params.frag_len_script} {input.ppqt})
         
         bamCoverage \\
             --bam {input.bam} \\

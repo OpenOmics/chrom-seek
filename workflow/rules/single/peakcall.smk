@@ -9,11 +9,20 @@ genome                          = config['options']['genome']
 tmpdir                          = config['options']['tmp_dir']
 
 
+wildcard_constraints:
+    # - regex to avoid backslashes in name wild cards
+    #   this corrects routing for `ppqt` and 
+    #   `ppqt_tagalign` rules
+    # - also possible to use negative look around regex:
+    #   "^((?!\/).)*$"
+    name                                = "[A-Za-z0-9_-]+"
+
+
 rule MACS2_broad:
     input:
         chip                                = join(bam_dir, "{name}.Q5DD_tagAlign.gz"),
         txt                                 = join(ppqt_dir, "{name}.Q5DD_tagAlign.ppqt.txt"),
-        c_option                            = lambda w: join(bam_dir, f"{chip2input[w.name]}.Q5DD_tagAlign.gz")
+        c_option                            = lambda w: join(bam_dir, f"{chip2input[w.name]}.Q5DD.bam")
                                                 if w.name and chip2input[w.name] else [],
     output:
         join(macsB_dir, "{name}", "{name}_peaks.broadPeak"),
@@ -22,10 +31,11 @@ rule MACS2_broad:
         gsize                           = config['references'][genome]['EFFECTIVEGENOMESIZE'],
         macsver                         = config['tools']['MACSVER'],
         flag                            = lambda w: "-c" if chip2input[w.name] else "",
+        frag_len_script                     = join(bin_path, "ppqt_process.py"),
     shell: 
         """
         module load {params.macsver};
-        ppqt_len=$(awk '{{print $1}}' {input.txt})
+        ppqt_len=$({params.frag_len_script} {input.txt})
         macs2 callpeak \\
             -t {input.chip} {params.flag} {input.c_option} \\
             -g {params.gsize} \\
@@ -41,21 +51,22 @@ rule MACS2_broad:
 
 rule MACS2_narrow:
     input:
-        chip                            = join(bam_dir, "{name}.Q5DD.bam"),
-        txt                             = join(ppqt_dir, "{name}.Q5DD.ppqt.txt"),
-        c_option                        = lambda w: join(bam_dir, f"{chip2input[w.name]}.Q5DD_tagAlign.gz")
-                                            if w.name and chip2input[w.name] else [],
+        chip                                = join(bam_dir, "{name}.Q5DD.bam"),
+        txt                                 = join(ppqt_dir, "{name}.Q5DD.ppqt.txt"),
+        c_option                            = lambda w: join(bam_dir, f"{chip2input[w.name]}.Q5DD.bam")
+                                                if w.name and chip2input[w.name] else [],
     output:
         join(macsN_dir, "{name}", "{name}_peaks.narrowPeak"),
     params:
-        rname                           = 'MACS2_narrow',
-        gsize                           = config['references'][genome]['EFFECTIVEGENOMESIZE'],
-        macsver                         = config['tools']['MACSVER'],
-        flag                            = lambda w: "-c" if chip2input[w.name] else "",
+        rname                               = 'MACS2_narrow',
+        gsize                               = config['references'][genome]['EFFECTIVEGENOMESIZE'],
+        macsver                             = config['tools']['MACSVER'],
+        flag                                = lambda w: "-c" if chip2input[w.name] else "",
+        frag_len_script                     = join(bin_path, "ppqt_process.py"),
     shell: 
         """
         module load {params.macsver};
-        ppqt_len=$(awk '{{print $1}}' {input.txt})
+        ppqt_len=$({params.frag_len_script} {input.txt})
         macs2 callpeak \\
             -t {input.chip} {params.flag} {input.c_option} \\
             -g {params.gsize} \\

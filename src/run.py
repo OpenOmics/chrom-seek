@@ -690,7 +690,7 @@ def runner(
     threads=2,
     jobname="pl:master",
     submission_script="run.sh",
-    tmp_dir="/lscratch/$SLURM_JOBID/",
+    tmp_dir="/lscratch/$SLURM_JOB_ID/",
 ):
     """Runs the pipeline via selected executor: local or slurm.
     If 'local' is selected, the pipeline is executed locally on a compute node/instance.

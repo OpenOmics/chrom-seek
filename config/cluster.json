@@ -29,7 +29,12 @@
         "mem": "96g",
         "threads": "2"
     },
+    "ppqt_tagalign": {
+        "threads": "16",
+        "mem": "24g"
+    },
     "ppqt": {
+        "threads": "16",
         "mem": "24g"
     },
     "bam2bw": {
