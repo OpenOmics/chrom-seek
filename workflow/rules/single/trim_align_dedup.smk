@@ -232,7 +232,7 @@ rule ppqt:
     container: 
         config['images']['ppqt']
     threads:
-        cluster['ppqt'].get('threads', cluster['__default__']['threads'])
+        int(cluster['ppqt'].get('threads', cluster['__default__']['threads']))
     shell: 
         """
         if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
@@ -243,14 +243,14 @@ rule ppqt:
             -c={input.bam} \\
             -savp={output.pdf} \\
             -out={output.ppqt} \\
-            -p={threads} \\
-            -tmpdir=${{tmp}} 
+            -tmpdir=${{tmp}} \\
+            -p={threads}
         """
 
 
 rule ppqt_tagalign:
     input:
-        bam                                 = join(bam_dir, "{name}.Q5DD_tagAlign.gz")
+        tagalign                            = join(bam_dir, "{name}.Q5DD_tagAlign.gz")
     output:                                          
         ppqt                                = join(ppqt_dir, "{name}.Q5DD_tagAlign.ppqt.txt"),
         pdf                                 = join(ppqt_dir, "{name}.Q5DD_tagAlign.pdf"),
@@ -262,23 +262,21 @@ rule ppqt_tagalign:
         tmpdir                              = tmpdir,
     container: 
         config['images']['ppqt']
-        # "docker://seqeralabs/phantompeakqualtools:latest"
     threads:
-        cluster['ppqt_tagalign'].get('threads', cluster['__default__']['threads'])
+        int(cluster['ppqt_tagalign'].get('threads', cluster['__default__']['threads']))
     shell: 
         """
         if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
         tmp=$(mktemp -d -p "{params.tmpdir}")
         trap 'rm -rf "${{tmp}}"' EXIT
-
-        ln -s {input.bam} ${{tmp}}/{wildcards.name}.Q5DD_tagAlign.gz
-        zcat ${{tmp}}/{wildcards.name}.Q5DD_tagAlign.gz | head
+        # ppqt will not work unless file name ends with ".tagAlign"
+        # "Q5DD_tagAlign" will not work
+        gunzip -C {input.tagalign} > ${{tmp}}/{wildcards.name}.Q5DD.tagAlign
         run_spp.R \\
-            -c=${{tmp}}/{wildcards.name}.Q5DD_tagAlign.gz \\
+            -c=${{tmp}}/{wildcards.name}.Q5DD.tagAlign \\
             -savp={output.pdf} \\
             -out={output.ppqt} \\
-            -p={threads} \\
-            -tmpdir=${{tmp}}
+            -p={threads} 
         """
 
 

@@ -260,6 +260,8 @@ rule ppqt:
         tmpdir                              = tmpdir,
     container: 
         config['images']['ppqt']
+    threads:
+        int(cluster['ppqt'].get('threads', cluster['__default__']['threads']))
     shell: 
         """
         if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
@@ -267,12 +269,17 @@ rule ppqt:
         trap 'rm -rf "${{tmp}}"' EXIT
 
         samtools view -b \\
+            -@ {threads} \\
             -f 66 \\
             -o ${{tmp}}/bam1.f66.bam {input};
         samtools index ${{tmp}}/bam1.f66.bam;
-        run_spp.R -c=${{tmp}}/bam1.f66.bam \
-                    -savp={output.pdf} -out={output.ppqt} \
-                    -tmpdir=${{tmp}} -rf
+        run_spp.R \\
+            -c=${{tmp}}/bam1.f66.bam \\
+            -savp={output.pdf} \\
+            -out={output.ppqt} \\
+            -tmpdir=${{tmp}} \\
+            -p={threads} \\
+            -rf
 
         python {params.scriptPy} -i {output.ppqt} -o {output.txt}
         """
