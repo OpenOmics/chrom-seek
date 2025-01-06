@@ -189,9 +189,9 @@ Each of the following arguments are optional, and do not need to be provided.
   `--tmp-dir TMP_DIR`   
 > **Max number of threads for each process.**  
 > *type: path*  
-> *default: `/lscratch/$SLURM_JOBID`*
+> *default: `/lscratch/$SLURM_JOB_ID`*
 > 
-> Path on the file system for writing temporary output files. By default, the temporary directory is set to '/lscratch/$SLURM_JOBID' for backwards compatibility with the NIH's Biowulf cluster; however, if you are running the pipeline on another cluster, this option will need to be specified. Ideally, this path should point to a dedicated location on the filesystem for writing tmp files. On many systems, this location is set to somewhere in /scratch. If you need to inject a variable into this string that should NOT be expanded, please quote this options value in single quotes.
+> Path on the file system for writing temporary output files. By default, the temporary directory is set to '/lscratch/$SLURM_JOB_ID' for backwards compatibility with the NIH's Biowulf cluster; however, if you are running the pipeline on another cluster, this option will need to be specified. Ideally, this path should point to a dedicated location on the filesystem for writing tmp files. On many systems, this location is set to somewhere in /scratch. If you need to inject a variable into this string that should NOT be expanded, please quote this options value in single quotes.
 > 
 > ***Example:*** `--tmp-dir /scratch/$USER/`
 
