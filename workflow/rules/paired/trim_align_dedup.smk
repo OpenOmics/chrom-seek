@@ -25,7 +25,7 @@ rule trim:
     next-generation sequencing experiments independent of cell line or experiment.
     Samtools view -f4 selects for reads unmapped and outpute a blacklist-sequences-free bam file.
     SamToFastq convers BAM file to FASTQs. All file processing is done in
-    "tmp_dir": "/lscratch/$SLURM_JOBID/", meaning all files are lost at job completion
+    "tmp_dir": "/lscratch/$SLURM_JOB_ID/", meaning all files are lost at job completion
     except for final R1.trim.fastq.gz and R2.trim.fastq.gz
 
     @Input:

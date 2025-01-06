@@ -19,6 +19,9 @@ wildcard_constraints:
     # - regex to avoid backslashes in name wild cards
     #   this corrects routing for `ppqt` and 
     #   `ppqt_tagalign` rules
+    # - if this isn't included, ppqt file paths (because
+    #   they're nested in the bam directory) get mixed up
+    #   with regular bam paths
     # - also possible to use negative look around regex:
     #   "^((?!\/).)*$"
     name                                = "[A-Za-z0-9_-]+"
@@ -33,7 +36,7 @@ rule trim:
     next-generation sequencing experiments independent of cell line or experiment.
     Samtools view -f4 selects for reads unmapped and outpute a blacklist-sequences-free bam file.
     SamToFastq convers BAM file to FASTQs. All file processing is done in
-    "tmp_dir": "/lscratch/$SLURM_JOBID/", meaning all files are lost at job completion
+    "tmp_dir": "/lscratch/$SLURM_JOB_ID/", meaning all files are lost at job completion
     except for final R1.trim.fastq.gz and R2.trim.fastq.gz
 
     @Input:
@@ -85,10 +88,11 @@ rule trim:
             {input}
         
         if [ "{params.blacklistbwaindex}" != "" ]; then 
-            bwa mem -t {threads} \\
+            thr=$(echo {threads}/2 | bc)
+            bwa mem -t ${{thr}} \\
                 {params.blacklistbwaindex} \\
                 ${{tmp}}/{params.sample}.R1.trim.fastq.gz \\
-                | samtools view -@{threads} \\
+                | samtools view -@${{thr}} \\
                     -f4 \\
                     -b \\
                     -o ${{tmp}}/{params.sample}.bam;
@@ -230,7 +234,7 @@ rule ppqt:
         rver                                = config['tools']['RVER'],
         tmpdir                              = tmpdir,
     container: 
-        config['images']['ppqt']
+        "docker://seqeralabs/phantompeakqualtools:latest"
     threads:
         int(cluster['ppqt'].get('threads', cluster['__default__']['threads']))
     shell: 
@@ -254,14 +258,13 @@ rule ppqt_tagalign:
     output:                                          
         ppqt                                = join(ppqt_dir, "{name}.Q5DD_tagAlign.ppqt.txt"),
         pdf                                 = join(ppqt_dir, "{name}.Q5DD_tagAlign.pdf"),
-        txt                                 = join(ppqt_dir, "{name}.Q5DD_tagAlign.txt"),
     params:
         rname                               = "ppqt_tagalign",
         samtoolsver                         = config['tools']['SAMTOOLSVER'],
         rver                                = config['tools']['RVER'],
         tmpdir                              = tmpdir,
     container: 
-        config['images']['ppqt']
+        "docker://seqeralabs/phantompeakqualtools:latest"
     threads:
         int(cluster['ppqt_tagalign'].get('threads', cluster['__default__']['threads']))
     shell: 
@@ -270,13 +273,15 @@ rule ppqt_tagalign:
         tmp=$(mktemp -d -p "{params.tmpdir}")
         trap 'rm -rf "${{tmp}}"' EXIT
         # ppqt will not work unless file name ends with ".tagAlign"
-        # "Q5DD_tagAlign" will not work
-        gunzip -C {input.tagalign} > ${{tmp}}/{wildcards.name}.Q5DD.tagAlign
+        #   "_tagAlign" will not work
+        gunzip -c {input.tagalign} > ${{tmp}}/sample.tagAlign
         run_spp.R \\
-            -c=${{tmp}}/{wildcards.name}.Q5DD.tagAlign \\
+            -c=${{tmp}}/sample.tagAlign \\
             -savp={output.pdf} \\
             -out={output.ppqt} \\
-            -p={threads} 
+            -p={threads} \\
+            -tmpdir=${{tmp}} \\
+            -rf
         """
 
 
