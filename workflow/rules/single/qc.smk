@@ -114,33 +114,3 @@ rule kraken:
         cut -f2,3 {output.krakenout} | \\
             ktImportTaxonomy - -o {output.kronahtml}
         """
-
-
-rule insert_size:
-    """
-    Quality step calculates number of reads per insert size.
-    @Input:
-        Sorted only bam file, and also bam files that were sorted, 
-        filtered by mapQ a value, and deduplicated (extensions: sorted and Q5DD),
-        for all samples.
-    @Output:
-        Number of reads per insert size and their histogram
-    """
-    input:
-        bam                     = join(bam_dir, "{name}.sorted.bam"),
-    output:
-        txt                     = join(qc_dir, "{name}.{ext}.insert_size_metrics.txt"),
-        pdf                     = join(qc_dir, "{name}.{ext}.insert_size_histogram.pdf"),
-    params:
-        rname                   = "insert_size",
-        picardver               = config['tools']['PICARDVER'],
-        rver                    = config['tools']['RVER'],
-        javaram                 = '16g',
-    shell: 
-        """
-        module load {params.picardver} {params.rver};
-        java -Xmx{params.javaram} -jar ${{PICARDJARPATH}}/picard.jar CollectInsertSizeMetrics \\
-            -I {input.bam} \\
-            -O {output.txt} \\
-            -H {output.pdf}
-        """

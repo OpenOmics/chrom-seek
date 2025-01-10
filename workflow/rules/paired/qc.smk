@@ -95,7 +95,7 @@ rule kraken:
         bacdb                   = config['shared_resources']['KRAKENBACDB'],
         tmpdir                  = tmpdir
     threads: 
-        int(allocated("threads", "kraken_pe", cluster)),
+        int(allocated("threads", "kraken", cluster)),
     envmodules:
         config['tools']['KRAKENVER'],
         config['tools']['KRONATOOLSVER'],

@@ -187,24 +187,17 @@ rule dedup:
         tagalign                            = join(bam_dir, "{name}.Q5DD_tagAlign.gz")
     params:
         rname                               = 'dedup',
-        picardver                           = config['tools']['PICARDVER'],
         samtoolsver                         = config['tools']['SAMTOOLSVER'],
         bedtoolsver                         = config['tools']['BEDTOOLSVER'],
         macsver                             = config['tools']['MACSVER'],
         gsize                               = config['references'][genome]['EFFECTIVEGENOMESIZE'],
         genomefile                          = config['references'][genome]['REFLEN'],
-        rver                                = config['tools']['RVER'],
-        javaram                             = '16g',
         tmpdir                              = tmpdir,
-        tmpBam                              = "{name}.Q5DD.withXY.bam",
-        rscript                             = join(config['references'][genome]['cfChIP_TOOLS_SRC'], "bam2fragment.R"),
     shell: 
         """
         module load {params.samtoolsver};
-        module load {params.picardver};
         module load {params.bedtoolsver};
         module load {params.macsver};
-        module load {params.rver}; 
         if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
         tmp=$(mktemp -d -p "{params.tmpdir}")
         trap 'rm -rf "${{tmp}}"' EXIT
@@ -224,17 +217,17 @@ rule dedup:
 
 rule ppqt:
     input:
-        bam                                 = join(bam_dir, "{name}.{ext}.bam")
+        bam                                 = join(bam_dir, "{name}.sorted.bam")
     output:                                          
-        ppqt                                = join(ppqt_dir, "{name}.{ext}.ppqt.txt"),
-        pdf                                 = join(ppqt_dir, "{name}.{ext}.pdf"),
+        ppqt                                = join(ppqt_dir, "{name}.sorted.ppqt.txt"),
+        pdf                                 = join(ppqt_dir, "{name}.sorted.pdf"),
     params:
         rname                               = "ppqt",
         samtoolsver                         = config['tools']['SAMTOOLSVER'],
         rver                                = config['tools']['RVER'],
         tmpdir                              = tmpdir,
     container: 
-        "docker://seqeralabs/phantompeakqualtools:latest"
+        config['images']['ppqt']
     threads:
         int(cluster['ppqt'].get('threads', cluster['__default__']['threads']))
     shell: 
@@ -264,7 +257,7 @@ rule ppqt_tagalign:
         rver                                = config['tools']['RVER'],
         tmpdir                              = tmpdir,
     container: 
-        "docker://seqeralabs/phantompeakqualtools:latest"
+        config['images']['ppqt']
     threads:
         int(cluster['ppqt_tagalign'].get('threads', cluster['__default__']['threads']))
     shell: 

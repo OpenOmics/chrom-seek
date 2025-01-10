@@ -251,6 +251,6 @@ else:
 # Include general rules
 include: join("rules", "hooks.smk")
 include: join("rules", "qc.smk")
-include: join("rules", "peakcall.smk")
+include: join("rules", "peak_utils.smk")
 include: join("rules", "dba.smk")
 include: join("rules", "uropa.smk")

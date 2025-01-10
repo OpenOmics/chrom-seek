@@ -86,41 +86,6 @@ rule sortByRead:
         """
 
 
-rule genrich:
-    """
-    In ATAC-mode, identifies open chromatic regions at intervals 
-    centered on transposase cut sites (ends of the reads/fragments).
-    @Input:
-        Bam file sorted by read name (extension: sortByRead.bam)
-    @Output:
-        Output peak file (in ENCODE narrowPeak format):
-        chrom name, star pos of peak, end pos of peak, peak name,
-        AUC score, strand, area under AUC, summit -log(p-value),
-        summit -log(q-value), and summit position.
-    """
-    input: 
-        join(bam_dir, "{name}.sortedByRead.bam")
-    output: 
-        join(genrich_dir, "{name}", "{name}.narrowPeak")
-    params:
-        rname                           = "genrich",
-        genrich_ver                     = config['tools']['GENRICHVER']
-    shell: 
-        """
-        module load {params.genrich_ver}
-        Genrich \\
-            -t {input} \\
-            -o {output} \\
-            -j \\
-            -y \\
-            -r \\
-            -v \\
-            -d 150 \\
-            -m 5 \\
-            -e chrM,chrY
-        """
-
-
 rule MEME:
     input:
         bed                             = lambda w: join(workpath, w.PeakTool, w.name, w.name + PeakExtensions[w.PeakTool])

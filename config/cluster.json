@@ -15,9 +15,10 @@
         "time": "1-18:00:00"
     },
     "kraken": {
-        "cpus-per-task": "24",
+        "threads": "24",
         "gres": "lscratch:256",
-        "mem": "110g"
+        "time": "2-18:00:00",
+        "mem": "168g"
     },
     "BWA": {
         "threads": "32",

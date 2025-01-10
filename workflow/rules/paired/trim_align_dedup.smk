@@ -192,10 +192,6 @@ rule dedup:
         rname                               = 'dedup',
         picardver                           = config['tools']['PICARDVER'],
         samtoolsver                         = config['tools']['SAMTOOLSVER'],
-        bedtoolsver                         = config['tools']['BEDTOOLSVER'],
-        macsver                             = config['tools']['MACSVER'],
-        gsize                               = config['references'][genome]['EFFECTIVEGENOMESIZE'],
-        genomefile                          = config['references'][genome]['REFLEN'],
         rver                                = config['tools']['RVER'],
         javaram                             = '16g',
         tmpdir                              = tmpdir,
@@ -205,8 +201,6 @@ rule dedup:
         """
         module load {params.samtoolsver};
         module load {params.picardver};
-        module load {params.bedtoolsver};
-        module load {params.macsver};
         module load {params.rver}; 
         if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
         tmp=$(mktemp -d -p "{params.tmpdir}")
