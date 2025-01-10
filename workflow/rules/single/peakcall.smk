@@ -27,6 +27,7 @@ rule MACS2_broad:
         txt                                 = join(ppqt_dir, "{name}.Q5DD_tagAlign.ppqt.txt"),
         c_option                            = lambda w: join(bam_dir, f"{chip2input[w.name]}.Q5DD_tagAlign.gz")
                                                 if w.name and chip2input[w.name] else [],
+        frag_length                         = join(ppqt_dir, "{name}.Q5DD.fragment.length"),
     output:
         join(macsB_dir, "{name}", "{name}_peaks.broadPeak"),
     params:
@@ -38,7 +39,7 @@ rule MACS2_broad:
     shell: 
         """
         module load {params.macsver};
-        ppqt_len=$({params.frag_len_script} {input.txt})
+        ppqt_len=$(cat {input.frag_length})
         macs2 callpeak \\
             -t {input.chip} {params.flag} {input.c_option} \\
             -g {params.gsize} \\
@@ -48,7 +49,7 @@ rule MACS2_broad:
             --broad-cutoff 0.01 \\
             --keep-dup="all" \\
             --nomodel \\
-            --extsize $ppqt_len
+            --extsize ${{ppqt_len}}
         """
 
 
@@ -58,6 +59,7 @@ rule MACS2_narrow:
         txt                                 = join(ppqt_dir, "{name}.Q5DD.ppqt.txt"),
         c_option                            = lambda w: join(bam_dir, f"{chip2input[w.name]}.Q5DD_tagAlign.gz")
                                                 if w.name and chip2input[w.name] else [],
+        frag_length                         = join(ppqt_dir, "{name}.Q5DD.fragment.length"),
     output:
         join(macsN_dir, "{name}", "{name}_peaks.narrowPeak"),
     params:
@@ -65,11 +67,10 @@ rule MACS2_narrow:
         gsize                               = config['references'][genome]['EFFECTIVEGENOMESIZE'],
         macsver                             = config['tools']['MACSVER'],
         flag                                = lambda w: "-c" if chip2input[w.name] else "",
-        frag_len_script                     = join(bin_path, "ppqt_process.py"),
     shell: 
         """
         module load {params.macsver};
-        ppqt_len=$({params.frag_len_script} {input.txt})
+        ppqt_len=$(cat {input.frag_length})
         macs2 callpeak \\
             -t {input.chip} {params.flag} {input.c_option} \\
             -g {params.gsize} \\
@@ -78,7 +79,7 @@ rule MACS2_narrow:
             -q 0.01 \\
             --keep-dup="all" \\
             --nomodel \\
-            --extsize $ppqt_len
+            --extsize ${{ppqt_len}}
         """
 
 

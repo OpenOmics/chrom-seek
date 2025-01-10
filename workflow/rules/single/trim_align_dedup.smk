@@ -220,12 +220,14 @@ rule ppqt:
         bam                                 = join(bam_dir, "{name}.{ext}.bam")
     output:                                          
         ppqt                                = join(ppqt_dir, "{name}.{ext}.ppqt.txt"),
+        frag_length                         = join(ppqt_dir, "{name}.{ext}.fragment.length"),
         pdf                                 = join(ppqt_dir, "{name}.{ext}.pdf"),
     params:
         rname                               = "ppqt",
         samtoolsver                         = config['tools']['SAMTOOLSVER'],
         rver                                = config['tools']['RVER'],
         tmpdir                              = tmpdir,
+        ppqt_script                         = join(bin_path, 'ppqt_process.py')
     container: 
         config['images']['ppqt']
     threads:
@@ -242,6 +244,7 @@ rule ppqt:
             -out={output.ppqt} \\
             -tmpdir=${{tmp}} \\
             -p={threads}
+        python {params.ppqt_script} {output.ppqt} > {output.frag_length}
         """
 
 
@@ -250,12 +253,14 @@ rule ppqt_tagalign:
         tagalign                            = join(bam_dir, "{name}.Q5DD_tagAlign.gz")
     output:                                          
         ppqt                                = join(ppqt_dir, "{name}.Q5DD_tagAlign.ppqt.txt"),
+        frag_length                         = join(ppqt_dir, "{name}.Q5DD_tagAlign.fragment.length"),
         pdf                                 = join(ppqt_dir, "{name}.Q5DD_tagAlign.pdf"),
     params:
         rname                               = "ppqt_tagalign",
         samtoolsver                         = config['tools']['SAMTOOLSVER'],
         rver                                = config['tools']['RVER'],
         tmpdir                              = tmpdir,
+        ppqt_script                         = join(bin_path, 'ppqt_process.py')
     container: 
         config['images']['ppqt']
     threads:
@@ -275,6 +280,7 @@ rule ppqt_tagalign:
             -p={threads} \\
             -tmpdir=${{tmp}} \\
             -rf
+        python {params.ppqt_script} {output.ppqt} > {output.frag_length}
         """
 
 
@@ -291,8 +297,9 @@ rule bam2bw:
        an associated score, RPGC
     """
     input:
-        bam                                 = lambda w: join(bam_dir, f"{w.name}.{w.ext}.bam"),
-        ppqt                                = lambda w: join(ppqt_dir, f"{w.name}.{w.ext}.ppqt.txt"),
+        bam                                 = join(bam_dir, "{name}.{ext}.bam"),
+        ppqt                                = join(ppqt_dir, "{name}.{ext}.ppqt.txt"),
+        frag_len                            = join(ppqt_dir, "{name}.{ext}.fragment.length"),
     output:
         outbw                               = join(bw_dir, "{name}.{ext}.RPGC.bw"),
     params:
@@ -311,7 +318,7 @@ rule bam2bw:
         tmp=$(mktemp -d -p "{params.tmpdir}")
         trap 'rm -rf "${{tmp}}"' EXIT
 
-        ppqt_len=$({params.frag_len_script} {input.ppqt})
+        ppqt_len=$(cat {input.frag_len})
         
         bamCoverage \\
             --bam {input.bam} \\
