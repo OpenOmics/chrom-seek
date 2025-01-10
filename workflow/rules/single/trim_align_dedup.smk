@@ -217,10 +217,10 @@ rule dedup:
 
 rule ppqt:
     input:
-        bam                                 = join(bam_dir, "{name}.sorted.bam")
+        bam                                 = join(bam_dir, "{name}.{ext}.bam")
     output:                                          
-        ppqt                                = join(ppqt_dir, "{name}.sorted.ppqt.txt"),
-        pdf                                 = join(ppqt_dir, "{name}.sorted.pdf"),
+        ppqt                                = join(ppqt_dir, "{name}.{ext}.ppqt.txt"),
+        pdf                                 = join(ppqt_dir, "{name}.{ext}.pdf"),
     params:
         rname                               = "ppqt",
         samtoolsver                         = config['tools']['SAMTOOLSVER'],
