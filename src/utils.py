@@ -8,9 +8,9 @@ import os, sys, hashlib
 import subprocess, json
 
 
-def md5sum(filename, first_block_only = False, blocksize = 65536):
+def md5sum(filename, first_block_only=False, blocksize=65536):
     """Gets md5checksum of a file in memory-safe manner.
-    The file is read in blocks/chunks defined by the blocksize parameter. This is 
+    The file is read in blocks/chunks defined by the blocksize parameter. This is
     a safer option to reading the entire file into memory if the file is very large.
     @param filename <str>:
         Input file on local filesystem to find md5 checksum
@@ -22,12 +22,12 @@ def md5sum(filename, first_block_only = False, blocksize = 65536):
         MD5 checksum of the file's contents
     """
     hasher = hashlib.md5()
-    with open(filename, 'rb') as fh:
+    with open(filename, "rb") as fh:
         buf = fh.read(blocksize)
         if first_block_only:
             # Calculate MD5 of first block or chunck of file.
-            # This is a useful heuristic for when potentially 
-            # calculating an MD5 checksum of thousand or 
+            # This is a useful heuristic for when potentially
+            # calculating an MD5 checksum of thousand or
             # millions of file.
             hasher.update(buf)
             return hasher.hexdigest()
@@ -51,9 +51,13 @@ def permissions(parser, path, *args, **kwargs):
         Returns abs path if it exists and permissions are correct
     """
     if not exists(path):
-        parser.error("Path '{}' does not exists! Failed to provide vaild input.".format(path))
+        parser.error(
+            "Path '{}' does not exists! Failed to provide vaild input.".format(path)
+        )
     if not os.access(path, *args, **kwargs):
-        parser.error("Path '{}' exists, but cannot read path due to permissions!".format(path))
+        parser.error(
+            "Path '{}' exists, but cannot read path due to permissions!".format(path)
+        )
 
     return os.path.abspath(path)
 
@@ -71,7 +75,7 @@ def standard_input(parser, path, *args, **kwargs):
     if not sys.stdin.isatty():
         # Standard input provided, set path as an
         # empty string to prevent searching of '-'
-        path = ''
+        path = ""
         return path
 
     # Checks for positional arguments as paths
@@ -91,7 +95,7 @@ def exists(testpath):
     """
     does_exist = True
     if not os.path.exists(testpath):
-        does_exist = False # File or directory does not exist on the filesystem
+        does_exist = False  # File or directory does not exist on the filesystem
 
     return does_exist
 
@@ -107,7 +111,7 @@ def ln(files, outdir):
     for file in files:
         ln = os.path.join(outdir, os.path.basename(file))
         if not exists(ln):
-                os.symlink(os.path.abspath(os.path.realpath(file)), ln)
+            os.symlink(os.path.abspath(os.path.realpath(file)), ln)
 
 
 def which(cmd, path=None):
@@ -133,7 +137,7 @@ def which(cmd, path=None):
 
 def err(*message, **kwargs):
     """Prints any provided args to standard error.
-    kwargs can be provided to modify print functions 
+    kwargs can be provided to modify print functions
     behavior.
     @param message <any>:
         Values printed to standard error
@@ -141,7 +145,6 @@ def err(*message, **kwargs):
         Key words to modify print function behavior
     """
     print(*message, file=sys.stderr, **kwargs)
-
 
 
 def fatal(*message, **kwargs):
@@ -172,17 +175,20 @@ def require(cmds, suggestions, path=None):
         if not available:
             c = Colors
             error = True
-            err("""\n{}{}Fatal: {} is not in $PATH and is required during runtime!{}
+            err(
+                """\n{}{}Fatal: {} is not in $PATH and is required during runtime!{}
             └── Possible solution: please 'module load {}' and run again!""".format(
-                c.bg_red, c.white, cmds[i], c.end, suggestions[i])
+                    c.bg_red, c.white, cmds[i], c.end, suggestions[i]
+                )
             )
 
-    if error: fatal()
+    if error:
+        fatal()
 
-    return 
+    return
 
 
-def safe_copy(source, target, resources = []):
+def safe_copy(source, target, resources=[]):
     """Private function: Given a list paths it will recursively copy each to the
     target location. If a target path already exists, it will NOT over-write the
     existing paths data.
@@ -209,15 +215,21 @@ def git_commit_hash(repo_path):
         Latest git commit hash
     """
     try:
-        githash = subprocess.check_output(['git', 'rev-parse', 'HEAD'], stderr=subprocess.STDOUT, cwd = repo_path).strip().decode('utf-8')
+        githash = (
+            subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], stderr=subprocess.STDOUT, cwd=repo_path
+            )
+            .strip()
+            .decode("utf-8")
+        )
         # Typecast to fix python3 TypeError (Object of type bytes is not JSON serializable)
         # subprocess.check_output() returns a byte string
         githash = str(githash)
     except Exception as e:
         # Github releases are missing the .git directory,
-        # meaning you cannot get a commit hash, set the 
+        # meaning you cannot get a commit hash, set the
         # commit hash to indicate its from a GH release
-        githash = 'github_release'
+        githash = "github_release"
     return githash
 
 
@@ -234,7 +246,7 @@ def join_jsons(templates):
     aggregated = {}
 
     for file in templates:
-        with open(os.path.join(repo_path, file), 'r') as fh:
+        with open(os.path.join(repo_path, file), "r") as fh:
             aggregated.update(json.load(fh))
 
     return aggregated
@@ -256,63 +268,75 @@ def check_cache(parser, cache, *args, **kwargs):
         os.makedirs(cache)
     elif os.path.isfile(cache):
         # Cache directory exists as file, raise error
-        parser.error("""\n\t\x1b[6;37;41mFatal: Failed to provided a valid singularity cache!\x1b[0m
+        parser.error(
+            """\n\t\x1b[6;37;41mFatal: Failed to provided a valid singularity cache!\x1b[0m
         The provided --singularity-cache already exists on the filesystem as a file.
         Please run {} again with a different --singularity-cache location.
-        """.format(sys.argv[0]))
+        """.format(
+                sys.argv[0]
+            )
+        )
     elif os.path.isdir(cache):
         # Provide cache exists as directory
         # Check that the user owns the child cache directory
         # May revert to os.getuid() if user id is not sufficent
-        if exists(os.path.join(cache, 'cache')) and os.stat(os.path.join(cache, 'cache')).st_uid != os.getuid():
-                # User does NOT own the cache directory, raise error
-                parser.error("""\n\t\x1b[6;37;41mFatal: Failed to provided a valid singularity cache!\x1b[0m
+        if (
+            exists(os.path.join(cache, "cache"))
+            and os.stat(os.path.join(cache, "cache")).st_uid != os.getuid()
+        ):
+            # User does NOT own the cache directory, raise error
+            parser.error(
+                """\n\t\x1b[6;37;41mFatal: Failed to provided a valid singularity cache!\x1b[0m
                 The provided --singularity-cache already exists on the filesystem with a different owner.
                 Singularity strictly enforces that the cache directory is not shared across users.
                 Please run {} again with a different --singularity-cache location.
-                """.format(sys.argv[0]))
+                """.format(
+                    sys.argv[0]
+                )
+            )
 
     return cache
 
 
-class Colors():
+class Colors:
     """Class encoding for ANSI escape sequeces for styling terminal text.
     Any string that is formatting with these styles must be terminated with
     the escape sequence, i.e. `Colors.end`.
     """
+
     # Escape sequence
-    end = '\33[0m'
+    end = "\33[0m"
     # Formatting options
-    bold   = '\33[1m'
-    italic = '\33[3m'
-    url    = '\33[4m'
-    blink  = '\33[5m'
-    higlighted = '\33[7m'
+    bold = "\33[1m"
+    italic = "\33[3m"
+    url = "\33[4m"
+    blink = "\33[5m"
+    higlighted = "\33[7m"
     # Text Colors
-    black  = '\33[30m'
-    red    = '\33[31m'
-    green  = '\33[32m'
-    yellow = '\33[33m'
-    blue   = '\33[34m'
-    pink  = '\33[35m'
-    cyan  = '\33[96m'
-    white = '\33[37m'
+    black = "\33[30m"
+    red = "\33[31m"
+    green = "\33[32m"
+    yellow = "\33[33m"
+    blue = "\33[34m"
+    pink = "\33[35m"
+    cyan = "\33[96m"
+    white = "\33[37m"
     # Background fill colors
-    bg_black  = '\33[40m'
-    bg_red    = '\33[41m'
-    bg_green  = '\33[42m'
-    bg_yellow = '\33[43m'
-    bg_blue   = '\33[44m'
-    bg_pink  = '\33[45m'
-    bg_cyan  = '\33[46m'
-    bg_white = '\33[47m'
+    bg_black = "\33[40m"
+    bg_red = "\33[41m"
+    bg_green = "\33[42m"
+    bg_yellow = "\33[43m"
+    bg_blue = "\33[44m"
+    bg_pink = "\33[45m"
+    bg_cyan = "\33[46m"
+    bg_white = "\33[47m"
 
 
 def hashed(l):
     """Returns an MD5 checksum for a list of strings. The list is sorted to
-    ensure deterministic results prior to generating the MD5 checksum. This 
+    ensure deterministic results prior to generating the MD5 checksum. This
     function can be used to generate a batch id from a list of input files.
-    It is worth noting that path should be removed prior to calculating the 
+    It is worth noting that path should be removed prior to calculating the
     checksum/hash.
     @Input:
         l list[<str>]: List of strings to hash
@@ -330,8 +354,8 @@ def hashed(l):
     l = [str(s) for s in l]
     # Calculate an MD5 checksum of results
     h = hashlib.md5()
-    # encode method ensure cross-compatiability 
-    # across python2 and python3 
+    # encode method ensure cross-compatiability
+    # across python2 and python3
     h.update("{}\n".format("\n".join(l)).encode())
     h = h.hexdigest()
 
@@ -340,31 +364,35 @@ def hashed(l):
 
 def sanitize_slurm_env(my_env):
     # Don't inherit TERM_PROGRAM cause its usually set by vscode
-    if 'TERM_PROGRAM' in my_env:
-        del my_env['TERM_PROGRAM']
+    if "TERM_PROGRAM" in my_env:
+        del my_env["TERM_PROGRAM"]
 
-    # unset user locale, can't guarantee the user's locale on the 
+    # unset user locale, can't guarantee the user's locale on the
     # container system
-    if 'LC_ALL' in my_env:
-        del my_env['LC_ALL']
+    if "LC_ALL" in my_env:
+        del my_env["LC_ALL"]
 
     # Removing R_SITE_LIB & R_LIBS_USER environment variable
     # due to issue: https://github.com/OpenOmics/chrom-seek/issues/28
     # Using SINGULARITY_CONTAINALL or APPTAINER_CONTAINALL
-    # causes downstream using where $SLURM_JOBID is 
+    # causes downstream using where $SLURM_JOB_ID is
     # NOT exported within a container.
-    if 'R_LIBS_SITE' in my_env:
-        del my_env['R_LIBS_SITE']
-    if 'R_LIBS_USER' in my_env:
-        del my_env['R_LIBS_USER']
-    
+    if "R_LIBS_SITE" in my_env:
+        del my_env["R_LIBS_SITE"]
+    if "R_LIBS_USER" in my_env:
+        del my_env["R_LIBS_USER"]
+
     return my_env
 
 
-if __name__ == '__main__':
-    # Calculate MD5 checksum of entire file 
-    print('{}  {}'.format(md5sum(sys.argv[0]), sys.argv[0]))
+if __name__ == "__main__":
+    # Calculate MD5 checksum of entire file
+    print("{}  {}".format(md5sum(sys.argv[0]), sys.argv[0]))
     # Calcualte MD5 cehcksum of 512 byte chunk of file,
-    # which is similar to following unix command: 
-    # dd if=utils.py bs=512 count=1 2>/dev/null | md5sum 
-    print('{}  {}'.format(md5sum(sys.argv[0], first_block_only = True, blocksize = 512), sys.argv[0]))
+    # which is similar to following unix command:
+    # dd if=utils.py bs=512 count=1 2>/dev/null | md5sum
+    print(
+        "{}  {}".format(
+            md5sum(sys.argv[0], first_block_only=True, blocksize=512), sys.argv[0]
+        )
+    )
