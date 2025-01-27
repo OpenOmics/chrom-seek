@@ -59,7 +59,7 @@ Required Arguments:
                                  intermediate, temporary output files. Any
                                  temporary output files will be written to
                                  this location. On Biowulf, it should be
-                                 set to '/lscratch/\$SLURM_JOBID/'. On FRCE,
+                                 set to '/lscratch/\$SLURM_JOB_ID/'. On FRCE,
                                  this value should be set to the following:
                                  '/scratch/cluster_scratch/\$USER/'.
 OPTIONS:

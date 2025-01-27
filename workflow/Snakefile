@@ -6,7 +6,7 @@ from os.path import join
 from os import listdir
 
 # Local imports
-from scripts.common import provided, get_file_components
+from scripts.common import provided
 from scripts.grouping import group_samples_by_reps, \
     group_output_files, get_peaktools
 
@@ -39,7 +39,6 @@ peak_types                      = config['options']['peak_type_base']
 rule_all_ins                    = []
 groupdatawinput, groupswreps    = group_samples_by_reps(groupdata, samples, chip2input)
 PeakTools                       = get_peaktools(assay)
-file_stems, extRPGC, extaln     = get_file_components(paired_end)
 groups                          = list(groupdatawinput.keys())
 reps                            = True if len(groupswreps) > 0 else False
 uniq_inputs                     = list(sorted(set([v for v in chip2input.values() if v])))
@@ -48,7 +47,6 @@ sampleswinput                   = [
     if chip_value != 'NA' and chip_value != ''
 ]
 inputnorm                       = [""] if len(sampleswinput) == 0 else ["", ".inputnorm"]
-deepgroups, deepexts            = group_output_files(extRPGC, groups, inputnorm)
 UropaCats                       = ["protTSS", "prot", "protSEC", "genes"]
 
 # Directory end points
@@ -79,14 +77,20 @@ if assay == "cfchip":
         qc_dir, "H3K4me3_cfChIP_signature.txt"
     ))
     rule_all_ins.extend(expand(
-        join(qc_dir, "{name}.{stem}.insert_size_metrics.txt"), 
-        name=samples, 
-        stem=file_stems
+        join(qc_dir, "{name}.sorted.insert_size_metrics.txt"), 
+        name=samples,
+    ))
+    rule_all_ins.extend(expand(
+        join(qc_dir, "{name}.Q5DD.insert_size_metrics.txt"), 
+        name=samples,
     ))
     rule_all_ins.extend(expand(
         join(cfTool_dir, "Output", "H3K4me3", "Signatures", "{name}.Q5DD.csv"), 
         name=chips
     ))
+    # rule_all_ins.extend(expand(join(ppqt_dir, "{name}.Q5DD_tagAlign.ppqt"), name=samples))
+    # rule_all_ins.extend(expand(join(ppqt_dir, "{name}.Q5DD_tagAlign.pdf"), name=samples))
+    # rule_all_ins.extend(expand(join(ppqt_dir, "{name}.Q5DD_tagAlign.ppqt.txt"), name=samples))
     if has_inputs:
         rule_all_ins.append(
             join(qc_dir, "AllSamples-macsNarrow", "AllSamples-macsNarrow_DiffBindQC_TMMcounts.bed")
@@ -127,26 +131,23 @@ elif assay in ["atac", "chip"]:
     # turn off other peak types for now
     # peak_types.extend(["prot", "protSEC", "genes"])
     # peak_types = list(set(peak_types))
+    if paired_end:
+        rule_all_ins.extend(expand(join(qc_dir, "{name}.sorted.insert_size_metrics.txt"), name=samples))
+        rule_all_ins.extend(expand(join(qc_dir, "{name}.Q5DD.insert_size_metrics.txt"), name=samples))
     # meme outputs turned off for now
     # if has_inputs:
     #     rule_all_ins.extend(expand(join(MEME_dir, "{PeakTool}", "{name}_meme", "meme-chip.html"), PeakTool=PeakTools, name=chips))
     #     rule_all_ins.extend(expand(join(MEME_dir, "{PeakTool}", "{name}_ame", "ame.html"), PeakTool=PeakTools, name=chips))
-    if paired_end:
-        rule_all_ins.extend(expand(join(qc_dir, "{name}.{stem}.insert_size_metrics.txt"), name=samples, stem=file_stems))
     if assay == "chip":
         rule_all_ins.extend(expand(join(macsB_dir, "{name}", "{name}_peaks.broadPeak"), name=chips))
         # sicer outputs turned off for now
         # if has_inputs:
         #     rule_all_ins.extend(expand(join(sicer_dir, "{name}", "{name}_broadpeaks.bed"), name=chips))
-        short_ext, tag_ext = ["sorted", "Q5DD"], ["sorted", "Q5DD_tagAlign"]
-        if paired_end:
-            rule_all_ins.extend(expand(join(ppqt_dir, "{name}.{ext}.ppqt"), name=samples, ext=short_ext))
-            rule_all_ins.extend(expand(join(ppqt_dir, "{name}.{ext}.pdf"), name=samples, ext=short_ext))
-            rule_all_ins.extend(expand(join(ppqt_dir, "{name}.{ext}.ppqt.txt"), name=samples, ext=short_ext))
-        else:
-            rule_all_ins.extend(expand(join(ppqt_dir, "{name}.{ext}.ppqt"), name=samples, ext=tag_ext))
-            rule_all_ins.extend(expand(join(ppqt_dir, "{name}.{ext}.pdf"), name=samples, ext=tag_ext))
-            rule_all_ins.extend(expand(join(ppqt_dir, "{name}.{ext}.ppqt.txt"), name=samples, ext=tag_ext))
+        # if not paired_end:
+        #     rule_all_ins.extend(expand(join(ppqt_dir, "{name}.sorted.ppqt"), name=samples))
+        #     rule_all_ins.extend(expand(join(ppqt_dir, "{name}.sorted.pdf"), name=samples))
+        #     rule_all_ins.extend(expand(join(ppqt_dir, "{name}.sorted.ppqt.txt"), name=samples))
+            
         rule_all_ins.extend(expand(
             join(uropa_dir, "{application}", "{name}_uropa_{_type}_allhits.txt"), 
             name=chips,
@@ -172,13 +173,26 @@ elif assay in ["atac", "chip"]:
         #     group2=zipGroup2, 
         #     tool=zipToolC
         # ))
+
 rule_all_ins.append(join(workpath, "multiqc_report.html"))
 rule_all_ins.extend(expand(join(qc_dir, "{name}.preseq.dat"), name=samples))
 rule_all_ins.extend(
-    expand(join(peakqc_dir, "{PeakTool}", "{PeakTool}.{name}.Q5DD.FRiP_table.txt"), PeakTool=PeakTools, name=chips)
+    expand(join(peakqc_dir, "{PeakTool}", "{PeakTool}.{name}.Q5DD.FRiP_table.txt"), 
+    PeakTool=PeakTools, 
+    name=chips)
 )
-rule_all_ins.extend(expand(join(bam_dir, "{name}.{ext}"), name=samples, ext=extaln))
-rule_all_ins.extend(expand(join(bw_dir, "{name}.{ext}.RPGC.bw"), name=samples, ext=["sorted", "Q5DD"]))
+rule_all_ins.extend(expand(
+    join(bam_dir, "{name}.sorted.bam"), 
+    name=samples
+))
+rule_all_ins.extend(expand(
+    join(bw_dir, "{name}.sorted.RPGC.bw"), 
+    name=samples,
+))
+rule_all_ins.extend(expand(
+    join(bw_dir, "{name}.Q5DD.RPGC.bw"), 
+    name=samples
+))
 
 if has_inputs:
     rule_all_ins.extend(expand(join(bw_dir, "{name}.Q5DD.RPGC.inputnorm.bw"), name=sampleswinput))
@@ -221,11 +235,22 @@ rule all:
     input:
         rule_all_ins
 
-# Include child rules
+# Include endedness rules
+if paired_end:
+    if assay == 'cfchip':
+        include: join("rules", "cfChIP.smk")
+    include: join("rules", "paired", "peakcall.smk")
+    include: join("rules", "paired", "qc.smk")
+    include: join("rules", "paired", "trim_align_dedup.smk")
+else:
+    include: join("rules", "single", "peakcall.smk")
+    include: join("rules", "single", "qc.smk")
+    include: join("rules", "single", "trim_align_dedup.smk")
+
+
+# Include general rules
 include: join("rules", "hooks.smk")
-include: join("rules", "trim_align_dedup.smk")
 include: join("rules", "qc.smk")
-include: join("rules", "peakcall.smk")
+include: join("rules", "peak_utils.smk")
 include: join("rules", "dba.smk")
 include: join("rules", "uropa.smk")
-include: join("rules", "cfChIP.smk")

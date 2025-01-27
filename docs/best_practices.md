@@ -110,3 +110,9 @@ Here are a set of useful links for learning more about ChIP-seq and ATAC-seq.
 - [Transcription factors](https://www.encodeproject.org/chip-seq/transcription_factor/)
 - [Histone marks](https://www.encodeproject.org/chip-seq/histone/)
 - [ATAC-seq](https://www.encodeproject.org/atac-seq/)
+
+### NF-core output file list with useful documentation about QC metrics we use in chrom-seek
+
+- [Cut & run](https://nf-co.re/cutandrun/3.2.2/docs/output/)
+- [ChIP-seq](https://nf-co.re/chipseq/2.1.0/docs/output/)
+- [ATAC-seq](https://nf-co.re/atacseq/2.1.2/docs/output/)
