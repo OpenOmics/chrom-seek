@@ -1,3 +1,3 @@
 FROM conda/miniconda3
+RUN conda update --all
 RUN conda install bioconda::seacr bedtools samtools
-RUN apt-get install libssl1.0.0
