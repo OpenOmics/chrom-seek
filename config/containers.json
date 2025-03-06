@@ -3,6 +3,7 @@
         "cfchip": "docker://skchronicles/cfchip_toolkit:v0.5.0",
         "uropa": "docker://rroutsong/uropa:4.0.3",
         "python": "docker://asyakhleborodova/chrom_seek_python:v0.1.0",
-        "ppqt": "docker://seqeralabs/phantompeakqualtools:latest"
+        "ppqt": "docker://seqeralabs/phantompeakqualtools:latest",
+        "seacr": "docker://rroutsong/seacr:0.0.1"
     }
 }
