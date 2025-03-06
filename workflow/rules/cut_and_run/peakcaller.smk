@@ -44,10 +44,10 @@ rule SEACR:
         rname                           = 'SEARC',
         out_dir                         = seacr_dir,
         control_flag                    = lambda w, input: input.control if input.control else "0.01",
-    container: 
+    container:
         config['images']['seacr']
     shell:
         """
         cd {params.out_dir}
-        SEACR_1.3.sh {input.exp} {params.control_flag} non stringent {name}
+        SEACR_1.3.sh {input.exp} {params.control_flag} non stringent {wildcards.name}
         """

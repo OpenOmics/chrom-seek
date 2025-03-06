@@ -164,7 +164,11 @@
     },
     "bam2bedgraph": {
         "threads": "6",
-        "gres": "lscratch:400"
+        "mem": "128g",
+        "gres": "lscratch:800"
     },
-    "SEACR": {}
+    "SEACR": {
+        "mem": "32g",
+        "threads": "2"
+    }
 }
