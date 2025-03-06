@@ -72,7 +72,7 @@ rule NRF:
         nrf                     = join(qc_dir, "{name}.nrf"),
     params:
         rname                   = 'NRF',
-        nrfscript               = join(bin_path, "atac_nrf.py"),
+        nrfscript               = join(bin_path, "nrf.py"),
     threads: 16
     container: config['images']['preseq']
     shell: 
