@@ -76,7 +76,7 @@ rule SICER:
         sicerver                        = config['tools']['SICERVER'],
         bedtoolsver                     = config['tools']['BEDTOOLSVER'],
         genomever                       = config['options']['genome'],
-        this_sicer_dir                  = join(sicer_dir,"{name}"),
+        this_sicer_dir                  = join(sicer_dir, "{name}"),
         frac                            = config['references'][genome]['FRAC'],
         flag                            = lambda w: "-c" if chip2input[w.name] else "",
     shell: 

@@ -66,6 +66,7 @@ genrich_dir                     = join(workpath, "Genrich")
 MEME_dir                        = join(workpath, "MEME")
 manorm_dir                      = join(workpath, "MANorm")
 dba_anno_path                   = join(workpath, 'dba_annotations')
+seacr_dir                       = join(workpath, "SEACR")
 
 
 # Read in resource information
@@ -127,10 +128,9 @@ if assay == "cfchip":
         #     tool=zipToolC
         # ))
         pass # remove this when manorm is added back
-elif assay in ["atac", "chip"]:
+elif assay in ["atac", "chip", "cutnrun"]:
     # turn off other peak types for now
     # peak_types.extend(["prot", "protSEC", "genes"])
-    # peak_types = list(set(peak_types))
     if paired_end:
         rule_all_ins.extend(expand(join(qc_dir, "{name}.sorted.insert_size_metrics.txt"), name=samples))
         rule_all_ins.extend(expand(join(qc_dir, "{name}.Q5DD.insert_size_metrics.txt"), name=samples))
@@ -138,16 +138,11 @@ elif assay in ["atac", "chip"]:
     # if has_inputs:
     #     rule_all_ins.extend(expand(join(MEME_dir, "{PeakTool}", "{name}_meme", "meme-chip.html"), PeakTool=PeakTools, name=chips))
     #     rule_all_ins.extend(expand(join(MEME_dir, "{PeakTool}", "{name}_ame", "ame.html"), PeakTool=PeakTools, name=chips))
-    if assay == "chip":
+    if assay in ("chip"):
         rule_all_ins.extend(expand(join(macsB_dir, "{name}", "{name}_peaks.broadPeak"), name=chips))
         # sicer outputs turned off for now
         # if has_inputs:
         #     rule_all_ins.extend(expand(join(sicer_dir, "{name}", "{name}_broadpeaks.bed"), name=chips))
-        # if not paired_end:
-        #     rule_all_ins.extend(expand(join(ppqt_dir, "{name}.sorted.ppqt"), name=samples))
-        #     rule_all_ins.extend(expand(join(ppqt_dir, "{name}.sorted.pdf"), name=samples))
-        #     rule_all_ins.extend(expand(join(ppqt_dir, "{name}.sorted.ppqt.txt"), name=samples))
-            
         rule_all_ins.extend(expand(
             join(uropa_dir, "{application}", "{name}_uropa_{_type}_allhits.txt"), 
             name=chips,
@@ -157,6 +152,10 @@ elif assay in ["atac", "chip"]:
     elif assay == "atac":
         rule_all_ins.extend(expand(
             join(genrich_dir, "{name}", "{name}.narrowPeak"), name=chips
+        ))
+    elif assay == "cutnrun":
+        rule_all_ins.extend(expand(
+            join(seacr_dir, "{name}.stringent.bed"), name=chips
         ))
     else:
         pass
@@ -239,6 +238,8 @@ rule all:
 if paired_end:
     if assay == 'cfchip':
         include: join("rules", "cfChIP.smk")
+    if assay == 'cutnrun':
+        include: join("rules", "cut_and_run", "peakcaller.smk")
     include: join("rules", "paired", "peakcall.smk")
     include: join("rules", "paired", "qc.smk")
     include: join("rules", "paired", "trim_align_dedup.smk")
