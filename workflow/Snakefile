@@ -203,6 +203,12 @@ rule_all_ins.extend(expand(
     _type=peak_types,
 ))
 
+if paired_end:
+    rule_all_ins.extend(expand(
+        join(qc_dir, "{name}.nrf"), 
+        name=chips,
+    ))
+
 if reps and contrast:
     rule_all_ins.extend(expand(
         join(diffbind_dir, "{contrast}-{PeakTool}", "{contrast}-{PeakTool}_Diffbind_EdgeR.html"), 
