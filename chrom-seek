@@ -424,7 +424,7 @@ def parsed_arguments(name, description):
                 [--sif-cache SIF_CACHE] [--singularity-cache SINGULARITY_CACHE] \\
                 [--silent] [--threads THREADS] [--tmp-dir TMP_DIR] \\
                 [--contrasts CONTRASTS] \\
-                --assay {{cfChIP,ChIP,ATAC}} \\
+                --assay {{cfChIP,ChIP,ATAC,cutnrun}} \\
                 --genome GENOME \\
                 --input INPUT [INPUT ...] \\
                 --output OUTPUT \\
@@ -440,7 +440,7 @@ def parsed_arguments(name, description):
         to their respective groups.
 
         {3}{4}Required arguments:{5}
-          --assay {{cfChIP,ChIP,ATAC}}
+          --assay {{cfChIP,ChIP,ATAC,cutnrun}}
                                 Assay type or data-processing pipeline. This option
                                 defines which pipeline will be run. chrom-seek supports
                                 the processing of bulk ChIP-seq (ChIP), cell-free DNA 
@@ -449,6 +449,7 @@ def parsed_arguments(name, description):
                                     • ChIP
                                     • cfChIP
                                     • ATAC
+                                    • cutnrun
                                   Example: --assay ChIP
           --genome GENOME       
                                 Reference genome. This option defines the reference
@@ -650,7 +651,7 @@ def parsed_arguments(name, description):
         "--assay",
         type=lambda option: str.lower(option),
         required=True,
-        choices=["chip", "cfchip", "atac"],
+        choices=["chip", "cfchip", "atac", "cutnrun"],
         help=argparse.SUPPRESS,
     )
 

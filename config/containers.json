@@ -4,6 +4,7 @@
         "uropa": "docker://rroutsong/uropa:4.0.3",
         "python": "docker://asyakhleborodova/chrom_seek_python:v0.1.0",
         "ppqt": "docker://seqeralabs/phantompeakqualtools:latest",
+        "seacr": "docker://rroutsong/seacr:0.0.1",
         "preseq": "docker://rroutsong/preseq:0.0.1"
     }
 }

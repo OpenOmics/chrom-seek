@@ -161,5 +161,14 @@
     "FRiP_Genrich": {
         "threads": "16",
         "gres": "lscratch:400"
+    },
+    "bam2bedgraph": {
+        "threads": "6",
+        "mem": "128g",
+        "gres": "lscratch:800"
+    },
+    "SEACR": {
+        "mem": "32g",
+        "threads": "2"
     }
 }
