@@ -252,7 +252,8 @@ def peakcalls(file, delim='\t'):
                     pass
 
             # Add ChIP, input pairs to dictionary
-            pairs[chip_sample] = input_sample
+            if input_sample:
+                pairs[chip_sample] = input_sample
             block[chip_sample] = block_info
 
     return pairs, groups, block
