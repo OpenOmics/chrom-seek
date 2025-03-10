@@ -21,6 +21,7 @@ log_dir                         = join(workpath, "logfiles")
 local_log_dir                   = join(log_dir, "local")
 diffbind_dir2                   = join(workpath, "DiffBind_block")
 diffbind_dir                    = join(workpath, "DiffBind")
+diffbind_qc_dir                 = join(workpath, "DB_TABLES")
 uropa_dir                       = join(workpath, "UROPA_annotations")
 uropa_diffbind_dir              = join(uropa_dir, "DiffBind")
 bam_dir                         = join(workpath, "bam")
@@ -416,3 +417,40 @@ rule diffbind_deseq_blocking:
         echo "--"
         sh ${{tmp}}/rscript.sh
         """)
+
+
+rule diffbindQC_macsN:
+    input:
+        sample_bams                 = expand(join(bam_dir, "{name}.Q5DD.bam"), name=chips),
+        control_bams                = [join(bam_dir, f"{chip2input[sample_name]}.Q5DD.bam") for sample_name in chips],
+        samples_peaks               = expand(join(macsN_dir, "{name}", "{name}_peaks.narrowPeak"), name=chips)
+    output:
+        html                        = join(diffbind_qc_dir, "AllSamples-macsNarrow", "AllSamples-macsNarrow_DiffBindQC.html"),
+        bed                         = join(diffbind_qc_dir, "AllSamples-macsNarrow", "AllSamples-macsNarrow_DiffBindQC_TMMcounts.bed"),
+        csvfile                     = join(diffbind_qc_dir, "AllSamples-macsNarrow", "AllSamples-macsNarrow_DiffBind_prep.csv"),
+    params:
+        rname                       = "diffbindQC_macsN",
+        PeakTool                    = "macsNarrow",
+        rscript                     = join(bin_path, "DiffBind_v2_QC.Rmd"),
+        outdir                      = join(diffbind_qc_dir, "AllSamples-macsNarrow"),
+        pythonscript                = join(bin_path, "prep_diffbindQC.py"),
+    container:
+       config['images']['cfchip']
+    shell:
+        """
+        python {params.pythonscript} \\
+            -s {input.sample_bams} \\
+            -c {input.control_bams} \\
+            -p {input.samples_peaks} \\
+            -t {params.PeakTool} \\
+            -o {output.csvfile}
+        cp {params.rscript} {params.outdir}
+        cd {params.outdir}
+        Rscript -e 'rmarkdown::render("{params.rscript}", \\
+            output_file="{output.html}",  \\
+            params=list( \\
+                csvfile="{output.csvfile}", \\
+                contrasts="All samples: macsNarrow", \\
+                peakcaller="{params.PeakTool}") \\
+            )'
+        """
