@@ -69,17 +69,14 @@ rule NRF:
     output:
         preseq                  = join(qc_dir, "{name}.preseq.dat"),
         preseqlog               = join(qc_dir, "{name}.preseq.log"),
-        nrf                     = temp(join(qc_dir, "{name}.nrf")),
+        nrf                     = join(qc_dir, "{name}.nrf"),
     params:
         rname                   = 'NRF',
-        samtoolsver             = config['tools']['SAMTOOLSVER'],
-        rver                    = config['tools']['RVER'],
-        preseqver               = config['tools']['PRESEQVER'],
-        nrfscript               = join(bin_path, "atac_nrf.py"),
+        nrfscript               = join(bin_path, "nrf.py"),
     threads: 16
+    container: config['images']['preseq']
     shell: 
         """
-        module load {params.preseqver};
         preseq lc_extrap \\
             -P \\
             -B \\

@@ -35,7 +35,6 @@ rule inputnorm:
     input:
         chip                                = lambda wc: join(bw_dir, f"{wc.name}.Q5DD.RPGC.bw"),
         ctrl                                = lambda wc: join(bw_dir, f"{chip2input[wc.name]}.Q5DD.RPGC.bw") 
-                                                if wc.name in chip2input and chip2input[wc.name] else []
     output:
         join(bw_dir, "{name}.Q5DD.RPGC.inputnorm.bw")
     params:

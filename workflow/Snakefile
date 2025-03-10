@@ -43,8 +43,8 @@ groups                          = list(groupdatawinput.keys())
 reps                            = True if len(groupswreps) > 0 else False
 uniq_inputs                     = list(sorted(set([v for v in chip2input.values() if v])))
 sampleswinput                   = [
-    chip_value for chip_value, input_id in chip2input.items() \
-    if chip_value != 'NA' and chip_value != ''
+    chip_sid for chip_sid, input_sid in chip2input.items() \
+    if chip_sid != 'NA' and chip_sid != ''
 ]
 inputnorm                       = [""] if len(sampleswinput) == 0 else ["", ".inputnorm"]
 UropaCats                       = ["protTSS", "prot", "protSEC", "genes"]
@@ -218,6 +218,12 @@ rule_all_ins.extend(expand(
     application=["macsNarrow"],
     _type=peak_types,
 ))
+
+if paired_end:
+    rule_all_ins.extend(expand(
+        join(qc_dir, "{name}.nrf"), 
+        name=chips,
+    ))
 
 if reps and contrast:
     rule_all_ins.extend(expand(
