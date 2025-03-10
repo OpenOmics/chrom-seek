@@ -61,6 +61,7 @@ peakqc_dir                      = join(workpath, "PeakQC")
 uropa_dir                       = join(workpath, "UROPA_annotations")
 uropa_diffbind_dir              = join(uropa_dir, "DiffBind")
 diffbind_dir                    = join(workpath, "DiffBind")
+diffbind_qc_dir                 = join(workpath, "DB_TABLES")
 cfTool_dir                      = join(workpath, "cfChIPtool")
 genrich_dir                     = join(workpath, "Genrich")
 MEME_dir                        = join(workpath, "MEME")
@@ -92,10 +93,14 @@ if assay == "cfchip":
     # rule_all_ins.extend(expand(join(ppqt_dir, "{name}.Q5DD_tagAlign.ppqt"), name=samples))
     # rule_all_ins.extend(expand(join(ppqt_dir, "{name}.Q5DD_tagAlign.pdf"), name=samples))
     # rule_all_ins.extend(expand(join(ppqt_dir, "{name}.Q5DD_tagAlign.ppqt.txt"), name=samples))
-    if has_inputs:
-        rule_all_ins.append(
-            join(qc_dir, "AllSamples-macsNarrow", "AllSamples-macsNarrow_DiffBindQC_TMMcounts.bed")
-        )
+
+    # for pktool in PeakTools:
+    #     rule_all_ins.append(
+    #         join(qc_dir, f"AllSamples-{pktool}", f"AllSamples-{pktool}_DiffBindQC_TMMcounts.bed")
+    #     )
+    join(diffbind_qc_dir, f"AllSamples-{pktool}", f"AllSamples-{pktool}_DiffBindQC.html", pktool=["macsNarrow"])
+    join(diffbind_qc_dir, f"AllSamples-{pktool}", f"AllSamples-{pktool}_DiffBindQC_TMMcounts.bed", pktool=["macsNarrow"])
+    join(diffbind_qc_dir, f"AllSamples-{pktool}", f"AllSamples-{pktool}_DiffBind_prep.csv", pktool=["macsNarrow"])
     if reps:
         # promotertable 1
         # rule_all_ins.extend(expand(
@@ -172,7 +177,18 @@ elif assay in ["atac", "chip", "cutnrun"]:
         #     group2=zipGroup2, 
         #     tool=zipToolC
         # ))
-
+rule_all_ins.append(expand(
+    join(diffbind_qc_dir, "AllSamples-{pktool}", "AllSamples-{pktool}_DiffBindQC.html"),
+    pktool=["macsNarrow"]
+))
+rule_all_ins.append(expand(
+    join(diffbind_qc_dir, "AllSamples-{pktool}", "AllSamples-{pktool}_DiffBindQC_TMMcounts.bed"),
+    pktool=["macsNarrow"]
+))
+rule_all_ins.append(expand(
+    join(diffbind_qc_dir, "AllSamples-{pktool}", "AllSamples-{pktool}_DiffBind_prep.csv"),
+    pktool=["macsNarrow"]
+))
 rule_all_ins.append(join(workpath, "multiqc_report.html"))
 rule_all_ins.extend(expand(join(qc_dir, "{name}.preseq.dat"), name=samples))
 rule_all_ins.extend(
