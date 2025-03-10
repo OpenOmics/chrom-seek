@@ -93,14 +93,6 @@ if assay == "cfchip":
     # rule_all_ins.extend(expand(join(ppqt_dir, "{name}.Q5DD_tagAlign.ppqt"), name=samples))
     # rule_all_ins.extend(expand(join(ppqt_dir, "{name}.Q5DD_tagAlign.pdf"), name=samples))
     # rule_all_ins.extend(expand(join(ppqt_dir, "{name}.Q5DD_tagAlign.ppqt.txt"), name=samples))
-
-    # for pktool in PeakTools:
-    #     rule_all_ins.append(
-    #         join(qc_dir, f"AllSamples-{pktool}", f"AllSamples-{pktool}_DiffBindQC_TMMcounts.bed")
-    #     )
-    join(diffbind_qc_dir, f"AllSamples-{pktool}", f"AllSamples-{pktool}_DiffBindQC.html", pktool=["macsNarrow"])
-    join(diffbind_qc_dir, f"AllSamples-{pktool}", f"AllSamples-{pktool}_DiffBindQC_TMMcounts.bed", pktool=["macsNarrow"])
-    join(diffbind_qc_dir, f"AllSamples-{pktool}", f"AllSamples-{pktool}_DiffBind_prep.csv", pktool=["macsNarrow"])
     if reps:
         # promotertable 1
         # rule_all_ins.extend(expand(
