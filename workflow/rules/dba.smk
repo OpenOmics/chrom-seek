@@ -426,11 +426,14 @@ rule diffbindQC_macsN:
         samples_peaks               = expand(join(macsN_dir, "{name}", "{name}_peaks.narrowPeak"), name=chips)
     output:
         html                        = join(diffbind_qc_dir, "AllSamples-macsNarrow", "AllSamples-macsNarrow_DiffBindQC.html"),
-        bed                         = join(diffbind_qc_dir, "AllSamples-macsNarrow", "AllSamples-macsNarrow_DiffBindQC_TMMcounts.bed"),
+        countsbed                   = join(diffbind_qc_dir, "AllSamples-macsNarrow", "AllSamples-macsNarrow_DiffBindQC_TMMcounts.bed"),
+        countscsv                   = join(diffbind_qc_dir, "AllSamples-macsNarrow", "AllSamples-macsNarrow_DiffBindQC_TMMcounts.csv"),
+        umap                        = join(diffbind_qc_dir, "AllSamples-macsNarrow", "AllSamples-macsNarrow_DiffBindQC_DiffBindQC_UMAP.csv"),
         csvfile                     = join(diffbind_qc_dir, "AllSamples-macsNarrow", "AllSamples-macsNarrow_DiffBind_prep.csv"),
     params:
         rname                       = "diffbindQC_macsN",
-        PeakTool                    = "macsNarrow",
+        peak_tool                   = "macsNarrow",
+        peak_type                   = "narrow",
         rscript                     = join(bin_path, "DiffBind_v2_QC.Rmd"),
         outdir                      = join(diffbind_qc_dir, "AllSamples-macsNarrow"),
         pythonscript                = join(bin_path, "prep_diffbindQC.py"),
@@ -442,15 +445,12 @@ rule diffbindQC_macsN:
             -s {input.sample_bams} \\
             -c {input.control_bams} \\
             -p {input.samples_peaks} \\
-            -t {params.PeakTool} \\
+            -t {params.peak_type} \\
             -o {output.csvfile}
         cp {params.rscript} {params.outdir}
         cd {params.outdir}
-        Rscript -e 'rmarkdown::render("{params.rscript}", \\
-            output_file="{output.html}",  \\
-            params=list( \\
-                csvfile="{output.csvfile}", \\
-                contrasts="All samples: macsNarrow", \\
-                peakcaller="{params.PeakTool}") \\
-            )'
+        Rscript -e 'rmarkdown::render("{params.rscript}", output_file="{output.html}",
+            params=list(csvfile="{output.csvfile}", umapfile="{output.umap}", 
+            counts_bed="{output.countsbed}", counts_csv="{output.countscsv}",
+            peakcaller="{params.peak_tool}"))'
         """
