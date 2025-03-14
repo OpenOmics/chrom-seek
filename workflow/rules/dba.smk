@@ -138,19 +138,17 @@ rule diffbind_csv_genrich:
         workpath                        = workpath,
         contrast                        = "{group1}_vs_{group2}",
     log: join(local_log_dir, "diffbind_csv_genrich", "{group1}_vs_{group2}_diffbind_csv.log")
-    run:
-            shell(dedent(
-                """
-                python {params.pythonscript} \\
-                    --con {params.contrast} \\
-                    --wp {params.workpath} \\
-                    --pt {params.this_peaktool} \\
-                    --pe {params.this_peakextension} \\
-                    --bd {params.bam_dir} \\
-                    --pc {params.peakcaller} \\
-                    --csv {output.csvfile} &> {log}
-                """
-            ))
+    shell:
+        dedent("""
+        python {params.pythonscript} \\
+            --con {params.contrast} \\
+            --wp {params.workpath} \\
+            --pt {params.this_peaktool} \\
+            --pe {params.this_peakextension} \\
+            --bd {params.bam_dir} \\
+            --pc {params.peakcaller} \\
+            --csv {output.csvfile} &> {log}
+        """)
 
 
 rule diffbind_csv_macsB:
@@ -226,7 +224,7 @@ rule diffbind_edger:
         rscript                         = join(bin_path, "DiffBind_v2_EdgeR.Rmd"),
         outdir                          = join(diffbind_dir, "{contrast}-{PeakTool}"),
     container:
-        config["images"]["cfchip"]
+        config["images"]["diffbind"]
     shell:
         dedent("""
         if [ ! -d \"{tmpdir}\" ]; then mkdir -p \"{tmpdir}\"; fi
@@ -279,7 +277,7 @@ rule diffbind_edger_blocking:
         blocking_rscript                = join(bin_path, "DiffBind_v2_EdgeR_block.Rmd"),
         outdir                          = join(diffbind_dir, "{contrast}-{PeakTool}"),
     container:
-        config["images"]["cfchip"]
+        config["images"]["diffbind"]
     shell:
         dedent("""
         if [ ! -d \"{tmpdir}\" ]; then mkdir -p \"{tmpdir}\"; fi
@@ -344,7 +342,7 @@ rule diffbind_deseq:
         rscript                         = join(bin_path, "DiffBind_v2_Deseq2.Rmd"),
         outdir                          = join(diffbind_dir, "{contrast}-{PeakTool}"),
     container:
-        config["images"]["cfchip"]
+        config["images"]["diffbind"]
     shell:
         dedent("""
         if [ ! -d \"{tmpdir}\\diffbind_deseq\" ]; then mkdir -p \"{tmpdir}\\diffbind_deseq\"; fi
@@ -398,7 +396,7 @@ rule diffbind_deseq_blocking:
         blocking_rscript                = join(bin_path, "DiffBind_v2_Deseq2_block.Rmd"),
         outdir                          = join(diffbind_dir, "{contrast}-{PeakTool}"),
     container:
-        config["images"]["cfchip"]
+        config["images"]["diffbind"]
     shell:
         dedent("""
         if [ ! -d \"{tmpdir}\" ]; then mkdir -p \"{tmpdir}\"; fi
@@ -441,7 +439,7 @@ rule diffbindQC_macsN:
         outdir                      = join(diffbind_qc_dir, "AllSamples-macsNarrow"),
         pythonscript                = join(bin_path, "prep_diffbindQC.py"),
     container:
-       config['images']['cfchip']
+       config['images']['diffbind']
     shell:
         """
         python {params.pythonscript} \\
@@ -478,7 +476,7 @@ rule diffbindQC_macsB:
         outdir                      = join(diffbind_qc_dir, "AllSamples-macsBroad"),
         pythonscript                = join(bin_path, "prep_diffbindQC.py"),
     container:
-       config['images']['cfchip']
+       config['images']['diffbind']
     shell:
         """
         python {params.pythonscript} \\
@@ -515,7 +513,7 @@ rule diffbindQC_genrich:
         outdir                      = join(diffbind_qc_dir, "AllSamples-genrich"),
         pythonscript                = join(bin_path, "prep_diffbindQC.py"),
     container:
-       config['images']['cfchip']
+       config['images']['diffbind']
     shell:
         """
         python {params.pythonscript} \\
