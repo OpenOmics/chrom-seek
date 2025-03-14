@@ -20,7 +20,7 @@ def main():
     PBC1 = one_pair / distinct_reads
     PBC2 = one_pair / two_pair
 
-    print_function(f"{round(NRF, 3)}\t{round(PBC1, 3)}\t{round(PBC2, 3)}")
+    print(f"{round(NRF, 3)}\t{round(PBC1, 3)}\t{round(PBC2, 3)}")
 
 
 if __name__ == "__main__":

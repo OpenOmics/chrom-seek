@@ -233,7 +233,9 @@ snakemake --latency-wait 120 -s "$3/workflow/Snakefile" -d "$3" \\
   --rerun-incomplete --stats "$3/logfiles/runtime_statistics.json" \\
   --keep-remote --local-cores 30 2>&1
 # Create summary report
-snakemake -d "$3" --report "Snakemake_Report.html"
+# Report not working with any version of snakemake <8.30.0
+# Until this commit is released: https://github.com/snakemake/snakemake/commit/4ba62fe337bdbee7eab4ca4d2bf533a6a9c55a57
+# snakemake -d "$3" --report "Snakemake_Report.html"
 EOF
     chmod +x kickoff.sh
     job_id=$(sbatch kickoff.sh | tee -a "$3"/logfiles/master.log)

@@ -1,62 +1,91 @@
-#!/usr/bin/env python3
-
-import json
+#!/usr/bin/env python
 import argparse
-import csv
-from os.path import join
+from csv import DictWriter
+from os.path import basename, dirname, exists
+from os import makedirs
+from itertools import repeat
+
+##
+## Objective : gather all Q5DD bams, their respective controls (if they exist),
+##              and their peaksets together in diffbind-esque csv
+##              see : https://bioconductor.org/packages/release/bioc/manuals/DiffBind/man/DiffBind.pdf
 
 
 def main(args):
-   with open(join(args.workpath, "config.json"), "r") as read_file:
-      config=json.load(read_file)
-      
-   chip2input = config['project']['peaks']['inputs']
-   groupdata = config['project']['groups']
+    extract_sid = lambda fn: basename(fn).replace(".Q5DD.bam", "")
+    n = len(args.sample)
+    columns = [
+        "SampleID",
+        "Condition",
+        "Replicate",
+        "bamReads",
+        "ControlID",
+        "bamControl",
+        "Peaks",
+        "PeakCaller",
+    ]
+    tbl = {}
+    tbl["SampleID"] = list(map(extract_sid, args.sample))
+    tbl["Condition"] = list(repeat("", n))
+    tbl["Replicate"] = list(repeat("1", n))
+    tbl["bamReads"] = args.sample
+    tbl["ControlID"] = list(map(extract_sid, args.control))
+    tbl["bamControl"] = args.control
+    tbl["Peaks"] = args.peaks
+    tbl["PeakCaller"] = list(repeat(args.pktool, n))
+    csv = []
+    for i in range(n):
+        this_row = {}
+        for col in columns:
+            this_row[col] = tbl[col][i]
+        csv.append(this_row)
 
-   tmpIDs = [x for xs in groupdata.values() for x in xs]
-   Ncounts = [tmpIDs.count(tmp) for tmp in set(tmpIDs)]
+    out_dir = dirname(args.output)
+    if not exists(out_dir):
+        makedirs(out_dir, 0o755, exist_ok=True)
 
-   with open(args.csvfile, 'w') as csvfile:
-      columns = ["SampleID","Condition", "Replicate", "bamReads", 
-               "ControlID", "bamControl", "Peaks", "PeakCaller"]
-      writer = csv.DictWriter(csvfile, fieldnames=columns)
-      writer.writeheader()
-
-      count = 1
-      for chip in chip2input.keys():
-         if set(Ncounts) == {1}: # if all samples only in one group
-            for key in groupdata.keys():
-               if chip in groupdata[key]:
-                  condition = key
-            replicate = str([ i + 1 for i in range(len(groupdata[condition])) if groupdata[condition][i]== chip ][0])
-         else:
-            condition = ""
-            replicate = str(count)
-            count = count +1
-         bamReads = args.bamdir + "/" + chip + ".Q5DD.bam"
-         controlID = chip2input[chip]
-         if controlID != "":
-            bamControl = args.bamdir + "/" +  controlID + ".Q5DD.bam"
-         else:
-            bamControl = ""
-         peaks = args.workpath + "/" + args.peaktool + "/" + chip + "/" + chip + args.peakextension
-         row_values = [chip, condition, replicate, bamReads, controlID, bamControl, peaks, args.peakcaller]
-         writer.writerow(dict(zip(columns, row_values)))
+    with open(args.output, "w") as csv_out:
+        wrtr = DictWriter(csv_out, columns, delimiter=",")
+        wrtr.writeheader()
+        for row in csv:
+            wrtr.writerow(row)
+    print(f"\t> File {args.output} written.")
 
 
 if __name__ == "__main__":
-   parser = argparse.ArgumentParser(description='Script to prepare the DiffBind input csv')
-   parser.add_argument('--wp', dest='workpath', required=True, 
-                       help='Full path of the working directory')
-   parser.add_argument('--pt', dest='peaktool', required=True, 
-                       help='Name of the the peak calling tool, also the directory where the peak file will be located')
-   parser.add_argument('--pe', dest='peakextension', required=True, 
-                       help='The file extension of the peakcall output')
-   parser.add_argument('--pc', dest='peakcaller', required=True, 
-                       help='Value for the PeakCaller column of the DiffBind csv')
-   parser.add_argument('--bd', dest='bamdir', required=True, 
-                       help='Name of the directory where the bam files are located')
-   parser.add_argument('--csv', dest='csvfile', required=True, 
-                       help='Name of the output csv file')
-
-   main(parser.parse_args())
+    parser = argparse.ArgumentParser(
+        description="Script for creating diffbind CSVs for QC purposes"
+    )
+    parser.add_argument(
+        "-t",
+        "--tool",
+        dest="pktool",
+        type=str,
+        help="Single string, identify peak tool to diffbind\n"
+        + "(see: https://bioconductor.org/packages/release/bioc/manuals/DiffBind/man/DiffBind.pdf)",
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        dest="output",
+        type=str,
+        help="Path to output AllSamples-* csvfile",
+    )
+    parser.add_argument(
+        "-s",
+        "--samplebams",
+        dest="sample",
+        nargs="+",
+        help="List of the sample BAM files",
+    )
+    parser.add_argument(
+        "-c",
+        "--controlbams",
+        dest="control",
+        nargs="+",
+        help="List of the control BAM files",
+    )
+    parser.add_argument(
+        "-p", "--peaks", dest="peaks", nargs="+", help="List of sample PEAKSETs"
+    )
+    main(parser.parse_args())

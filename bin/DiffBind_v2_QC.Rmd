@@ -10,9 +10,11 @@ output:
         fig_width: 7
         fig_height: 6
 params:
-    csvfile: samplesheet.csv
-    contrasts: "group1_vs_group2"
-    peakcaller: "macs"
+    csvfile: ""
+    umapfile: ""
+    counts_bed: ""
+    counts_csv: ""
+    peakcaller: ""
 ---
 
 <style type="text/css">
@@ -24,10 +26,11 @@ params:
 ```{r, include=FALSE, warning=FALSE, message=FALSE}
 ## grab args
 dateandtime<-format(Sys.time(), "%a %b %d %Y - %X")
-
-csvfile <- params$csvfile
-contrasts <- params$contrasts
 peakcaller <- params$peakcaller
+csvfile <- params$csvfile
+umapfile <- params$umapfile
+counts_bed <- params$counts_bed
+counts_csv <- params$counts_csv
 ```
 
 **Peak sources:**
@@ -152,12 +155,10 @@ consensus2 <- dba.peakset(DBdataCounts, bRetrieve=TRUE) %>% ##extracts TMM-norma
   mutate(Peaks = paste0("Peak",1:nrow(.))) %>% 
   dplyr::select(1:4, Peaks, samples$samples$SampleID)
 
-outfile1 <- paste0(contrasts, "-", peakcaller, "_DiffBindQC_TMMcounts.csv")
-write.csv(consensus2, outfile1, row.names = F)
+write.csv(consensus2, counts_csv, row.names = F)
 
-outfile2 <- paste0(contrasts, "-", peakcaller, "_DiffBindQC_TMMcounts.bed")
 write.table(consensus2[,c("seqnames","start","end","Peaks")],
-    outfile2, quote=F, sep="\t", row.names=F, col.names=F)
+    counts_bed, quote=F, sep="\t", row.names=F, col.names=F)
 
 counts_TMM_ALL <- consensus2
 rownames(counts_TMM_ALL) <- counts_TMM_ALL$Peaks
@@ -181,8 +182,7 @@ if (nrow(samples$samples) < 16) {
 umap_coord <- as.data.frame(umap_coord$layout) %>% 
               setNames(c("UMAP1", "UMAP2"))
 
-outfile <- paste0(contrasts, "-", peakcaller, "_DiffBindQC_UMAP.csv")
-write.csv(umap_coord, outfile, row.names = F)
+write.csv(umap_coord, umapfile, row.names = F)
 ```
 
 ## UMAP: peaks and reads 

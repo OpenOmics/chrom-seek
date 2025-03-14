@@ -115,33 +115,3 @@ rule promoterTable2:
         Rscript -e "source('{params.script2}'); promoterAnnotationWrapper('{output}', '{params.gtf}', 'KEGG')";
         Rscript -e "source('{params.script2}'); promoterAnnotationWrapper('{output}', '{params.gtf}', 'Reactome')";
         """
-
-
-rule diffbindQC_macsN:
-    input:
-        expand(join(macsN_dir, "{name}", "{name}_peaks.narrowPeak"), name=chips),
-    output:
-        html                    = join(qc_dir, "AllSamples-macsNarrow", "AllSamples-macsNarrow_DiffBindQC.html"),
-        bed                     = join(qc_dir, "AllSamples-macsNarrow", "AllSamples-macsNarrow_DiffBindQC_TMMcounts.bed"),
-    params:
-       rname                    = "diffbindQC_macsN",
-       contrast                 = "AllSamples",
-       PeakTool                 = "macsNarrow",
-       rscript                  = join(bin_path, "DiffBind_v2_cfChIP_QC.Rmd"),
-       outdir                   = join(qc_dir, "AllSamples-macsNarrow"),
-       csvfile                  = join(qc_dir, "AllSamples-macsNarrow", "AllSamples-macsNarrow_DiffBind_prep.csv"),
-       pythonscript             = join(bin_path, "prep_diffbindQC.py"),
-       PeakExtension            = "_peaks.narrowPeak",
-       peakcaller               = "narrowPeak",
-    container:
-       config['images']['cfchip']
-    shell: 
-        """
-        python {params.pythonscript} --wp {workpath} \
-            --pt {params.PeakTool} --pe {params.PeakExtension} --bd {bam_dir} \
-            --pc {params.peakcaller} --csv {params.csvfile}
-        cp {params.rscript} {params.outdir}
-        cd {params.outdir}
-        Rscript -e 'rmarkdown::render("DiffBind_v2_cfChIP_QC.Rmd", output_file= "{output.html}",  \
-            params=list(csvfile="{params.csvfile}", contrasts="{params.contrast}", peakcaller="{params.PeakTool}"))'
-        """
