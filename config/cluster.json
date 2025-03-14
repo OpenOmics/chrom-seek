@@ -170,5 +170,12 @@
     "SEACR": {
         "mem": "32g",
         "threads": "2"
+    },
+    "diffbindQC_SEARC": {},
+    "join_diffbind_uropa": {
+        "mem": "32g",
+        "threads": "2",
+        "partition": "quick",
+        "time": "04:00:00"
     }
 }
