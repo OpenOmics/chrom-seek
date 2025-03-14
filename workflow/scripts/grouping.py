@@ -60,6 +60,8 @@ def get_peaktools(assay_type):
         tools.append("macsBroad")
         # turn sicer off for now
         # tools.extend(["macsBroad", "sicer"])
+    elif assay_type == "cutnrun":
+        tools.append("SEARC")
     return tools
 
 
