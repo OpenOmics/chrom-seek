@@ -500,17 +500,17 @@ rule diffbindQC_genrich:
         control_bams                = [join(bam_dir, f"{chip2input[sample_name]}.Q5DD.bam") for sample_name in chips],
         samples_peaks               = expand(join(genrich_dir, "{name}", "{name}.narrowPeak"), name=chips)
     output:
-        html                        = join(diffbind_qc_dir, "AllSamples-genrich", "AllSamples-genrich_DiffBindQC.html"),
-        countsbed                   = join(diffbind_qc_dir, "AllSamples-genrich", "AllSamples-genrich_DiffBindQC_TMMcounts.bed"),
-        countscsv                   = join(diffbind_qc_dir, "AllSamples-genrich", "AllSamples-genrich_DiffBindQC_TMMcounts.csv"),
-        umap                        = join(diffbind_qc_dir, "AllSamples-genrich", "AllSamples-genrich_DiffBindQC_DiffBindQC_UMAP.csv"),
-        csvfile                     = join(diffbind_qc_dir, "AllSamples-genrich", "AllSamples-genrich_DiffBind_prep.csv"),
+        html                        = join(diffbind_qc_dir, "AllSamples-Genrich", "AllSamples-Genrich_DiffBindQC.html"),
+        countsbed                   = join(diffbind_qc_dir, "AllSamples-Genrich", "AllSamples-Genrich_DiffBindQC_TMMcounts.bed"),
+        countscsv                   = join(diffbind_qc_dir, "AllSamples-Genrich", "AllSamples-Genrich_DiffBindQC_TMMcounts.csv"),
+        umap                        = join(diffbind_qc_dir, "AllSamples-Genrich", "AllSamples-Genrich_DiffBindQC_DiffBindQC_UMAP.csv"),
+        csvfile                     = join(diffbind_qc_dir, "AllSamples-Genrich", "AllSamples-Genrich_DiffBind_prep.csv"),
     params:
         rname                       = "diffbindQC_genrich",
-        peak_tool                   = "genrich",
+        peak_tool                   = "Genrich",
         peak_type                   = "narrow",
         rscript                     = join(bin_path, "DiffBind_v2_QC.Rmd"),
-        outdir                      = join(diffbind_qc_dir, "AllSamples-genrich"),
+        outdir                      = join(diffbind_qc_dir, "AllSamples-Genrich"),
         pythonscript                = join(bin_path, "prep_diffbindQC.py"),
     container:
        config['images']['diffbind']
