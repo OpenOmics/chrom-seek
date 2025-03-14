@@ -60,6 +60,7 @@ sicer_dir                       = join(workpath, "sicer")
 peakqc_dir                      = join(workpath, "PeakQC")
 uropa_dir                       = join(workpath, "UROPA_annotations")
 uropa_diffbind_dir              = join(uropa_dir, "DiffBind")
+uropa_diffbind_join_dir         = join(workpath, "UROPA_DIFFBIND_TBLS")
 diffbind_dir                    = join(workpath, "DiffBind")
 diffbind_qc_dir                 = join(workpath, "DB_TABLES")
 cfTool_dir                      = join(workpath, "cfChIPtool")
@@ -146,6 +147,13 @@ elif assay in ["atac", "chip", "cutnrun"]:
             application=["macsBroad"],
             _type=peak_types,
         ))
+        rule_all_ins.extend(expand(
+            join(uropa_diffbind_join_dir, "{contrast}-{PeakTool}-{differential_app}_{_type}_UROPA_DIFFBIND_JOIN.txt"),
+            differential_app=["DeSeq2"],
+            contrast=contrasts,
+            _type=peak_types,
+            PeakTool=['macsNarrow']
+        ))
     elif assay == "atac":
         rule_all_ins.extend(expand(
             join(genrich_dir, "{name}", "{name}.narrowPeak"), name=chips
@@ -171,15 +179,15 @@ elif assay in ["atac", "chip", "cutnrun"]:
         # ))
 rule_all_ins.append(expand(
     join(diffbind_qc_dir, "AllSamples-{pktool}", "AllSamples-{pktool}_DiffBindQC.html"),
-    pktool=["macsNarrow"]
+    pktool=PeakTools
 ))
 rule_all_ins.append(expand(
     join(diffbind_qc_dir, "AllSamples-{pktool}", "AllSamples-{pktool}_DiffBindQC_TMMcounts.bed"),
-    pktool=["macsNarrow"]
+    pktool=PeakTools
 ))
 rule_all_ins.append(expand(
     join(diffbind_qc_dir, "AllSamples-{pktool}", "AllSamples-{pktool}_DiffBind_prep.csv"),
-    pktool=["macsNarrow"]
+    pktool=PeakTools
 ))
 rule_all_ins.append(join(workpath, "multiqc_report.html"))
 rule_all_ins.extend(expand(join(qc_dir, "{name}.preseq.dat"), name=samples))
@@ -209,6 +217,13 @@ rule_all_ins.extend(expand(
     name=chips,
     application=["macsNarrow"],
     _type=peak_types,
+))
+rule_all_ins.extend(expand(
+    join(uropa_diffbind_join_dir, "{contrast}-{PeakTool}-{differential_app}_{_type}_UROPA_DIFFBIND_JOIN.txt"),
+    differential_app=["DeSeq2", "EdgeR"],
+    contrast=contrasts,
+    _type=peak_types,
+    PeakTool=PeakTools
 ))
 
 if paired_end:
