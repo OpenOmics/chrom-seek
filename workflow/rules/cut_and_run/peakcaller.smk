@@ -51,3 +51,40 @@ rule SEACR:
         cd {params.out_dir}
         SEACR_1.3.sh {input.exp} {params.control_flag} non stringent {wildcards.name}
         """
+
+
+rule diffbindQC_SEARC:
+    input:
+        sample_bams                 = expand(join(bam_dir, "{name}.Q5DD.bam"), name=chips),
+        control_bams                = [join(bam_dir, f"{chip2input[sample_name]}.Q5DD.bam") for sample_name in chips],
+        samples_peaks               = expand(join(seacr_dir, "{name}.stringent.bed"), name=chips)
+    output:
+        html                        = join(diffbind_qc_dir, "AllSamples-SEARC", "AllSamples-SEARC_DiffBindQC.html"),
+        countsbed                   = join(diffbind_qc_dir, "AllSamples-SEARC", "AllSamples-SEARC_DiffBindQC_TMMcounts.bed"),
+        countscsv                   = join(diffbind_qc_dir, "AllSamples-SEARC", "AllSamples-SEARC_DiffBindQC_TMMcounts.csv"),
+        umap                        = join(diffbind_qc_dir, "AllSamples-SEARC", "AllSamples-SEARC_DiffBindQC_DiffBindQC_UMAP.csv"),
+        csvfile                     = join(diffbind_qc_dir, "AllSamples-SEARC", "AllSamples-SEARC_DiffBind_prep.csv"),
+    params:
+        rname                       = "diffbindQC_SEARC",
+        peak_tool                   = "SEARC",
+        peak_type                   = "raw",
+        rscript                     = join(bin_path, "DiffBind_v2_QC.Rmd"),
+        outdir                      = join(diffbind_qc_dir, "AllSamples-SEARC"),
+        pythonscript                = join(bin_path, "prep_diffbindQC.py"),
+    container:
+       config['images']['diffbind']
+    shell:
+        """
+        python {params.pythonscript} \\
+            -s {input.sample_bams} \\
+            -c {input.control_bams} \\
+            -p {input.samples_peaks} \\
+            -t {params.peak_type} \\
+            -o {output.csvfile}
+        cp {params.rscript} {params.outdir}
+        cd {params.outdir}
+        Rscript -e 'rmarkdown::render("{params.rscript}", output_file="{output.html}",
+            params=list(csvfile="{output.csvfile}", umapfile="{output.umap}", 
+            counts_bed="{output.countsbed}", counts_csv="{output.countscsv}",
+            peakcaller="{params.peak_tool}"))'
+        """
