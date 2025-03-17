@@ -591,7 +591,7 @@ rule join_diffbind_uropa:
         output_dir                      = uropa_diffbind_join_dir,
         fdr_cutoff                      = 0.05,
         foldchange_cutoff               = 0
-    container: config["images"]["pandas"]
+    container: config["images"]["cfchip"]
     shell:
         dedent("""
         mkdir -p {params.output_dir}

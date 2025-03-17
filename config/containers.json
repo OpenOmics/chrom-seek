@@ -7,6 +7,5 @@
         "ppqt": "docker://seqeralabs/phantompeakqualtools:latest",
         "seacr": "docker://rroutsong/seacr:0.0.1",
         "preseq": "docker://rroutsong/preseq:0.0.1",
-        "pandas": "docker://pandas/pandas:pip-all"
     }
 }
