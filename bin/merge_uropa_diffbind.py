@@ -8,7 +8,7 @@ import os
 Script for joining diffbind peak set to uropa gene annotations
 
 Caveat: this won't work with the uropa allhits file because of the 1:Many
-        relationshipt between peaks and genes.
+        relationship between peaks and genes.
 
 Example uropa entry
 
@@ -54,8 +54,6 @@ Joined entry
     start                           713768
     end                             714581
     peak_id                          Peak1
-    peak_score                           0
-    peak_strand                          .
     feature                           gene
     feat_start                    621058.0
     feat_end                      622053.0
@@ -70,8 +68,6 @@ Joined entry
     gene_type               protein_coding
     name                           query_3
     width                              813
-    strand                               *
-    Conc                          5.864859
     Conc_IFN0h                    5.622903
     Conc_IFN24h                   6.072004
     Fold                         -0.449101
@@ -95,21 +91,19 @@ def main(args):
     diffbind = diffbind[
         (diffbind["Fold"] >= args.fold) & (diffbind["FDR"] <= args.fdr)
     ]  # filter
-
-    import ipdb
-
-    ipdb.set_trace()
+    diffbind = diffbind.drop(columns=["strand", "Conc"])
+    diffbind = diffbind.reset_index(drop=True)
 
     uropa = pd.read_csv(args.uropa, sep="\t")
     uropa = uropa.rename(
         columns={"peak_chr": "chr", "peak_start": "start", "peak_end": "end"}
     )
+    uropa = uropa.drop(columns=["peak_score", "peak_strand"])
+    uropa = uropa.reset_index(drop=True)
 
-    merged = diffbind.merge(uropa, on=["chr", "start", "end"])
+    merged = uropa.merge(diffbind, on=["chr", "start", "end"])
     merged = merged.reset_index(drop=True)
     merged.to_csv(args.output, sep="\t", index=False)
-
-
 
     return
 

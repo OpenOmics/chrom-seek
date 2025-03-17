@@ -68,7 +68,7 @@ genrich_dir                     = join(workpath, "Genrich")
 MEME_dir                        = join(workpath, "MEME")
 manorm_dir                      = join(workpath, "MANorm")
 dba_anno_path                   = join(workpath, 'dba_annotations')
-seacr_dir                       = join(workpath, "SEACR")
+seacr_dir                       = join(workpath, "seacr")
 
 
 # Read in resource information
@@ -267,8 +267,6 @@ rule all:
 if paired_end:
     if assay == 'cfchip':
         include: join("rules", "cfChIP.smk")
-    if assay == 'cutnrun':
-        include: join("rules", "cut_and_run", "peakcaller.smk")
     include: join("rules", "paired", "peakcall.smk")
     include: join("rules", "paired", "qc.smk")
     include: join("rules", "paired", "trim_align_dedup.smk")
