@@ -21,8 +21,10 @@ log_dir                         = join(workpath, "logfiles")
 local_log_dir                   = join(log_dir, "local")
 diffbind_dir2                   = join(workpath, "DiffBind_block")
 diffbind_dir                    = join(workpath, "DiffBind")
+diffbind_qc_dir                 = join(workpath, "DB_TABLES")
 uropa_dir                       = join(workpath, "UROPA_annotations")
 uropa_diffbind_dir              = join(uropa_dir, "DiffBind")
+uropa_diffbind_join_dir         = join(workpath, "UROPA_DIFFBIND_TBLS")
 bam_dir                         = join(workpath, "bam")
 ppqt_dir                        = join(bam_dir, "ppqt")
 qc_dir                          = join(workpath, "PeakQC")
@@ -35,6 +37,8 @@ otherDirs                       = [qc_dir, homer_dir, uropa_dir]
 cfTool_dir                      = join(workpath, "cfChIPtool")
 cfTool_subdir2                  = join(cfTool_dir, "BED", "H3K4me3")  
 group_combos                    = []
+blocking                        = False if set(blocks.values()) in ({None}, {''}) else True
+block_add                       = "_block" if blocking else ""
 
 # ~~ workflow config ~~
 blocking = False if set(blocks.values()) in ({None}, {""}) else True
@@ -134,19 +138,17 @@ rule diffbind_csv_genrich:
         workpath                        = workpath,
         contrast                        = "{group1}_vs_{group2}",
     log: join(local_log_dir, "diffbind_csv_genrich", "{group1}_vs_{group2}_diffbind_csv.log")
-    run:
-            shell(dedent(
-                """
-                python {params.pythonscript} \\
-                    --con {params.contrast} \\
-                    --wp {params.workpath} \\
-                    --pt {params.this_peaktool} \\
-                    --pe {params.this_peakextension} \\
-                    --bd {params.bam_dir} \\
-                    --pc {params.peakcaller} \\
-                    --csv {output.csvfile} &> {log}
-                """
-            ))
+    shell:
+        dedent("""
+        python {params.pythonscript} \\
+            --con {params.contrast} \\
+            --wp {params.workpath} \\
+            --pt {params.this_peaktool} \\
+            --pe {params.this_peakextension} \\
+            --bd {params.bam_dir} \\
+            --pc {params.peakcaller} \\
+            --csv {output.csvfile} &> {log}
+        """)
 
 
 rule diffbind_csv_macsB:
@@ -222,7 +224,7 @@ rule diffbind_edger:
         rscript                         = join(bin_path, "DiffBind_v2_EdgeR.Rmd"),
         outdir                          = join(diffbind_dir, "{contrast}-{PeakTool}"),
     container:
-        config["images"]["cfchip"]
+        config["images"]["diffbind"]
     shell:
         dedent("""
         if [ ! -d \"{tmpdir}\" ]; then mkdir -p \"{tmpdir}\"; fi
@@ -275,7 +277,7 @@ rule diffbind_edger_blocking:
         blocking_rscript                = join(bin_path, "DiffBind_v2_EdgeR_block.Rmd"),
         outdir                          = join(diffbind_dir, "{contrast}-{PeakTool}"),
     container:
-        config["images"]["cfchip"]
+        config["images"]["diffbind"]
     shell:
         dedent("""
         if [ ! -d \"{tmpdir}\" ]; then mkdir -p \"{tmpdir}\"; fi
@@ -323,24 +325,24 @@ rule diffbind_deseq:
         up_file                         = join(
                                             diffbind_dir,
                                             "{contrast}-{PeakTool}",
-                                            "{contrast}-{PeakTool}_Diffbind_Deseq2_up.bed",
+                                            "{contrast}-{PeakTool}_Diffbind_DeSeq2_up.bed",
                                           ),
         down_file                       = join(
                                             diffbind_dir,
                                             "{contrast}-{PeakTool}",
-                                            "{contrast}-{PeakTool}_Diffbind_Deseq2_down.bed",
+                                            "{contrast}-{PeakTool}_Diffbind_DeSeq2_down.bed",
                                           ),
         peak_list                       = join(
                                             diffbind_dir,
                                             "{contrast}-{PeakTool}",
-                                            "{contrast}-{PeakTool}_Diffbind_Deseq2_peak_list.tab",
+                                            "{contrast}-{PeakTool}_Diffbind_DeSeq2_peak_list.tab",
                                           ),
     params:
         rname                           = "diffbind_deseq2",
         rscript                         = join(bin_path, "DiffBind_v2_Deseq2.Rmd"),
         outdir                          = join(diffbind_dir, "{contrast}-{PeakTool}"),
     container:
-        config["images"]["cfchip"]
+        config["images"]["diffbind"]
     shell:
         dedent("""
         if [ ! -d \"{tmpdir}\\diffbind_deseq\" ]; then mkdir -p \"{tmpdir}\\diffbind_deseq\"; fi
@@ -387,14 +389,14 @@ rule diffbind_deseq_blocking:
         peak_list                       = join(
                                             diffbind_dir,
                                             "{contrast}-{PeakTool}",
-                                            "{contrast}-{PeakTool}_Diffbind_block_Deseq2_peak_list.tab",
+                                            "{contrast}-{PeakTool}_Diffbind_block_DeSeq2_peak_list.tab",
                                           ),
     params:
         rname                           = "diffbind_deseq_block",
         blocking_rscript                = join(bin_path, "DiffBind_v2_Deseq2_block.Rmd"),
         outdir                          = join(diffbind_dir, "{contrast}-{PeakTool}"),
     container:
-        config["images"]["cfchip"]
+        config["images"]["diffbind"]
     shell:
         dedent("""
         if [ ! -d \"{tmpdir}\" ]; then mkdir -p \"{tmpdir}\"; fi
@@ -415,4 +417,188 @@ rule diffbind_deseq_blocking:
         cat ${{tmp}}/rscript.sh
         echo "--"
         sh ${{tmp}}/rscript.sh
+        """)
+
+
+rule diffbindQC_macsN:
+    input:
+        sample_bams                 = expand(join(bam_dir, "{name}.Q5DD.bam"), name=chips),
+        control_bams                = [join(bam_dir, f"{chip2input[sample_name]}.Q5DD.bam") for sample_name in chips],
+        samples_peaks               = expand(join(macsN_dir, "{name}", "{name}_peaks.narrowPeak"), name=chips)
+    output:
+        html                        = join(diffbind_qc_dir, "AllSamples-macsNarrow", "AllSamples-macsNarrow_DiffBindQC.html"),
+        countsbed                   = join(diffbind_qc_dir, "AllSamples-macsNarrow", "AllSamples-macsNarrow_DiffBindQC_TMMcounts.bed"),
+        countscsv                   = join(diffbind_qc_dir, "AllSamples-macsNarrow", "AllSamples-macsNarrow_DiffBindQC_TMMcounts.csv"),
+        umap                        = join(diffbind_qc_dir, "AllSamples-macsNarrow", "AllSamples-macsNarrow_DiffBindQC_DiffBindQC_UMAP.csv"),
+        csvfile                     = join(diffbind_qc_dir, "AllSamples-macsNarrow", "AllSamples-macsNarrow_DiffBind_prep.csv"),
+    params:
+        rname                       = "diffbindQC_macsN",
+        peak_tool                   = "macsNarrow",
+        peak_type                   = "narrow",
+        rscript                     = join(bin_path, "DiffBind_v2_QC.Rmd"),
+        outdir                      = join(diffbind_qc_dir, "AllSamples-macsNarrow"),
+        pythonscript                = join(bin_path, "prep_diffbindQC.py"),
+    container:
+       config['images']['diffbind']
+    shell:
+        """
+        python {params.pythonscript} \\
+            -s {input.sample_bams} \\
+            -c {input.control_bams} \\
+            -p {input.samples_peaks} \\
+            -t {params.peak_type} \\
+            -o {output.csvfile}
+        cp {params.rscript} {params.outdir}
+        cd {params.outdir}
+        Rscript -e 'rmarkdown::render("{params.rscript}", output_file="{output.html}",
+            params=list(csvfile="{output.csvfile}", umapfile="{output.umap}", 
+            counts_bed="{output.countsbed}", counts_csv="{output.countscsv}",
+            peakcaller="{params.peak_tool}"))'
+        """
+
+
+rule diffbindQC_macsB:
+    input:
+        sample_bams                 = expand(join(bam_dir, "{name}.Q5DD.bam"), name=chips),
+        control_bams                = [join(bam_dir, f"{chip2input[sample_name]}.Q5DD.bam") for sample_name in chips],
+        samples_peaks               = expand(join(macsB_dir, "{name}", "{name}_peaks.broadPeak"), name=chips)
+    output:
+        html                        = join(diffbind_qc_dir, "AllSamples-macsBroad", "AllSamples-macsBroad_DiffBindQC.html"),
+        countsbed                   = join(diffbind_qc_dir, "AllSamples-macsBroad", "AllSamples-macsBroad_DiffBindQC_TMMcounts.bed"),
+        countscsv                   = join(diffbind_qc_dir, "AllSamples-macsBroad", "AllSamples-macsBroad_DiffBindQC_TMMcounts.csv"),
+        umap                        = join(diffbind_qc_dir, "AllSamples-macsBroad", "AllSamples-macsBroad_DiffBindQC_DiffBindQC_UMAP.csv"),
+        csvfile                     = join(diffbind_qc_dir, "AllSamples-macsBroad", "AllSamples-macsBroad_DiffBind_prep.csv"),
+    params:
+        rname                       = "diffbindQC_macsB",
+        peak_tool                   = "macsBroad",
+        peak_type                   = "narrow",
+        rscript                     = join(bin_path, "DiffBind_v2_QC.Rmd"),
+        outdir                      = join(diffbind_qc_dir, "AllSamples-macsBroad"),
+        pythonscript                = join(bin_path, "prep_diffbindQC.py"),
+    container:
+       config['images']['diffbind']
+    shell:
+        """
+        python {params.pythonscript} \\
+            -s {input.sample_bams} \\
+            -c {input.control_bams} \\
+            -p {input.samples_peaks} \\
+            -t {params.peak_type} \\
+            -o {output.csvfile}
+        cp {params.rscript} {params.outdir}
+        cd {params.outdir}
+        Rscript -e 'rmarkdown::render("{params.rscript}", output_file="{output.html}",
+            params=list(csvfile="{output.csvfile}", umapfile="{output.umap}", 
+            counts_bed="{output.countsbed}", counts_csv="{output.countscsv}",
+            peakcaller="{params.peak_tool}"))'
+        """
+
+
+rule diffbindQC_genrich:
+    input:
+        sample_bams                 = expand(join(bam_dir, "{name}.Q5DD.bam"), name=chips),
+        control_bams                = [join(bam_dir, f"{chip2input[sample_name]}.Q5DD.bam") for sample_name in chips],
+        samples_peaks               = expand(join(genrich_dir, "{name}", "{name}.narrowPeak"), name=chips)
+    output:
+        html                        = join(diffbind_qc_dir, "AllSamples-Genrich", "AllSamples-Genrich_DiffBindQC.html"),
+        countsbed                   = join(diffbind_qc_dir, "AllSamples-Genrich", "AllSamples-Genrich_DiffBindQC_TMMcounts.bed"),
+        countscsv                   = join(diffbind_qc_dir, "AllSamples-Genrich", "AllSamples-Genrich_DiffBindQC_TMMcounts.csv"),
+        umap                        = join(diffbind_qc_dir, "AllSamples-Genrich", "AllSamples-Genrich_DiffBindQC_DiffBindQC_UMAP.csv"),
+        csvfile                     = join(diffbind_qc_dir, "AllSamples-Genrich", "AllSamples-Genrich_DiffBind_prep.csv"),
+    params:
+        rname                       = "diffbindQC_genrich",
+        peak_tool                   = "Genrich",
+        peak_type                   = "narrow",
+        rscript                     = join(bin_path, "DiffBind_v2_QC.Rmd"),
+        outdir                      = join(diffbind_qc_dir, "AllSamples-Genrich"),
+        pythonscript                = join(bin_path, "prep_diffbindQC.py"),
+    container:
+       config['images']['diffbind']
+    shell:
+        """
+        python {params.pythonscript} \\
+            -s {input.sample_bams} \\
+            -c {input.control_bams} \\
+            -p {input.samples_peaks} \\
+            -t {params.peak_type} \\
+            -o {output.csvfile}
+        cp {params.rscript} {params.outdir}
+        cd {params.outdir}
+        Rscript -e 'rmarkdown::render("{params.rscript}", output_file="{output.html}",
+            params=list(csvfile="{output.csvfile}", umapfile="{output.umap}", 
+            counts_bed="{output.countsbed}", counts_csv="{output.countscsv}",
+            peakcaller="{params.peak_tool}"))'
+        """
+
+
+rule diffbindQC_SEACR:
+    input:
+        sample_bams                 = expand(join(bam_dir, "{name}.Q5DD.bam"), name=chips),
+        control_bams                = [join(bam_dir, f"{chip2input[sample_name]}.Q5DD.bam") for sample_name in chips],
+        samples_peaks               = expand(join(seacr_dir, "{name}.stringent.bed"), name=chips)
+    output:
+        html                        = join(diffbind_qc_dir, "AllSamples-SEACR", "AllSamples-SEACR_DiffBindQC.html"),
+        countsbed                   = join(diffbind_qc_dir, "AllSamples-SEACR", "AllSamples-SEACR_DiffBindQC_TMMcounts.bed"),
+        countscsv                   = join(diffbind_qc_dir, "AllSamples-SEACR", "AllSamples-SEACR_DiffBindQC_TMMcounts.csv"),
+        umap                        = join(diffbind_qc_dir, "AllSamples-SEACR", "AllSamples-SEACR_DiffBindQC_DiffBindQC_UMAP.csv"),
+        csvfile                     = join(diffbind_qc_dir, "AllSamples-SEACR", "AllSamples-SEACR_DiffBind_prep.csv"),
+    params:
+        rname                       = "diffbindQC_SEACR",
+        peak_tool                   = "SEACR",
+        peak_type                   = "raw",
+        rscript                     = join(bin_path, "DiffBind_v2_QC.Rmd"),
+        outdir                      = join(diffbind_qc_dir, "AllSamples-SEACR"),
+        pythonscript                = join(bin_path, "prep_diffbindQC.py"),
+    container:
+       config['images']['diffbind']
+    shell:
+        """
+        python {params.pythonscript} \\
+            -s {input.sample_bams} \\
+            -c {input.control_bams} \\
+            -p {input.samples_peaks} \\
+            -t {params.peak_type} \\
+            -o {output.csvfile}
+        cp {params.rscript} {params.outdir}
+        cd {params.outdir}
+        Rscript -e 'rmarkdown::render("{params.rscript}", output_file="{output.html}",
+            params=list(csvfile="{output.csvfile}", umapfile="{output.umap}", 
+            counts_bed="{output.countsbed}", counts_csv="{output.countscsv}",
+            peakcaller="{params.peak_tool}"))'
+        """
+
+
+rule join_diffbind_uropa:
+    input:
+        finalhits_txt                   = join(
+                                            uropa_diffbind_dir, 
+                                            "{contrast}-{PeakTool}-{differential_app}", 
+                                            "{contrast}_{PeakTool}_{differential_app}_{_type}_uropa_finalhits.txt"
+                                          ),
+        peak_list                       = join(
+                                            diffbind_dir,
+                                            "{contrast}-{PeakTool}",
+                                            "{contrast}-{PeakTool}_Diffbind" + block_add + "_{differential_app}_peak_list.tab",
+                                          ),
+    output:
+        joined_tbl                      = join(
+                                            uropa_diffbind_join_dir, 
+                                            "{contrast}-{PeakTool}-{differential_app}_{_type}_UROPA_DIFFBIND_JOIN.txt"
+                                          )
+    params:
+        rname                           = "join_diffbind_uropa",
+        this_script                     = join(bin_path, "merge_uropa_diffbind.py"),
+        output_dir                      = uropa_diffbind_join_dir,
+        fdr_cutoff                      = 0.05,
+        foldchange_cutoff               = 0
+    container: config["images"]["cfchip"]
+    shell:
+        dedent("""
+        mkdir -p {params.output_dir}
+        {params.this_script} \\
+            --uropa {input.finalhits_txt} \\
+            --diffbind {input.peak_list} \\
+            --output {output.joined_tbl} \\
+            --fdr {params.fdr_cutoff} \\
+            --fold {params.foldchange_cutoff}
         """)
