@@ -8,6 +8,7 @@ bin_path                        = config['project']['binpath']
 genome                          = config['options']['genome']
 tmpdir                          = config['options']['tmp_dir']
 seacr_dir                       = join(workpath, "seacr")
+bg_dir                          = join(workpath, "bedgraph")
 
 
 rule MACS2_broad:
