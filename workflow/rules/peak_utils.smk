@@ -140,22 +140,22 @@ rule HOMER:
                                              "{contrast}-{PeakTool}_Diffbind" + block_add + "_{differential_app}_down.bed",
                                            ),
      output:
-         down_motifs                     = [join(homer_dir, 'DOWN', fn) for fn in homer_output_targets]
-         up_motifs                       = [join(homer_dir, 'UP', fn) for fn in homer_output_targets]
+         down_motifs                     = [join(homer_dir, 'DOWN', fn) for fn in homer_output_targets],
+         up_motifs                       = [join(homer_dir, 'UP', fn) for fn in homer_output_targets],
      params:
          rname                           = 'HOMER',
-         genome_name                     = genome
-         out_dir_up                      = join(homer_dir, 'UP')
-         out_dir_down                    = join(homer_dir, 'DOWN')
+         genome_name                     = genome,
+         out_dir_up                      = join(homer_dir, 'UP'),
+         out_dir_down                    = join(homer_dir, 'DOWN'),
          # -len <#>[,<#>,<#>...] (motif length, default=8,10,12) [NOTE: values greater 12 may cause the program
          #   to run out of memmory - in these cases decrease the number of sequences analyzed]
-         seq_length                      = "8,10,12"
+         seq_length                      = "8,10,12",
          # Selecting the size of the region for motif finding (-size # or -size given, default: 200)
          #   This is one of the most important parameters and also a source of confusion for many.  
          #   If you wish to find motifs using your peaks using their exact sizes, use the option "-size given").  
          # However, for Transcription Factor peaks, most of the motifs are found +/- 50-75 bp from the peak center, 
          #   making it better to use a fixed size rather than depend on your peak size.
-         motif_finding_region            = "200"
+         motif_finding_region            = "200",
          tmpdir                         = tmpdir
      threads:
          int(cluster['HOMER'].get('threads', cluster['__default__']['threads']))
