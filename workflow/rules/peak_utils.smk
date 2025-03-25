@@ -130,9 +130,9 @@ rule MEME:
 pkcaller2homer_size = defaultdict(lambda: "200")
 pkcaller2homer_size.update({
     'macsNarow': "200", 
-    'macsBroad': "200", 
-    'genrich': "200", 
-    'SEACR': "200"
+    'macsBroad': "given", 
+    'genrich': "given", 
+    'SEACR': "given"
 })
 
 
