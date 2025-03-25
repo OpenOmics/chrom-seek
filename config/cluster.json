@@ -183,7 +183,7 @@
         "time": "04:00:00"
     },
     "HOMER" : {
-        "threads": "56",
+        "threads": "32",
         "mem": "128g",
         "gres": "lscratch:800"
     }
