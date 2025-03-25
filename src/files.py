@@ -3,7 +3,8 @@
 
 # Python standard library
 from __future__ import print_function
-import os, sys, re
+import os, sys, re, json
+import mimetypes
 
 # Local imports
 from utils import Colors, err, fatal
@@ -338,6 +339,54 @@ def contrasts(file, groups, delim="\t"):
         fatal("{}{}\t  └── {} {}".format(c.bg_red, c.white, ",".join(errors), c.end))
 
     return comparsions
+
+
+def validate_custom_genome(genome_json):
+    if not os.path.exists(genome_json):
+        raise FileNotFoundError(
+            f"Custom genome definition {genome_json} does not exist!"
+        )
+    if not mimetypes.guess_type(genome_json)[0] in ("text/plain", "application/json"):
+        raise ValueError(
+            f"Custom genome definition {genome_json} is not a plain text json file"
+        )
+    with open(genome_json, "r") as file:
+        try:
+            this_genome = json.load(file)
+        except json.JSONDecodeError:
+            raise ValueError(
+                f"JSON syntax is broken in custom genome definition {genome_json}"
+            )
+    required_keys = [
+        "ALIAS",
+        "SUPPORTED_PIPELINES",
+        "BLACKLISTBWAINDEX",
+        "BLACKLISTGENRICH",
+        "BWA",
+        "cfChIP_TOOLS_SRC",
+        "EFFECTIVEGENOMESIZE",
+        "GENEINFO",
+        "GENOME",
+        "GENOMECHR",
+        "GTFFILE",
+        "REFLEN",
+        "FRAC",
+        "MEME_VERTEBRATES_DB",
+        "MEME_EUKARYOTE_DB",
+        "MEME_GENOME_DB",
+    ]
+    bad_columns = []
+    genome_alias = list(this_genome["references"].values())[0][0]
+    genome_ks = list(this_genome["references"].values())[0].keys()
+    for k in required_keys:
+        if k not in genome_ks:
+            bad_columns.append(k)
+
+    if bad_columns:
+        raise ValueError(
+            f"Custom genome definition {genome_json} (alias {genome_alias}) is missing keys: {','.join(bad_columns)}"
+        )
+    return this_genome
 
 
 if __name__ == "__main__":

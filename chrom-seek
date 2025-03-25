@@ -40,7 +40,7 @@ import argparse  # potential python3 3rd party package, added in python/3.5
 # Local imports
 from src import version
 from src.run import init, setup, bind, dryrun, runner
-from src.files import peakcalls, contrasts
+from src.files import peakcalls, contrasts, validate_custom_genome
 from src.shells import bash
 from src.utils import (
     Colors,
@@ -196,6 +196,7 @@ def run(sub_args):
             fatal(
                 '  └── The cfchip pipeline only runs with the following reference genome : "hg19"'
             )
+
         if chip_missing_input:
             err("Error: Missing input for chip sample in peakcall file!")
             err("  └── Input samples are required for the cfchip pipeline.")
@@ -230,10 +231,15 @@ def run(sub_args):
     with open(os.path.join(sub_args.output, "config.json"), "w") as fh:
         json.dump(config, fh, indent=4, sort_keys=True)
 
-    if (
-        sub_args.assay
-        not in config["references"][sub_args.genome]["SUPPORTED_PIPELINES"]
-    ):
+    if sub_args.genome.endswith(".json"):
+        parsed_genome = validate_custom_genome(sub_args.genome)
+        supported_pipelines = parsed_genome["SUPPORTED_PIPELINES"]
+    else:
+        supported_pipelines = config["references"][sub_args.genome][
+            "SUPPORTED_PIPELINES"
+        ]
+
+    if sub_args.assay not in supported_pipelines:
         fatal(
             "\nWarning: {} assay is not supported for {} genome".format(
                 sub_args.assay, sub_args.genome
@@ -655,12 +661,23 @@ def parsed_arguments(name, description):
         help=argparse.SUPPRESS,
     )
 
+    def valid_genome(genome):
+        valid_choices = ["hg19", "hg38", "mm10", "rheMac10"]
+        if genome in valid_choices:
+            return genome
+        if os.path.exists(genome) and genome.endswith(".json"):
+            return genome
+        raise argparse.ArgumentTypeError(
+            "Unsupported genome, please use one of:\n"
+            + '\t"hg19", "hg38", "mm10", "rheMac10"\n'
+            + "Or a valid json file ending with .json"
+        )
+
     # Reference genome
     subparser_run.add_argument(
         "--genome",
         required=True,
         type=str,
-        choices=["hg19", "hg38", "mm10", "rheMac10"],
         help=argparse.SUPPRESS,
     )
 
