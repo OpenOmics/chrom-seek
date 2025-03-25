@@ -127,7 +127,7 @@ rule MEME:
         """
 
 
-pkcaller2homer_size = defaultdict("200")
+pkcaller2homer_size = defaultdict(lambda: "200")
 pkcaller2homer_size.update({
     'macsNarow': "200", 
     'macsBroad': "200", 
