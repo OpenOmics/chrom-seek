@@ -3,7 +3,7 @@
 # ~~~~
 # Genrally applicable rules
 from os.path import join
-
+from collections import defaultdict
 
 # ~~ workflow configuration
 workpath                        = config['project']['workpath']
@@ -127,6 +127,15 @@ rule MEME:
         """
 
 
+pkcaller2homer_size = defaultdict("200")
+pkcaller2homer_size.update({
+    'macsNarow': "200", 
+    'macsBroad': "200", 
+    'genrich': "200", 
+    'SEACR': "200"
+})
+
+
 rule HOMER:
      input:
          up_file                         = join(
@@ -149,14 +158,14 @@ rule HOMER:
          out_dir_down                    = join(homer_dir, 'DOWN'),
          # -len <#>[,<#>,<#>...] (motif length, default=8,10,12) [NOTE: values greater 12 may cause the program
          #   to run out of memmory - in these cases decrease the number of sequences analyzed]
-         seq_length                      = "8,10,12",
+         seq_length                      = "8,10",
          # Selecting the size of the region for motif finding (-size # or -size given, default: 200)
          #   This is one of the most important parameters and also a source of confusion for many.  
          #   If you wish to find motifs using your peaks using their exact sizes, use the option "-size given").  
          # However, for Transcription Factor peaks, most of the motifs are found +/- 50-75 bp from the peak center, 
          #   making it better to use a fixed size rather than depend on your peak size.
-         motif_finding_region            = "200",
-         tmpdir                         = tmpdir
+         motif_finding_region            = pkcaller2homer_size["{PeakTool}"],
+         tmpdir                          = tmpdir
      threads:
          int(cluster['HOMER'].get('threads', cluster['__default__']['threads']))
      shell:
