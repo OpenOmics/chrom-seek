@@ -232,8 +232,9 @@ def run(sub_args):
         json.dump(config, fh, indent=4, sort_keys=True)
 
     if sub_args.genome.endswith(".json"):
-        parsed_genome = validate_custom_genome(sub_args.genome)
-        supported_pipelines = parsed_genome["SUPPORTED_PIPELINES"]
+        parsed_genome = validate_custom_genome(sub_args.genome)["references"]
+        genome_k = list(parsed_genome.keys())[0]
+        supported_pipelines = parsed_genome[genome_k]["SUPPORTED_PIPELINES"]
     else:
         supported_pipelines = config["references"][sub_args.genome][
             "SUPPORTED_PIPELINES"

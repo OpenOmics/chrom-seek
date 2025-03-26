@@ -376,7 +376,7 @@ def validate_custom_genome(genome_json):
         "MEME_GENOME_DB",
     ]
     bad_columns = []
-    genome_alias = list(this_genome["references"].values())[0][0]
+    genome_alias = list(this_genome["references"].values())[0]["ALIAS"]
     genome_ks = list(this_genome["references"].values())[0].keys()
     for k in required_keys:
         if k not in genome_ks:
