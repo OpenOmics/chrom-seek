@@ -72,17 +72,17 @@ Each of the following arguments are required. Failure to provide a required argu
 > **Peakcall file.**   
 > *type: file*
 >   
-> This tab delimited (TSV) file is used to pair each ChIP sample to its corresponding input sample and to assign any groups that are associated with said sample. Please note that multiple groups can be assigned to a given sample using a comma. Group information is used to setup comparsions within groups of samples. This file consists of three columns containing the name of each ChIP sample, the name of each Input (control) sample, and the name of its groups. Each sample must be assigned to at least one group. The header of this file needs to be `ChIP` for the chips column, `Input` for the inputs column, and `Group` for the groups column. Group names currently cannot include ".", "-", or "_". The base name of each sample should be listed in the `ChIP` and `Input` columns. The base name of a given sample can be determined by removing its file extension from the sample's R1 FastQ file, example: `WT_S4.R1.fastq.gz` becomes `WT_S4` in the peakcall file. `WT_S4_R1_001.fastq.gz` also becomes `WT_S4`. An optional column, called Block, can also be provided to block duplicate correlations between repeated observations. Typically, blocks are biological replicates or multiple samples from same indivdual.  
+> This tab delimited (TSV) file is used to pair each ChIP sample to its corresponding input sample and to assign any groups that are associated with said sample. Please note that multiple groups can be assigned to a given sample using a comma. Group information is used to setup comparsions within groups of samples. This file consists of three columns containing the name of each ChIP sample, the name of each Input (control) sample, and the name of its groups. Each sample must be assigned to at least one group. The header of this file needs to be `Sample` for the chips column, `InputControl` for the inputs column, and `Group` for the groups column _(the column names are case insensitive; lower- upper- camelcase all work the same)_. Group names currently cannot include ".", "-", or "_". The base name of each sample should be listed in the `Sample` and `InputControl` columns. The base name of a given sample can be determined by removing its file extension from the sample's R1 FastQ file, example: `WT_S4.R1.fastq.gz` becomes `WT_S4` in the peakcall file. `WT_S4_R1_001.fastq.gz` also becomes `WT_S4`. An optional column, called Block, can also be provided to block duplicate correlations between repeated observations. Typically, blocks are biological replicates or multiple samples from same indivdual.  
 > 
 > **Contents of example peakcalls file:** 
 > ```
-> ChIP	Input	Group
-> WT_S1	IN_S1	G1,G3
-> WT_S2	IN_S2	G1,G3
-> WT_S3	IN_S3	G1
-> WT_S4	IN_S4	G2,G4
-> WT_S5	IN_S5	G2,G4
-> WT_S6	IN_S6	G2
+> Sample	InputControl	Group
+> WT_S1	  IN_S1	        G1,G3
+> WT_S2	  IN_S2       	G1,G3
+> WT_S3	  IN_S3	        G1
+> WT_S4	  IN_S4	        G2,G4
+> WT_S5	  IN_S5	        G2,G4
+> WT_S6	  IN_S6	        G2
 > ```
 > ***Example:*** `--peakcall /data/$USER/peakcall.tsv`
 
