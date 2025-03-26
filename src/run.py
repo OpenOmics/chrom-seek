@@ -232,6 +232,9 @@ def setup(sub_args, ifiles, repo_path, output_path):
         if opt == "func":
             # Pass over sub command's handler
             continue
+        elif opt == "genome" and os.path.exists(v):
+            # use custom genome alias if given
+            v = list(validate_custom_genome(v)["references"].values())[0]["ALIAS"]
         elif not isinstance(v, (list, dict)):
             # CLI value can be converted to a string
             v = str(v)
