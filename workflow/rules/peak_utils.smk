@@ -127,7 +127,7 @@ rule MEME:
         """
 
 
-pkcaller2homer_size = defaultdict(lambda: "200")
+pkcaller2homer_size = defaultdict(lambda: "given")
 pkcaller2homer_size.update({
     'macsNarow': "200", 
     'macsBroad': "given", 
@@ -149,13 +149,13 @@ rule HOMER:
                                              "{contrast}-{PeakTool}_Diffbind" + block_add + "_{differential_app}_down.bed",
                                            ),
      output:
-         down_motifs                     = [join(homer_dir, 'DOWN', fn) for fn in homer_output_targets],
-         up_motifs                       = [join(homer_dir, 'UP', fn) for fn in homer_output_targets],
+         down_motifs                     = [join(homer_dir, "DOWN_{contrast}_{PeakTool}_{differential_app}", fn) for fn in homer_output_targets],
+         up_motifs                       = [join(homer_dir, "UP_{contrast}_{PeakTool}_{differential_app}", fn) for fn in homer_output_targets],
      params:
          rname                           = 'HOMER',
          genome_name                     = genome,
-         out_dir_up                      = join(homer_dir, 'UP'),
-         out_dir_down                    = join(homer_dir, 'DOWN'),
+         out_dir_up                      = join(homer_dir, "UP_{contrast}_{PeakTool}_{differential_app}"),
+         out_dir_down                    = join(homer_dir, "DOWN_{contrast}_{PeakTool}_{differential_app}"),
          # -len <#>[,<#>,<#>...] (motif length, default=8,10,12) [NOTE: values greater 12 may cause the program
          #   to run out of memmory - in these cases decrease the number of sequences analyzed]
          seq_length                      = "8,10",
@@ -176,6 +176,6 @@ rule HOMER:
          export TMPDIR="${{tmp}}" # used by sort
          module load homer
          cd ${{tmp}}
-         findMotifsGenome.pl {input.up} {params.genome_name} {params.out_dir_up} -p {threads} -size {params.motif_finding_region} -len {params.seq_len}
-         findMotifsGenome.pl {input.down} {params.genome_name} {params.out_dir_down} -p {threads} -size {params.motif_finding_region} -len {params.seq_len}
+         findMotifsGenome.pl {input.up_file} {params.genome_name} {params.out_dir_up} -p {threads} -size {params.motif_finding_region} -len {params.seq_length}
+         findMotifsGenome.pl {input.down_file} {params.genome_name} {params.out_dir_down} -p {threads} -size {params.motif_finding_region} -len {params.seq_length}
          """
