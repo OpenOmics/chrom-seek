@@ -25,14 +25,7 @@ uropa_dir                       = join(workpath, "UROPA_annotations")
 uropa_diffbind_dir              = join(uropa_dir, "DiffBind")
 uropa_diffbind_join_dir         = join(workpath, "UROPA_DIFFBIND_TBLS")
 bam_dir                         = join(workpath, "bam")
-ppqt_dir                        = join(bam_dir, "ppqt")
-qc_dir                          = join(workpath, "PeakQC")
-idr_dir                         = join(workpath, "IDR")
-memechip_dir                    = join(workpath, "MEME")
-homer_dir                       = join(workpath, "HOMER_motifs")
-manorm_dir                      = join(workpath, "MANorm")
-downstream_dir                  = join(workpath, "Downstream")
-otherDirs                       = [qc_dir, homer_dir, uropa_dir]
+otherDirs                       = [uropa_dir]
 cfTool_dir                      = join(workpath, "cfChIPtool")
 cfTool_subdir2                  = join(cfTool_dir, "BED", "H3K4me3")  
 group_combos                    = []
@@ -42,7 +35,7 @@ block_add                       = "_block" if blocking else ""
 # ~~ workflow config ~~
 blocking = False if set(blocks.values()) in ({None}, {""}) else True
 if reps == "yes": otherDirs.append(diffbind_dir)
-mk_dir_if_not_exist(PeakTools + otherDirs)
+mk_dir_if_not_exist(PeakTools + [uropa_dir])
 
 
 localrules: diffbind_csv_macsN, diffbind_csv_macsB, diffbind_csv_genrich
