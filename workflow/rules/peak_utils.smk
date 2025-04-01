@@ -158,14 +158,7 @@ rule HOMER:
          genomealias                     = genome,
          out_dir_up                      = join(homer_dir, "UP_{contrast}_{PeakTool}_{differential_app}"),
          out_dir_down                    = join(homer_dir, "DOWN_{contrast}_{PeakTool}_{differential_app}"),
-         # -len <#>[,<#>,<#>...] (motif length, default=8,10,12) [NOTE: values greater 12 may cause the program
-         #   to run out of memmory - in these cases decrease the number of sequences analyzed]
          seq_length                      = "8,10",
-         # Selecting the size of the region for motif finding (-size # or -size given, default: 200)
-         #   This is one of the most important parameters and also a source of confusion for many.  
-         #   If you wish to find motifs using your peaks using their exact sizes, use the option "-size given").  
-         # However, for Transcription Factor peaks, most of the motifs are found +/- 50-75 bp from the peak center, 
-         #   making it better to use a fixed size rather than depend on your peak size.
          motif_finding_region            = pkcaller2homer_size["{PeakTool}"],
          tmpdir                          = tmpdir
      threads:
@@ -179,16 +172,17 @@ rule HOMER:
         module load homer/4.11.1
         cd ${{TMPDIR}}
         min() {{
-            printf "%s\n" "${{@:2}}" | sort "$1" | head -n1
+            printf "%s\\n" "${{@:2}}" | sort "$1" | head -n1
         }}
-        [ -d "/fdb/homer/genomes/{params.genomealias}" ] || { echo "Homer does not support this genome!" >&2; exit 1; }
+        [ -d "/fdb/homer/genomes/{params.genomealias}" ] || {{ echo "Homer does not support this genome!" >&2; exit 1; }}
         for each in /fdb/homer/genomes/{params.genomealias}/preparsed/*; do ln -s $each .; done
         ln -s {params.genomefa} ${{TMPDIR}}/{params.genomealias}
         UP_LC=$(wc -l {input.up_file})
         DOWN_LC=$(wc -l {input.down_file})
         export THRDS=$(min -g {threads} ${{UP_LC}} ${{DOWN_LC}})
 
-        awk 'BEGIN {{FS="\t"; OFS="\t"}} {{print $4, $1, $2, $3, $6}}' {input.up_file} | sed -e 's/\./+/g' > ${{tmp}}/homer_up_input.bed
+        awk 'BEGIN {{FS="\\t"; OFS="\\t"}} {{print $4, $1, $2, $3, $6}}' {input.up_file} | sed -e 's/\./+/g' > ${{tmp}}/homer_up_input.bed
+        echo "\\n\\n-------- HOMER UP_GENES_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app} sample sheet --------"
         cat ${{tmp}}/homer_up_input.bed
         findMotifsGenome.pl ${{tmp}}/homer_up_input.bed \\
             ${{TMPDIR}}/{params.genomealias} \\
@@ -197,8 +191,10 @@ rule HOMER:
             -p ${{THRDS}} \\
             -size {params.motif_finding_region} \\
             -len {params.seq_length}
+        echo "-------- HOMER UP_GENES_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app} sample sheet --------\\n\\n"
 
-        awk 'BEGIN {{FS="\t"; OFS="\t"}} {{print $4, $1, $2, $3, $6}}' {input.down_file} | sed -e 's/\./+/g' > ${{tmp}}/homer_down_input.bed
+        awk 'BEGIN {{FS="\\t"; OFS="\\t"}} {{print $4, $1, $2, $3, $6}}' {input.down_file} | sed -e 's/\./+/g' > ${{tmp}}/homer_down_input.bed
+        echo "\\n\\n-------- HOMER DOWN_GENES_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app} sample sheet --------"
         cat ${{tmp}}/homer_down_input.bed
         findMotifsGenome.pl ${{tmp}}/homer_down_input.bed \\
             ${{TMPDIR}}/{params.genomealias} \\
@@ -207,4 +203,5 @@ rule HOMER:
             -p ${{THRDS}} \\
             -size {params.motif_finding_region} \\
             -len {params.seq_length}
-         """
+        echo "-------- HOMER DOWN_GENES_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app} sample sheet --------\\n\\n"
+        """
