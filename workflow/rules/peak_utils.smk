@@ -8,7 +8,7 @@ from collections import defaultdict
 # ~~ workflow configuration
 workpath                        = config['project']['workpath']
 genome                          = config['options']['genome']
-genome_fasta                    = config['references'][genome]['GENOME']
+homer_genome                    = config['references'][genome]['HOMER_REF']
 paired_end                      = False if config['project']['nends'] == 1 else True
 chip2input                      = config['project']['peaks']['inputs']
 tmpdir                          = config['options']['tmp_dir']
@@ -154,8 +154,8 @@ rule HOMER:
          up_motifs                       = [join(homer_dir, "UP_{contrast}_{PeakTool}_{differential_app}", fn) for fn in homer_output_targets],
      params:
          rname                           = 'HOMER',
-         genomefa                        = genome_fasta,
-         genomealias                     = genome,
+         homer_genome                    = homer_genome,
+         genomealias                     = genomealias,
          out_dir_up                      = join(homer_dir, "UP_{contrast}_{PeakTool}_{differential_app}"),
          out_dir_down                    = join(homer_dir, "DOWN_{contrast}_{PeakTool}_{differential_app}"),
          seq_length                      = "8,10",
@@ -174,7 +174,7 @@ rule HOMER:
         min() {{
             printf "%s\\n" "${{@:2}}" | sort "$1" | head -n1
         }}
-        [ -d "/fdb/homer/genomes/{params.genomealias}" ] || {{ echo "Homer does not support this genome!" >&2; exit 1; }}
+        [ -d "{params.homer_genome}" ] || {{ echo "Homer does not support this genome!" >&2; exit 1; }}
         for each in /fdb/homer/genomes/{params.genomealias}/preparsed/*; do ln -s $each .; done
         ln -s {params.genomefa} ${{TMPDIR}}/{params.genomealias}
         UP_LC=$(wc -l {input.up_file})
