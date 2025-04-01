@@ -8,6 +8,7 @@ from collections import defaultdict
 # ~~ workflow configuration
 workpath                        = config['project']['workpath']
 genome                          = config['options']['genome']
+genome_fasta                    = config['references'][genome]['GENOME']
 paired_end                      = False if config['project']['nends'] == 1 else True
 chip2input                      = config['project']['peaks']['inputs']
 tmpdir                          = config['options']['tmp_dir']
@@ -153,7 +154,8 @@ rule HOMER:
          up_motifs                       = [join(homer_dir, "UP_{contrast}_{PeakTool}_{differential_app}", fn) for fn in homer_output_targets],
      params:
          rname                           = 'HOMER',
-         genome_name                     = genome,
+         genomefa                        = genome_fasta,
+         genomealias                     = genome,
          out_dir_up                      = join(homer_dir, "UP_{contrast}_{PeakTool}_{differential_app}"),
          out_dir_down                    = join(homer_dir, "DOWN_{contrast}_{PeakTool}_{differential_app}"),
          # -len <#>[,<#>,<#>...] (motif length, default=8,10,12) [NOTE: values greater 12 may cause the program
@@ -169,13 +171,40 @@ rule HOMER:
      threads:
          int(cluster['HOMER'].get('threads', cluster['__default__']['threads']))
      shell:
-         """
-         if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
-         tmp=$(mktemp -d -p "{params.tmpdir}")
-         trap 'rm -rf "${{tmp}}"' EXIT
-         export TMPDIR="${{tmp}}" # used by sort
-         module load homer
-         cd ${{tmp}}
-         findMotifsGenome.pl {input.up_file} {params.genome_name} {params.out_dir_up} -p {threads} -size {params.motif_finding_region} -len {params.seq_length}
-         findMotifsGenome.pl {input.down_file} {params.genome_name} {params.out_dir_down} -p {threads} -size {params.motif_finding_region} -len {params.seq_length}
+        """
+        if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
+        tmp=$(mktemp -d -p "{params.tmpdir}")
+        trap 'rm -rf "${{tmp}}"' EXIT
+        export TMPDIR="${{tmp}}" # used by sort
+        module load homer/4.11.1
+        cd ${{TMPDIR}}
+        min() {{
+            printf "%s\n" "${{@:2}}" | sort "$1" | head -n1
+        }}
+        [ -d "/fdb/homer/genomes/{params.genomealias}" ] || { echo "Homer does not support this genome!" >&2; exit 1; }
+        for each in /fdb/homer/genomes/{params.genomealias}/preparsed/*; do ln -s $each .; done
+        ln -s {params.genomefa} ${{TMPDIR}}/{params.genomealias}
+        UP_LC=$(wc -l {input.up_file})
+        DOWN_LC=$(wc -l {input.down_file})
+        export THRDS=$(min -g {threads} ${{UP_LC}} ${{DOWN_LC}})
+
+        awk 'BEGIN {{FS="\t"; OFS="\t"}} {{print $4, $1, $2, $3, $6}}' {input.up_file} | sed -e 's/\./+/g' > ${{tmp}}/homer_up_input.bed
+        cat ${{tmp}}/homer_up_input.bed
+        findMotifsGenome.pl ${{tmp}}/homer_up_input.bed \\
+            ${{TMPDIR}}/{params.genomealias} \\
+            {params.out_dir_up} \\
+            -preparsedDir ${{TMPDIR}} \\
+            -p ${{THRDS}} \\
+            -size {params.motif_finding_region} \\
+            -len {params.seq_length}
+
+        awk 'BEGIN {{FS="\t"; OFS="\t"}} {{print $4, $1, $2, $3, $6}}' {input.down_file} | sed -e 's/\./+/g' > ${{tmp}}/homer_down_input.bed
+        cat ${{tmp}}/homer_down_input.bed
+        findMotifsGenome.pl ${{tmp}}/homer_down_input.bed \\
+            ${{TMPDIR}}/{params.genomealias} \\
+            {params.out_dir_down} \\
+            -preparsedDir ${{TMPDIR}} \\
+            -p ${{THRDS}} \\
+            -size {params.motif_finding_region} \\
+            -len {params.seq_length}
          """
