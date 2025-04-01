@@ -77,12 +77,12 @@ def index(
         # a tab delimited file, i.e. a TSV file.
         has_header = False
         err(
-            "{}{}Warning: {} is missing at least one of the following column names: ChIP, Input, Group {}".format(
+            "{}{}Warning: {} is missing at least one of the following column names: Sample, InputControl, Group {}".format(
                 c.bg_yellow, c.black, file, c.end
             )
         )
         err(
-            "{}{}\t  └── Making assumptions about columns in the peakcall file... 1=ChIP, 2=Input, 3=Group, 4=Block {}".format(
+            "{}{}\t  └── Making assumptions about columns in the peakcall file... 1=Sample, 2=InputControl, 3=Group, 4=Block {}".format(
                 c.bg_yellow, c.black, c.end
             )
         )
