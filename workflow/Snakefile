@@ -267,6 +267,8 @@ rule all:
 if paired_end:
     if assay == 'cfchip':
         include: join("rules", "cfChIP.smk")
+    else:
+        include: join("rules", "paired", "dba.smk")
     include: join("rules", "paired", "peakcall.smk")
     include: join("rules", "paired", "qc.smk")
     include: join("rules", "paired", "trim_align_dedup.smk")

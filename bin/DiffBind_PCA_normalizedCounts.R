@@ -149,7 +149,6 @@ PCAbasic <- function(pv, outfile) {
 PCApeaks <- function(csvfile, outroot) {
   samples <- dba(sampleSheet=csvfile)
   pv <- samples
-  outfile <- paste0(outroot, "_PCA_peaks_only.txt")
   PCAbasic(pv,outfile)
 }
 

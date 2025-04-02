@@ -1,5 +1,5 @@
 ---
-title: "DiffBind: Quality control"
+title: "DiffBind: cfChIP-seq QC"
 output: 
     html_document:
         toc: true
@@ -11,17 +11,16 @@ output:
         fig_height: 6
 params:
     csvfile: ""
+    umapfile: ""
+    counts_bed: ""
+    counts_csv: ""
     peakcaller: ""
-    pca_counts_file: ""
-    pca_peaks_file: ""
-    tmm_counts_file: ""
-    rpkm_counts_file: ""
 ---
 
 <style type="text/css">
   body{
-    font-size: 12pt;
-  }
+  font-size: 12pt;
+}
 </style>
 
 ```{r, include=FALSE, warning=FALSE, message=FALSE}
@@ -29,12 +28,9 @@ params:
 dateandtime<-format(Sys.time(), "%a %b %d %Y - %X")
 peakcaller <- params$peakcaller
 csvfile <- params$csvfile
-
-pca_counts_file <- params$pca_counts_file
-pca_peaks_file <- params$pca_peaks_file
-tmm_counts_file <- params$tmm_counts_file
-rpkm_counts_file <- params$rpkm_counts_file
-
+umapfile <- params$umapfile
+counts_bed <- params$counts_bed
+counts_csv <- params$counts_csv
 ```
 
 **Peak sources:**
@@ -51,119 +47,6 @@ suppressMessages(library(tidyr))
 suppressMessages(library(umap))
 suppressMessages(library(ggplot2))
 suppressMessages(library(ggrepel))
-
-pv.pcmask <- function(pv,numSites, mask, sites,removeComps,cor=F,bLog=T){
-   
-   if(missing(numSites)) numSites <- nrow(pv$binding)
-   if(is.null(numSites)) numSites <- nrow(pv$binding)  
-   numSites <- min(numSites,nrow(pv$binding))
-   
-   if(missing(sites)) sites <- 1:numSites
-   if(is.null(sites)) sites <- 1:numSites
-   
-   if(missing(mask)) mask <- rep(T,ncol(pv$class))
-   for(i in which(mask)) {
-      if(nrow(pv$peaks[[i]])==0) {
-         mask[i]=F
-      }
-   }
-   if(sum(mask)<2) {
-      stop('Need at least two samples for PCA.')
-   }
-   
-   res <- NULL   
-   res$class <- pv$class
-   pv$values <- pv$binding[sites,c(F,F,F,mask)]
-   active   <- apply(pv$values,1,pv.activefun)
-   numSites <- min(numSites,sum(active))
-   
-   pv$values <- pv$values[active,][1:numSites,]
-   
-   if(!missing(removeComps)) {
-      pv$values <- pv.removeComp(pv$values,numRemove=removeComps)
-   }
-   
-   if(bLog) {
-      if(max(pv$values)>1) {
-         pv$values[pv$values<=1] <- 1
-         pv$values <- log2(pv$values)
-      }
-   }
-   
-   if(nrow(pv$values) >= sum(mask)) {
-      res$pc <- prcomp(pv$values) #,cor=cor)
-   }
-   res$mask <- mask
-   
-   return(res)
-}
-
-pv.activefun <- function(x){
-   if(sum(x>0)>0){
-      return(TRUE)
-   } else {
-      return(FALSE)
-   }	
-}
-
-PCAbasic <- function(pv, outfile) {
-  numSites <- nrow(pv$binding)
-  mask <- rep(T,ncol(pv$class))
-  pv <- pv.pcmask(pv, numSites, mask, sites=NULL, cor=F, bLog=T)
-
-  pc <- pv$pc
-
-  vr <- rep(0,length(pc$sdev))
-  for (i in 1:length(vr)) {
-      vr[i] <- pc$sdev[i] ^ 2
-  }
-
-  comps=1:3
-  c1 <- comps[1]
-  c2 <- comps[2]
-  c3 <- comps[3]
-
-  c1p <- vr[c1] / sum(vr) * 100
-  c2p <- vr[c2] / sum(vr) * 100
-  c3p <- vr[c3] / sum(vr) * 100
-
-  plotData <- as.data.frame(pc$rotation[,c(c1,c2,c3)])
-  colnames(plotData) <- c("PC1","PC2","PC3")
-  write.table(plotData, outfile,quote=F,append=T,sep="\t")
-  write.table(paste0("PC1 %: ", c1p), outfile,quote=F,row.names=F,col.names=F,append=T)
-  write.table(paste0("PC2 %: ", c2p), outfile,quote=F,row.names=F,col.names=F,append=T)
-  write.table(paste0("PC3 %: ", c3p), outfile,quote=F,row.names=F,col.names=F,append=T)  
-}
-
-
-PCApeaks <- function(csvfile, pca_peaks_file) {
-  samples <- dba(sampleSheet=csvfile)
-  pv <- samples
-  PCAbasic(pv, pca_peaks_file)
-}
-
-PCAcounts <- function(csvfile, pca_counts_file, tmm_counts_file, rpkm_counts_file, counts=TRUE, macsNarrow=FALSE) {
-  samples <- dba(sampleSheet=csvfile)
-#  if ( grepl("narrow",samples$samples$Peaks[1]) ) {
-  if (macsNarrow == TRUE) {
-    DBdataCounts <- dba.count(samples, summits=250)
-  } else {
-    DBdataCounts <- dba.count(samples)
-  }
-  pv <- DBdataCounts
-  PCAbasic(pv, pca_counts_file)
-  
-  if (counts == TRUE) {
-    # first TMM
-    countsGR <- dba.peakset(DBdataCounts, bRetrieve=TRUE)
-    write.table(as.data.frame(countsGR), tmm_counts_file, sep="\t", quote=F)
-    
-    # then RPKM
-    DBdataCounts <- dba.count(DBdataCounts,peaks=NULL,score=DBA_SCORE_RPKM_FOLD)
-    countsGR <- dba.peakset(DBdataCounts, bRetrieve=TRUE)
-    write.table(as.data.frame(countsGR), rpkm_counts_file, sep="\t", quote=F) 
-  }
-}
 ```
 
 # Peak Data
@@ -283,16 +166,44 @@ counts_TMM_ALL$Peaks <- NULL
 
 counts_TMM_ALL <- counts_TMM_ALL %>% dplyr::select(5:ncol(.)) %>%
   t() %>% log10() %>% as.data.frame(.)
+##UMAP coordinates
+set.seed(123)
+
+if (nrow(samples$samples) < 16) {
+  neighbors=nrow(samples$samples)-1
+  if (neighbors > 1) {
+    umap_coord <- umap(counts_TMM_ALL, n_neighbors=neighbors)
+  } else {
+    umap_coord <- umap(counts_TMM_ALL, n_neighbors=2)
+  }
+} else {
+  umap_coord <- umap(counts_TMM_ALL)
+}
+umap_coord <- as.data.frame(umap_coord$layout) %>% 
+              setNames(c("UMAP1", "UMAP2"))
+
+write.csv(umap_coord, umapfile, row.names = F)
 ```
 
-```{r PCA-counts-peaks}
-narrow <- peakcaller %in% c('macsNarrow', 'macsBroad', 'Genrich')
-pca_counts <- PCAcounts(csvfile, pca_counts_file, tmm_counts_file, rpkm_counts_file, counts = TRUE, macsNarrow = narrow)
+## UMAP: peaks and reads 
+```{r UMAP_plot}
+p <- ggplot(umap_coord,aes(x = UMAP1, y = UMAP2, label = samples$samples$SampleID))+ ##With labels
+  geom_point(aes(color=samples$samples$Condition), size = 3) +
+  theme_bw()+ ggtitle(paste0("log-transformed counts:", "n = ", nrow(umap_coord))) +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  labs(color = "Phenotypes") + theme(text=element_text(size=15))+
+  geom_text_repel(point.size = NA, size = 2.5)
+q <- ggplot(umap_coord,aes(x = UMAP1, y = UMAP2)) + ##No labels
+  geom_point(aes(color=samples$samples$Condition), size = 3) +
+  theme_bw()+ ggtitle(paste0("log-transformed counts:", "n = ", nrow(umap_coord))) +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  labs(color ="Phenotypes") +  theme(text=element_text(size=15))
+  ##geom_text_repel(point.size = NA, size = 2.5)
+p
 
-print('--- PCA COUNTS ---')
-print(pca_counts)
-
-pca_peak <- PCApeaks(csvfile, pca_peaks_file)
+if ( sum(samples$class["Condition",] != "") == ncol(samples$class) ) {
+q
+}
 ```
 
 ## R tool version information
