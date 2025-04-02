@@ -155,7 +155,7 @@ rule HOMER:
      params:
          rname                           = 'HOMER',
          homer_genome                    = homer_genome,
-         genomealias                     = genomealias,
+         genomealias                     = genome,
          out_dir_up                      = join(homer_dir, "UP_{contrast}_{PeakTool}_{differential_app}"),
          out_dir_down                    = join(homer_dir, "DOWN_{contrast}_{PeakTool}_{differential_app}"),
          seq_length                      = "8,10",
