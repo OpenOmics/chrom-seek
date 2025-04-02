@@ -385,6 +385,14 @@ def sanitize_slurm_env(my_env):
     return my_env
 
 
+def valid_trigger(trigger_given):
+    from argparse import ArgumentTypeError
+    snk_triggers = ('mtime', 'code', 'input', 'params', 'software-env')
+    if not trigger_given in snk_triggers:
+        raise ArgumentTypeError('Invalid trigger selected please only use one of: ' + ', '.join(snk_triggers))
+    return trigger_given
+
+
 if __name__ == "__main__":
     # Calculate MD5 checksum of entire file
     print("{}  {}".format(md5sum(sys.argv[0]), sys.argv[0]))
