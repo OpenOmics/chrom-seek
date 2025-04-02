@@ -9,6 +9,7 @@ from collections import defaultdict
 workpath                        = config['project']['workpath']
 genome                          = config['options']['genome']
 homer_genome                    = config['references'][genome]['HOMER_REF']
+genomefa                        = config['references'][genome]['GENOME']
 paired_end                      = False if config['project']['nends'] == 1 else True
 chip2input                      = config['project']['peaks']['inputs']
 tmpdir                          = config['options']['tmp_dir']
@@ -156,6 +157,7 @@ rule HOMER:
          rname                           = 'HOMER',
          homer_genome                    = homer_genome,
          genomealias                     = genome,
+         genomefa                        = genomefa,
          out_dir_up                      = join(homer_dir, "UP_{contrast}_{PeakTool}_{differential_app}"),
          out_dir_down                    = join(homer_dir, "DOWN_{contrast}_{PeakTool}_{differential_app}"),
          seq_length                      = "8,10",
