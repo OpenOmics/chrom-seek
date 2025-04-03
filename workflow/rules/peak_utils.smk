@@ -4,6 +4,7 @@
 # Genrally applicable rules
 from os.path import join
 from collections import defaultdict
+from textwrap import dedent
 
 # ~~ workflow configuration
 workpath                        = config['project']['workpath']
@@ -166,44 +167,50 @@ rule HOMER:
      threads:
          int(cluster['HOMER'].get('threads', cluster['__default__']['threads']))
      shell:
-        """
+        dedent("""
         if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
         tmp=$(mktemp -d -p "{params.tmpdir}")
         trap 'rm -rf "${{tmp}}"' EXIT
         export TMPDIR="${{tmp}}" # used by sort
         module load homer/4.11.1
         cd ${{TMPDIR}}
-        min() {{
-            printf "%s\\n" "${{@:2}}" | sort "$1" | head -n1
-        }}
         [ -d "{params.homer_genome}" ] || {{ echo "Homer does not support this genome!" >&2; exit 1; }}
-        for each in /fdb/homer/genomes/{params.genomealias}/preparsed/*; do ln -s $each .; done
+        for each in {params.homer_genome}/preparsed/*; do ln -s $each .; done
         ln -s {params.genomefa} ${{TMPDIR}}/{params.genomealias}
-        UP_LC=$(wc -l {input.up_file})
-        DOWN_LC=$(wc -l {input.down_file})
-        export THRDS=$(min -g {threads} ${{UP_LC}} ${{DOWN_LC}})
-
+        uppeaks=$(wc -l {input.up_file})
+        downpeaks=$(wc -l {input.up_file})
         awk 'BEGIN {{FS="\\t"; OFS="\\t"}} {{print $4, $1, $2, $3, $6}}' {input.up_file} | sed -e 's/\./+/g' > ${{tmp}}/homer_up_input.bed
-        echo "\\n\\n-------- HOMER UP_GENES_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app} sample sheet --------"
-        cat ${{tmp}}/homer_up_input.bed
-        findMotifsGenome.pl ${{tmp}}/homer_up_input.bed \\
-            ${{TMPDIR}}/{params.genomealias} \\
-            {params.out_dir_up} \\
-            -preparsedDir ${{TMPDIR}} \\
-            -p ${{THRDS}} \\
-            -size {params.motif_finding_region} \\
-            -len {params.seq_length}
-        echo "-------- HOMER UP_GENES_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app} sample sheet --------\\n\\n"
-
+        if [ "${{uppeaks}}" -ge 21 ]; then
+            echo "\\n\\n-------- HOMER UP_GENES_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app} sample sheet --------"
+            cat ${{tmp}}/homer_up_input.bed
+            findMotifsGenome.pl ${{tmp}}/homer_up_input.bed \\
+                ${{TMPDIR}}/{params.genomealias} \\
+                {params.out_dir_up} \\
+                -preparsedDir ${{TMPDIR}} \\
+                -p {threads} \\
+                -mask \\
+                -size {params.motif_finding_region} \\
+                -len {params.seq_length}
+            echo "-------- HOMER UP_GENES_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app} sample sheet --------\\n\\n"
+        else
+            touch {output.up_motifs}
+            echo "{input.up_file} has less than 20 peaks; Not running homer!"
+        fi
         awk 'BEGIN {{FS="\\t"; OFS="\\t"}} {{print $4, $1, $2, $3, $6}}' {input.down_file} | sed -e 's/\./+/g' > ${{tmp}}/homer_down_input.bed
-        echo "\\n\\n-------- HOMER DOWN_GENES_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app} sample sheet --------"
-        cat ${{tmp}}/homer_down_input.bed
-        findMotifsGenome.pl ${{tmp}}/homer_down_input.bed \\
-            ${{TMPDIR}}/{params.genomealias} \\
-            {params.out_dir_down} \\
-            -preparsedDir ${{TMPDIR}} \\
-            -p ${{THRDS}} \\
-            -size {params.motif_finding_region} \\
-            -len {params.seq_length}
-        echo "-------- HOMER DOWN_GENES_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app} sample sheet --------\\n\\n"
-        """
+        if [ "${{downpeaks}}" -ge 21 ]; then
+            echo "\\n\\n-------- HOMER DOWN_GENES_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app} sample sheet --------"
+            cat ${{tmp}}/homer_down_input.bed
+            findMotifsGenome.pl ${{tmp}}/homer_down_input.bed \\
+                ${{TMPDIR}}/{params.genomealias} \\
+                {params.out_dir_down} \\
+                -preparsedDir ${{TMPDIR}} \\
+                -mask \\
+                -p {threads} \\
+                -size {params.motif_finding_region} \\
+                -len {params.seq_length}
+            echo "-------- HOMER DOWN_GENES_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app} sample sheet --------\\n\\n"
+        else
+            touch {output.down_motifs}
+            echo "{input.down_file} has less than 20 peaks; Not running homer!"
+        fi
+        """)
