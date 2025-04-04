@@ -152,8 +152,10 @@ rule HOMER:
                                              "{contrast}-{PeakTool}_Diffbind" + block_add + "_{differential_app}_down.bed",
                                            ),
      output:
-         down_motifs                     = [join(homer_dir, "DOWN_{contrast}_{PeakTool}_{differential_app}", fn) for fn in homer_output_targets],
-         up_motifs                       = [join(homer_dir, "UP_{contrast}_{PeakTool}_{differential_app}", fn) for fn in homer_output_targets],
+         down_motifs                     = temp([join(homer_dir, "DOWN_{contrast}_{PeakTool}_{differential_app}", fn) for fn in homer_output_targets]),
+         down_motifs_gz                  = join(homer_dir, "DOWN_{contrast}_{PeakTool}_{differential_app}", "DOWN_{contrast}_{PeakTool}_{differential_app}.tar.gz"),
+         up_motifs                       = temp([join(homer_dir, "UP_{contrast}_{PeakTool}_{differential_app}", fn) for fn in homer_output_targets]),
+         up_motifs_gz                    = join(homer_dir, "UP_{contrast}_{PeakTool}_{differential_app}", "UP_{contrast}_{PeakTool}_{differential_app}.tar.gz"),
      params:
          rname                           = 'HOMER',
          homer_genome                    = homer_genome,
@@ -163,7 +165,7 @@ rule HOMER:
          out_dir_down                    = join(homer_dir, "DOWN_{contrast}_{PeakTool}_{differential_app}"),
          seq_length                      = "8,10",
          motif_finding_region            = pkcaller2homer_size["{PeakTool}"],
-         tmpdir                          = tmpdir
+         tmpdir                          = tmpdir,
          homer_peak_threshhold           = 20
      threads:
          int(cluster['HOMER'].get('threads', cluster['__default__']['threads']))
@@ -194,6 +196,7 @@ rule HOMER:
                 -mask \\
                 -size {params.motif_finding_region} \\
                 -len {params.seq_length}
+            tar -czf {params.out_dir_up}/UP_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app}.tar.gz {params.out_dir_up}
             echo "-------- HOMER UP_GENES_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app} sample sheet --------\\n\\n"
         else
             touch {output.up_motifs}
@@ -211,6 +214,7 @@ rule HOMER:
                 -p {threads} \\
                 -size {params.motif_finding_region} \\
                 -len {params.seq_length}
+            tar -czf {params.out_dir_down}/UP_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app}.tar.gz {params.out_dir_down}
             echo "-------- HOMER DOWN_GENES_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app} sample sheet --------\\n\\n"
         else
             touch {output.down_motifs}
