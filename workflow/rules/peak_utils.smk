@@ -164,6 +164,7 @@ rule HOMER:
          seq_length                      = "8,10",
          motif_finding_region            = pkcaller2homer_size["{PeakTool}"],
          tmpdir                          = tmpdir
+         homer_peak_threshhold           = 20
      threads:
          int(cluster['HOMER'].get('threads', cluster['__default__']['threads']))
      shell:
@@ -179,8 +180,10 @@ rule HOMER:
         ln -s {params.genomefa} ${{TMPDIR}}/{params.genomealias}
         uppeaks=$(wc -l {input.up_file} | cut -f1 -d$' ')
         downpeaks=$(wc -l {input.down_file} | cut -f1 -d$' ')
+        thres=$(("{params.homer_peak_threshhold}"))
+        thres=$((${{thres}} + 1))
         awk 'BEGIN {{FS="\\t"; OFS="\\t"}} {{print $4, $1, $2, $3, $6}}' {input.up_file} | sed -e 's/\./+/g' > ${{tmp}}/homer_up_input.bed
-        if [ "${{uppeaks}}" -ge 21 ]; then
+        if [ "${{uppeaks}}" -ge ${{thres}} ]; then
             echo "\\n\\n-------- HOMER UP_GENES_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app} sample sheet --------"
             cat ${{tmp}}/homer_up_input.bed
             findMotifsGenome.pl ${{tmp}}/homer_up_input.bed \\
@@ -197,7 +200,7 @@ rule HOMER:
             echo "{input.up_file} has less than 20 peaks; Not running homer!"
         fi
         awk 'BEGIN {{FS="\\t"; OFS="\\t"}} {{print $4, $1, $2, $3, $6}}' {input.down_file} | sed -e 's/\./+/g' > ${{tmp}}/homer_down_input.bed
-        if [ "${{downpeaks}}" -ge 21 ]; then
+        if [ "${{downpeaks}}" -ge ${{thres}} ]; then
             echo "\\n\\n-------- HOMER DOWN_GENES_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app} sample sheet --------"
             cat ${{tmp}}/homer_down_input.bed
             findMotifsGenome.pl ${{tmp}}/homer_down_input.bed \\
