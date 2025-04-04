@@ -177,8 +177,8 @@ rule HOMER:
         [ -d "{params.homer_genome}" ] || {{ echo "Homer does not support this genome!" >&2; exit 1; }}
         for each in {params.homer_genome}/preparsed/*; do ln -s $each .; done
         ln -s {params.genomefa} ${{TMPDIR}}/{params.genomealias}
-        uppeaks=$(wc -l {input.up_file})
-        downpeaks=$(wc -l {input.up_file})
+        uppeaks=$(wc -l {input.up_file} | cut -f1 -d$' ')
+        downpeaks=$(wc -l {input.down_file} | cut -f1 -d$' ')
         awk 'BEGIN {{FS="\\t"; OFS="\\t"}} {{print $4, $1, $2, $3, $6}}' {input.up_file} | sed -e 's/\./+/g' > ${{tmp}}/homer_up_input.bed
         if [ "${{uppeaks}}" -ge 21 ]; then
             echo "\\n\\n-------- HOMER UP_GENES_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app} sample sheet --------"
