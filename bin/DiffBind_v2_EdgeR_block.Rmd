@@ -36,6 +36,8 @@ contrasts <- params$contrasts
 peakcaller <- params$peakcaller
 peak_counts <- params$counts
 list_file <- params$list_file
+up_file <- params$up_file
+down_file <- params$down_file
 ```
 
 **Groups being compared:**
@@ -141,6 +143,12 @@ All concentrations are on log2 scale.
 ```{r analyze}
 DBAnalysisEdgeR <- dba.analyze(DBdatacontrast, method=DBA_EDGER)
 DBReportEdgeR <- dba.report(DBAnalysisEdgeR, method=DBA_EDGER_BLOCK)
+
+UpPeaks <- DBReportEdgeR[which(DBReportEdgeR$Fold > 0)]
+rtracklayer::export(UpPeaks, up_file)
+
+DownPeaks <- DBReportEdgeR[which(DBReportEdgeR$Fold < 0)]
+rtracklayer::export(DownPeaks, down_file)
 ```
 
 ## PCA
