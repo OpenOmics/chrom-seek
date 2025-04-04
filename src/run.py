@@ -696,6 +696,7 @@ def runner(
     jobname="pl:master",
     submission_script="run.sh",
     tmp_dir="/lscratch/$SLURM_JOB_ID/",
+    triggers=None,
 ):
     """Runs the pipeline via selected executor: local or slurm.
     If 'local' is selected, the pipeline is executed locally on a compute node/instance.
@@ -780,18 +781,21 @@ def runner(
         # Look into later: it maybe worth
         # replacing Popen subprocess with a direct
         # snakemake API call: https://snakemake.readthedocs.io/en/stable/api_reference/snakemake.html
+        cmd = [
+            "snakemake",
+            "-pr",
+            "--rerun-incomplete",
+            "--use-singularity",
+            "--singularity-args",
+            "\\-c \\-B '{}'".format(bindpaths),
+            "--cores",
+            str(threads),
+            "--configfile=config.json",
+        ]
+        if triggers:
+            cmd.extend(["--rerun-triggers", " ".join(triggers)])
         masterjob = subprocess.Popen(
-            [
-                "snakemake",
-                "-pr",
-                "--rerun-incomplete",
-                "--use-singularity",
-                "--singularity-args",
-                "\\-c \\-B '{}'".format(bindpaths),
-                "--cores",
-                str(threads),
-                "--configfile=config.json",
-            ],
+            cmd,
             cwd=outdir,
             stderr=subprocess.STDOUT,
             stdout=logger,
@@ -815,21 +819,25 @@ def runner(
         #   --cluster "${CLUSTER_OPTS}" --keep-going --restart-times 3 -j 500 \
         #   --rerun-incomplete --stats "$3"/logfiles/runtime_statistics.json \
         #   --keep-remote --local-cores 30 2>&1 | tee -a "$3"/logfiles/master.log
+        
+        cmd = [
+            str(submission_script),
+            mode,
+            "-j",
+            jobname,
+            "-b",
+            str(bindpaths),
+            "-o",
+            str(outdir),
+            "-c",
+            str(cache),
+            "-t",
+            "'{}'".format(tmp_dir),
+        ]
+        if triggers:
+            cmd.extend(["-r", " ".join(triggers)])
         masterjob = subprocess.Popen(
-            [
-                str(submission_script),
-                mode,
-                "-j",
-                jobname,
-                "-b",
-                str(bindpaths),
-                "-o",
-                str(outdir),
-                "-c",
-                str(cache),
-                "-t",
-                "'{}'".format(tmp_dir),
-            ],
+            cmd,
             cwd=outdir,
             stderr=subprocess.STDOUT,
             stdout=logger,
