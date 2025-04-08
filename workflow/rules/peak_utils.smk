@@ -184,7 +184,7 @@ rule HOMER:
         do
             base=$(basename ${{each}})
             suffix=$(echo ${{base}} | cut -d'.' -f 2-)
-            ln -s ${{each}} ${params.genomealias}.${{suffix}}
+            ln -s ${{each}} "{params.genomealias}.${{suffix}}"
         done
         ln -s {params.genomefa} ${{TMPDIR}}/{params.genomealias}
         uppeaks=$(wc -l {input.up_file} | cut -f1 -d$' ')
