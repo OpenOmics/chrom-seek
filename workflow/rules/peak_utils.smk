@@ -178,7 +178,14 @@ rule HOMER:
         module load homer/4.11.1
         cd ${{TMPDIR}}
         [ -d "{params.homer_genome}" ] || {{ echo "Homer does not support this genome!" >&2; exit 1; }}
-        for each in {params.homer_genome}/preparsed/*; do ln -s $each .; done
+        # copy over biowulf preparse files
+        # see: https://hpc.nih.gov/apps/homer.html
+        for each in {params.homer_genome}/preparsed/*
+        do
+            base=$(basename ${{each}})
+            suffix=$(echo ${{base}} | cut -d'.' -f 2-)
+            ln -s ${{each}} ${params.genomealias}.${{suffix}}
+        done
         ln -s {params.genomefa} ${{TMPDIR}}/{params.genomealias}
         uppeaks=$(wc -l {input.up_file} | cut -f1 -d$' ')
         downpeaks=$(wc -l {input.down_file} | cut -f1 -d$' ')
@@ -186,8 +193,8 @@ rule HOMER:
         thres=$((${{thres}} + 1))
         awk 'BEGIN {{FS="\\t"; OFS="\\t"}} {{print $4, $1, $2, $3, $6}}' {input.up_file} | sed -e 's/\./+/g' > ${{tmp}}/homer_up_input.bed
         if [ "${{uppeaks}}" -ge ${{thres}} ]; then
-            echo "\\n\\n-------- HOMER UP_GENES_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app} sample sheet --------"
-            cat ${{tmp}}/homer_up_input.bed
+            echo -e "\\n\\n-------- HOMER UP_GENES_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app} sample sheet --------"
+            head ${{tmp}}/homer_up_input.bed
             findMotifsGenome.pl ${{tmp}}/homer_up_input.bed \\
                 ${{TMPDIR}}/{params.genomealias} \\
                 {params.out_dir_up} \\
@@ -196,16 +203,18 @@ rule HOMER:
                 -mask \\
                 -size {params.motif_finding_region} \\
                 -len {params.seq_length}
-            tar -czf {params.out_dir_up}/UP_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app}.tar.gz {params.out_dir_up}
-            echo "-------- HOMER UP_GENES_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app} sample sheet --------\\n\\n"
+            tar -czf UP_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app}.tar.gz {params.out_dir_up}
+            mv UP_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app}.tar.gz {params.out_dir_up}
+            echo -e "-------- HOMER UP_GENES_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app} sample sheet --------\\n\\n"
         else
             touch {output.up_motifs}
+            echo "Not enough peaks" >> {params.out_dir_up}/UP_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app}.tar.gz
             echo "{input.up_file} has less than 20 peaks; Not running homer!"
         fi
         awk 'BEGIN {{FS="\\t"; OFS="\\t"}} {{print $4, $1, $2, $3, $6}}' {input.down_file} | sed -e 's/\./+/g' > ${{tmp}}/homer_down_input.bed
         if [ "${{downpeaks}}" -ge ${{thres}} ]; then
-            echo "\\n\\n-------- HOMER DOWN_GENES_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app} sample sheet --------"
-            cat ${{tmp}}/homer_down_input.bed
+            echo -e "\\n\\n-------- HOMER DOWN_GENES_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app} sample sheet --------"
+            head ${{tmp}}/homer_down_input.bed
             findMotifsGenome.pl ${{tmp}}/homer_down_input.bed \\
                 ${{TMPDIR}}/{params.genomealias} \\
                 {params.out_dir_down} \\
@@ -214,10 +223,12 @@ rule HOMER:
                 -p {threads} \\
                 -size {params.motif_finding_region} \\
                 -len {params.seq_length}
-            tar -czf {params.out_dir_down}/UP_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app}.tar.gz {params.out_dir_down}
-            echo "-------- HOMER DOWN_GENES_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app} sample sheet --------\\n\\n"
+            tar -czf DOWN_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app}.tar.gz {params.out_dir_down}
+            mv DOWN_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app}.tar.gz {params.out_dir_down}
+            echo -e "-------- HOMER DOWN_GENES_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app} sample sheet --------\\n\\n"
         else
             touch {output.down_motifs}
+            echo "Not enough peaks" >> {params.out_dir_down}/DOWN_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app}.tar.gz
             echo "{input.down_file} has less than 20 peaks; Not running homer!"
         fi
         """)
