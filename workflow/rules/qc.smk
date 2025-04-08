@@ -413,6 +413,38 @@ rule FRiP_macsB:
         """
 
 
+rule FRiP_SEACR:
+    input:
+        peaks                   = expand(join(seacr_dir, "{SID}.stringent.bed"), SID=chips),
+        bam                     = join(bam_dir, "{name}.Q5DD.bam"),
+    output:
+        join(peakqc_dir, "SEACR", "SEACR.{name}.Q5DD.FRiP_table.txt"),
+    params:
+        rname                   = "FRiP_SEACR",
+        script                  = join(bin_path, "frip.py"),
+        genome                  = config['references'][genome]['REFLEN'],
+        tmpdir                  = tmpdir,
+    container: 
+        config['images']['python']
+    shell: 
+        """
+        # Setups temporary directory for
+        # intermediate files with built-in 
+        # mechanism for deletion on exit
+        if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
+        tmp=$(mktemp -d -p "{params.tmpdir}")
+        export TMPDIR="${{tmp}}"
+        trap 'rm -rf "${{tmp}}"' EXIT
+
+        python {params.script} \\
+            -p {input.peaks} \\
+            -b {input.bam} \\
+            -g {params.genome} \\
+            -o {output} \\
+            -x 16
+        """
+
+
 rule jaccard:
     input:
         lambda w: [ join(workpath, w.PeakTool, chip, chip + PeakExtensions[w.PeakTool]) for chip in chips ],

@@ -136,7 +136,7 @@ elif assay in ["atac", "chip", "cutnrun"]:
     # if has_inputs:
     #     rule_all_ins.extend(expand(join(MEME_dir, "{PeakTool}", "{name}_meme", "meme-chip.html"), PeakTool=PeakTools, name=chips))
     #     rule_all_ins.extend(expand(join(MEME_dir, "{PeakTool}", "{name}_ame", "ame.html"), PeakTool=PeakTools, name=chips))
-    if assay in ("chip"):
+    if assay in ("chip", "cutnrun"):
         rule_all_ins.extend(expand(join(macsB_dir, "{name}", "{name}_peaks.broadPeak"), name=chips))
         # sicer outputs turned off for now
         # if has_inputs:
@@ -154,13 +154,13 @@ elif assay in ["atac", "chip", "cutnrun"]:
             _type=peak_types,
             PeakTool=['macsNarrow']
         ))
+        if assay == "cutnrun":
+            rule_all_ins.extend(expand(
+                join(seacr_dir, "{name}.stringent.bed"), name=chips
+            ))
     elif assay == "atac":
         rule_all_ins.extend(expand(
             join(genrich_dir, "{name}", "{name}.narrowPeak"), name=chips
-        ))
-    elif assay == "cutnrun":
-        rule_all_ins.extend(expand(
-            join(seacr_dir, "{name}.stringent.bed"), name=chips
         ))
     else:
         pass

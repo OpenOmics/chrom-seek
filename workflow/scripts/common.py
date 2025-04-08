@@ -221,6 +221,7 @@ def joint_option(prefix, valueslist):
 
 
 def mk_dir_if_not_exist(dirs):
+    exit(dirs)
     if isinstance(dirs, str):
         dirs = [dirs]
     assert isinstance(dirs, list), "Supplied directories should be in a list"

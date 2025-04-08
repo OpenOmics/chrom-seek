@@ -103,9 +103,25 @@
         "threads": "4",
         "mem": "50g"
     },
-    "diffbindQC": {
-        "threads": "16",
-        "mem": "150g"
+    "diffbindQC_macsN": {
+        "threads": "32",
+        "mem": "128g",
+        "gres": "lscratch:400"
+    },
+    "diffbindQC_macsB": {
+        "threads": "32",
+        "mem": "128g",
+        "gres": "lscratch:400"
+    },
+    "diffbindQC_genrich": {
+        "threads": "32",
+        "mem": "128g",
+        "gres": "lscratch:400"
+    },
+    "diffbindQC_SEACR": {
+        "threads": "32",
+        "mem": "128g",
+        "gres": "lscratch:400"
     },
     "diffbind_deseq": {
         "threads": "16",
