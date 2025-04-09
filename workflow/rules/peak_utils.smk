@@ -18,7 +18,8 @@ assay                           = config['options']['assay']
 blocking                        = False if set(blocks.values()) in ({None}, {''}) else True
 block_add                       = "_block" if blocking else ""
 homer_output_targets            = ['homerMotifs.all.motifs', 'motifFindingParameters.txt', 
-                                'knownResults.txt', 'seq.autonorm.tsv', 'homerResults.html']
+                                'knownResults.txt', 'seq.autonorm.tsv', 'homerResults.html', 'knownResults.html', 'homerMotifs.motifs8'
+                                'homerMotifs.motifs10']
 
 # Directory end points
 bam_dir                         = join(workpath, "bam")
@@ -184,7 +185,7 @@ rule HOMER:
         do
             base=$(basename ${{each}})
             suffix=$(echo ${{base}} | cut -d'.' -f 2-)
-            ln -s ${{each}} "{params.genomealias}.${{suffix}}"
+            ln -s ${{each}} "{params.genomealias}r.${{suffix}}"
         done
         ln -s {params.genomefa} ${{TMPDIR}}/{params.genomealias}
         uppeaks=$(wc -l {input.up_file} | cut -f1 -d$' ')
