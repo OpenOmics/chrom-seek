@@ -171,7 +171,7 @@
         "mem": "32g",
         "threads": "2"
     },
-    "diffbindQC_SEARC": {
+    "diffbindQC_SEACR": {
         "threads": "4",
         "mem": "32g",
         "time": "04:00:00"
