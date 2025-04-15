@@ -29,6 +29,7 @@ uropa_dir                       = join(workpath, "UROPA_annotations")
 uropa_diffbind_dir              = join(uropa_dir, "DiffBind")
 uropa_diffbind_join_dir         = join(workpath, "UROPA_DIFFBIND_TBLS")
 bam_dir                         = join(workpath, "bam")
+seacr_dir                       = join(workpath, "SEACR")
 
 
 ######### workflow configuration flags #########
@@ -181,7 +182,7 @@ rule diffbind_csv_macsB:
 
 rule diffbind_csv_SEACR:
     input:
-        beds                            = expand(join(seacr_dir, "{name}.stringent.bed"), name=chips),
+        beds                            = expand(join(seacr_dir, "{name}", "{name}.stringent.bed"), name=chips),
     output:
         csvfile                         = join(
                                             diffbind_dir,
@@ -191,26 +192,24 @@ rule diffbind_csv_SEACR:
     params:
         rname                           = "diffbind_csv_SEACR",
         this_peaktool                   = "SEACR",
-        peakcaller                      = "narrowPeak",
+        peakcaller                      = "raw",
         this_peakextension              = ".stringent.bed",
         pythonscript                    = join(bin_path, "prep_diffbind.py"),
         bam_dir                         = bam_dir,
         workpath                        = workpath,
         contrast                        = "{group1}_vs_{group2}",
     log: join(local_log_dir, "diffbind_csv_SEACR", "{group1}_vs_{group2}_diffbind_csv.log")
-    run:
-            shell(dedent(
-                """
-                python {params.pythonscript} \\
-                    --con {params.contrast} \\
-                    --wp {params.workpath} \\
-                    --pt {params.this_peaktool} \\
-                    --pe {params.this_peakextension} \\
-                    --bd {params.bam_dir} \\
-                    --pc {params.peakcaller} \\
-                    --csv {output.csvfile}
-                """
-            ))
+    shell: 
+        dedent("""
+            python {params.pythonscript} \\
+                --con {params.contrast} \\
+                --wp {params.workpath} \\
+                --pt {params.this_peaktool} \\
+                --pe {params.this_peakextension} \\
+                --bd {params.bam_dir} \\
+                --pc {params.peakcaller} \\
+                --csv {output.csvfile}
+        """)
 
 
 ######### diffbind EdgeR DE analysis #########
@@ -467,7 +466,7 @@ rule diffbindQC_macsN:
         rscript                     = join(bin_path, "DiffBind_v2_QC.Rmd"),
         outdir                      = join(diffbind_qc_dir, "AllSamples-macsNarrow"),
         pythonscript                = join(bin_path, "prep_diffbindQC.py"),
-        groups                      = json.dumps(config['project']['groups'], ensure_ascii=True)
+        groups                      = json.dumps(config['project']['groups']).replace('"', '\\"')
     container:
        config['images']['diffbind']
     shell:
@@ -481,12 +480,12 @@ rule diffbindQC_macsN:
         if [ -s "${{tmp}}/groups.json" ]; then
             grp="-g ${{tmp}}/groups.json"
         fi
-        python {params.pythonscript} \\
-            -s {input.sample_bams} \\
-            -c {input.control_bams} \\
+        {params.pythonscript} \\
             -p {input.samples_peaks} \\
             -t {params.peak_type} \\
-            -o {output.csvfile} ${{grp}}
+            -o {output.csvfile} ${{grp}}\\
+            -s {input.sample_bams} \\
+            -c {input.control_bams}
         cp {params.rscript} {params.outdir}
         cd {params.outdir}
         Rscript -e 'rmarkdown::render("{params.rscript}", output_file="{output.html}",
@@ -514,11 +513,11 @@ rule diffbindQC_macsB:
         rscript                     = join(bin_path, "DiffBind_v2_QC.Rmd"),
         outdir                      = join(diffbind_qc_dir, "AllSamples-macsBroad"),
         pythonscript                = join(bin_path, "prep_diffbindQC.py"),
-        groups                      = json.dumps(config['project']['groups'], ensure_ascii=True)
+        groups                      = json.dumps(config['project']['groups']).replace('"', '\\"')
     container:
        config['images']['diffbind']
     shell:
-        dedent("""
+        """
         if [ ! -d \"{tmpdir}\" ]; then mkdir -p \"{tmpdir}\"; fi
         tmp=$(mktemp -d -p \"{tmpdir}\")
         trap 'rm -rf "${{tmp}}"' EXIT
@@ -528,19 +527,19 @@ rule diffbindQC_macsB:
         if [ -s "${{tmp}}/groups.json" ]; then
             grp="-g ${{tmp}}/groups.json"
         fi
-        python {params.pythonscript} \\
-            -s {input.sample_bams} \\
-            -c {input.control_bams} \\
+        {params.pythonscript} \\
             -p {input.samples_peaks} \\
             -t {params.peak_type} \\
-            -o {output.csvfile} ${{grp}}
+            -o {output.csvfile} ${{grp}}\\
+            -s {input.sample_bams} \\
+            -c {input.control_bams}
         cp {params.rscript} {params.outdir}
         cd {params.outdir}
         Rscript -e 'rmarkdown::render("{params.rscript}", output_file="{output.html}",
             params=list(csvfile="{output.csvfile}", umapfile="{output.umap}", 
             counts_bed="{output.countsbed}", counts_csv="{output.countscsv}",
             peakcaller="{params.peak_tool}"))'
-        """)
+        """
 
 
 rule diffbindQC_genrich:
@@ -561,11 +560,11 @@ rule diffbindQC_genrich:
         rscript                     = join(bin_path, "DiffBind_v2_QC.Rmd"),
         outdir                      = join(diffbind_qc_dir, "AllSamples-Genrich"),
         pythonscript                = join(bin_path, "prep_diffbindQC.py"),
-        groups                      = json.dumps(config['project']['groups'], ensure_ascii=True)
+        groups                      = json.dumps(config['project']['groups']).replace('"', '\\"')
     container:
        config['images']['diffbind']
     shell:
-        dedent("""
+        """
         if [ ! -d \"{tmpdir}\" ]; then mkdir -p \"{tmpdir}\"; fi
         tmp=$(mktemp -d -p \"{tmpdir}\")
         trap 'rm -rf "${{tmp}}"' EXIT
@@ -575,19 +574,19 @@ rule diffbindQC_genrich:
         if [ -s "${{tmp}}/groups.json" ]; then
             grp="-g ${{tmp}}/groups.json"
         fi
-        python {params.pythonscript} \\
-            -s {input.sample_bams} \\
-            -c {input.control_bams} \\
+        {params.pythonscript} \\
             -p {input.samples_peaks} \\
             -t {params.peak_type} \\
-            -o {output.csvfile} ${{grp}}
+            -o {output.csvfile} ${{grp}}\\
+            -s {input.sample_bams} \\
+            -c {input.control_bams}
         cp {params.rscript} {params.outdir}
         cd {params.outdir}
         Rscript -e 'rmarkdown::render("{params.rscript}", output_file="{output.html}",
             params=list(csvfile="{output.csvfile}", umapfile="{output.umap}", 
             counts_bed="{output.countsbed}", counts_csv="{output.countscsv}",
             peakcaller="{params.peak_tool}"))'
-        """)
+        """
 
 
 rule diffbindQC_SEACR:
@@ -608,33 +607,32 @@ rule diffbindQC_SEACR:
         rscript                     = join(bin_path, "DiffBind_v2_QC.Rmd"),
         outdir                      = join(diffbind_qc_dir, "AllSamples-SEACR"),
         pythonscript                = join(bin_path, "prep_diffbindQC.py"),
-        groups                      = json.dumps(config['project']['groups'], ensure_ascii=True)
+        groups                      = json.dumps(config['project']['groups']).replace('"', '\\"')
     container:
        config['images']['diffbind']
     shell:
-        dedent("""
+        """
         if [ ! -d \"{tmpdir}\" ]; then mkdir -p \"{tmpdir}\"; fi
         tmp=$(mktemp -d -p \"{tmpdir}\")
         trap 'rm -rf "${{tmp}}"' EXIT
         echo "{params.groups}" | python -m json.tool >> ${{tmp}}/groups.json
-        cat ${{tmp}}/groups.json
-        grp=""
+        grp="";
         if [ -s "${{tmp}}/groups.json" ]; then
-            grp="-g ${{tmp}}/groups.json"
+            grp="-g ${{tmp}}/groups.json";
         fi
-        python {params.pythonscript} \\
-            -s {input.sample_bams} \\
-            -c {input.control_bams} \\
+        {params.pythonscript} \\
             -p {input.samples_peaks} \\
             -t {params.peak_type} \\
-            -o {output.csvfile} ${{grp}}
+            -o {output.csvfile} ${{grp}}\\
+            -s {input.sample_bams} \\
+            -c {input.control_bams}
         cp {params.rscript} {params.outdir}
         cd {params.outdir}
         Rscript -e 'rmarkdown::render("{params.rscript}", output_file="{output.html}",
             params=list(csvfile="{output.csvfile}", umapfile="{output.umap}", 
             counts_bed="{output.countsbed}", counts_csv="{output.countscsv}",
             peakcaller="{params.peak_tool}"))'
-        """)
+        """
 
 
 ######### UROPA + Diffbind #########
