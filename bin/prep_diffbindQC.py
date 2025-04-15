@@ -96,7 +96,7 @@ if __name__ == "__main__":
         "-c",
         "--controlbams",
         dest="control",
-        nargs="?",
+        nargs="+",
         default=None,
         help="List of the control BAM files",
     )
@@ -107,7 +107,7 @@ if __name__ == "__main__":
         "-g",
         "--groups",
         dest="groups",
-        type=valid_file_path,
+        type=valid_json,
         help="JSON file of group mappings",
         required=False,
     )
