@@ -465,7 +465,7 @@ def add_sample_metadata(input_files, config, group=None):
     config["samples"] = []
     for file in input_files:
         # Split sample name on file extension
-        sample = re.split("\.R[12]\.fastq\.gz", os.path.basename(file))[0]
+        sample = re.split(r"\.R[12]\.fastq\.gz", os.path.basename(file))[0]
         if sample not in added:
             # Only add PE sample information once
             added.append(sample)
@@ -819,7 +819,7 @@ def runner(
         #   --cluster "${CLUSTER_OPTS}" --keep-going --restart-times 3 -j 500 \
         #   --rerun-incomplete --stats "$3"/logfiles/runtime_statistics.json \
         #   --keep-remote --local-cores 30 2>&1 | tee -a "$3"/logfiles/master.log
-        
+
         cmd = [
             str(submission_script),
             mode,
