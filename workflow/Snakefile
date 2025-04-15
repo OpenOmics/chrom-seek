@@ -68,7 +68,7 @@ genrich_dir                     = join(workpath, "Genrich")
 MEME_dir                        = join(workpath, "MEME")
 manorm_dir                      = join(workpath, "MANorm")
 dba_anno_path                   = join(workpath, 'dba_annotations')
-seacr_dir                       = join(workpath, "seacr")
+seacr_dir                       = join(workpath, "SEACR")
 
 
 # Read in resource information
@@ -156,7 +156,7 @@ elif assay in ["atac", "chip", "cutnrun"]:
         ))
         if assay == "cutnrun":
             rule_all_ins.extend(expand(
-                join(seacr_dir, "{name}.stringent.bed"), name=chips
+                join(seacr_dir, "{name}", "{name}.stringent.bed"), name=chips
             ))
     elif assay == "atac":
         rule_all_ins.extend(expand(
