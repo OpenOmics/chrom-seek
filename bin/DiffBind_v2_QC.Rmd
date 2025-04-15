@@ -80,7 +80,7 @@ the consensus peak set are the peaks identified in at least 2 samples for that c
 from the consensus peak set used for differential analyses.
 ```{r Venn, fig_height=4}
 if (nrow(samples$samples) < 5) {
-   dba.plotVenn(samples,1:nrow(samples$samples)) 
+   dba.plotVenn(samples, 1:nrow(samples$samples)) 
 } else {
    if ( sum(samples$class["Condition",] != "") == ncol(samples$class) ) {
       dba.plotVenn(consensus,consensus$masks$Consensus,main="Binding Site Overlaps: 'consensus', comparing between groups")

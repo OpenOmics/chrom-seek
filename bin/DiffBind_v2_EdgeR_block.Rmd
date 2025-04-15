@@ -56,7 +56,6 @@ suppressMessages(library(parallel))
 Read in sample sheet information and peak information
 ```{r samples}
 samples <- dba(sampleSheet=csvfile)
-consensus <- dba.peakset(samples, consensus=DBA_CONDITION)
 print(samples)
 ```
 
@@ -81,9 +80,12 @@ from the consensus peak set used for differential analyses.
 if (nrow(samples$samples) < 5) {
    dba.plotVenn(samples, 1:nrow(samples$samples)) 
 } else {
-   dba.plotVenn(consensus, consensus$masks$Consensus, main="Binding Site Overlaps: 'consensus', comparing between groups")
-   try(dba.plotVenn(samples,samples$masks[[3]], main="Binding Site Overlaps: samples in Group1"),silent=TRUE)
-   try(dba.plotVenn(samples,samples$masks[[4]], main="Binding Site Overlaps: samples in Group2"),silent=TRUE)
+   try(consensus <- dba.peakset(samples,consensus=DBA_CONDITION),silent=TRUE)
+   if (exists("consensus")) {
+   		dba.plotVenn(consensus,consensus$masks$Consensus,main="Binding Site Overlaps: 'consensus', comparing between groups")
+   }
+   try(dba.plotVenn(samples,samples$masks[[3]],main="Binding Site Overlaps: samples in Group1"),silent=TRUE)
+   try(dba.plotVenn(samples,samples$masks[[4]],main="Binding Site Overlaps: samples in Group2"),silent=TRUE)
 }
 ```
 
@@ -116,7 +118,7 @@ dba.plotHeatmap(DBdataCounts,main="",cexRow=1,cexCol=1)
 ## Heatmap: Average signal across each peak
 1000 most variable consensus peaks (library-size normalized counts)
 ```{r heatmap3}
-dba.plotHeatmap(DBdataCounts,correlations=FALSE,cexRow=1,cexCol=1)
+try(dba.plotHeatmap(DBdataCounts, correlations=FALSE, cexRow=1, cexCol=1), silent=TRUE)
 ```
 
 ## PCA: Peaks and reads
