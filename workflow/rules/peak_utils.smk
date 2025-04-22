@@ -17,9 +17,12 @@ tmpdir                          = config['options']['tmp_dir']
 assay                           = config['options']['assay']
 blocking                        = False if set(blocks.values()) in ({None}, {''}) else True
 block_add                       = "_block" if blocking else ""
-homer_output_targets            = ['homerMotifs.all.motifs', 'motifFindingParameters.txt', 
-                                'knownResults.txt', 'seq.autonorm.tsv', 'homerResults.html', 'knownResults.html', 'homerMotifs.motifs8'
-                                'homerMotifs.motifs10']
+homer_output_targets            = [
+                                    'homerMotifs.all.motifs', 'motifFindingParameters.txt', 
+                                    'knownResults.txt', 'seq.autonorm.tsv', 'homerResults.html', 
+                                    'knownResults.html', 'homerMotifs.motifs8',
+                                    'homerMotifs.motifs10'
+                                  ]
 
 # Directory end points
 bam_dir                         = join(workpath, "bam")
@@ -179,14 +182,6 @@ rule HOMER:
         module load homer/4.11.1
         cd ${{TMPDIR}}
         [ -d "{params.homer_genome}" ] || {{ echo "Homer does not support this genome!" >&2; exit 1; }}
-        # copy over biowulf preparse files
-        # see: https://hpc.nih.gov/apps/homer.html
-        for each in {params.homer_genome}/preparsed/*
-        do
-            base=$(basename ${{each}})
-            suffix=$(echo ${{base}} | cut -d'.' -f 2-)
-            ln -s ${{each}} "{params.genomealias}r.${{suffix}}"
-        done
         ln -s {params.genomefa} ${{TMPDIR}}/{params.genomealias}
         uppeaks=$(wc -l {input.up_file} | cut -f1 -d$' ')
         downpeaks=$(wc -l {input.down_file} | cut -f1 -d$' ')
@@ -201,10 +196,9 @@ rule HOMER:
                 {params.out_dir_up} \\
                 -preparsedDir ${{TMPDIR}} \\
                 -p {threads} \\
-                -mask \\
                 -size {params.motif_finding_region} \\
                 -len {params.seq_length}
-            tar -czf UP_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app}.tar.gz {params.out_dir_up}
+            tar -czf UP_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app}.tar.gz {params.out_dir_down}/knownResults {params.out_dir_down}/homerResults
             mv UP_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app}.tar.gz {params.out_dir_up}
             echo -e "-------- HOMER UP_GENES_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app} sample sheet --------\\n\\n"
         else
@@ -220,11 +214,10 @@ rule HOMER:
                 ${{TMPDIR}}/{params.genomealias} \\
                 {params.out_dir_down} \\
                 -preparsedDir ${{TMPDIR}} \\
-                -mask \\
                 -p {threads} \\
                 -size {params.motif_finding_region} \\
                 -len {params.seq_length}
-            tar -czf DOWN_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app}.tar.gz {params.out_dir_down}
+            tar -czf DOWN_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app}.tar.gz {params.out_dir_down}/knownResults {params.out_dir_down}/homerResults
             mv DOWN_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app}.tar.gz {params.out_dir_down}
             echo -e "-------- HOMER DOWN_GENES_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app} sample sheet --------\\n\\n"
         else
