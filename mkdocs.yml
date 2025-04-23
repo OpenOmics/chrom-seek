@@ -103,8 +103,10 @@ nav:
     - chrom-seek install: usage/install.md
     - chrom-seek cache: usage/cache.md
   - Best Practices: best_practices.md
-  - Tools: tools_software.md
+  - Tools/References: tools_software.md
   - FAQ:
     - Glossary of terms: faq/glossary.md
+    - Useful reviews: Useful_review_articles.md
+    - Input vs IgG: faq/Input_vs_IgG.md
     - General Questions: faq/questions.md
   - License: license.md
