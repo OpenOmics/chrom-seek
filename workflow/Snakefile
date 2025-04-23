@@ -95,7 +95,7 @@ if assay == "cfchip":
 elif assay in ["atac", "chip", "cutnrun"]:
     if assay in ("atac", "chip"):
         rule_all_ins.extend(expand(
-            join(homer_dir, "UP_{contrast}_{PeakTool}_{differential_app}", "homerMotifs.all.motifs"),
+            join(homer_dir, "UP_{contrast}_{PeakTool}_{differential_app}", "homer.out"),
             contrast=contrasts,
             PeakTool=PeakTools,
             differential_app=["DeSeq2", "EdgeR"],

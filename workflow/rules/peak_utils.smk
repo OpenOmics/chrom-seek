@@ -17,12 +17,6 @@ tmpdir                          = config['options']['tmp_dir']
 assay                           = config['options']['assay']
 blocking                        = False if set(blocks.values()) in ({None}, {''}) else True
 block_add                       = "_block" if blocking else ""
-homer_output_targets            = [
-                                    'homerMotifs.all.motifs', 'motifFindingParameters.txt', 
-                                    'knownResults.txt', 'seq.autonorm.tsv', 'homerResults.html', 
-                                    'knownResults.html', 'homerMotifs.motifs8',
-                                    'homerMotifs.motifs10'
-                                  ]
 
 # Directory end points
 bam_dir                         = join(workpath, "bam")
@@ -156,10 +150,8 @@ rule HOMER:
                                              "{contrast}-{PeakTool}_Diffbind" + block_add + "_{differential_app}_down.bed",
                                            ),
      output:
-         down_motifs                     = temp([join(homer_dir, "DOWN_{contrast}_{PeakTool}_{differential_app}", fn) for fn in homer_output_targets]),
-         down_motifs_gz                  = join(homer_dir, "DOWN_{contrast}_{PeakTool}_{differential_app}", "DOWN_{contrast}_{PeakTool}_{differential_app}.tar.gz"),
-         up_motifs                       = temp([join(homer_dir, "UP_{contrast}_{PeakTool}_{differential_app}", fn) for fn in homer_output_targets]),
-         up_motifs_gz                    = join(homer_dir, "UP_{contrast}_{PeakTool}_{differential_app}", "UP_{contrast}_{PeakTool}_{differential_app}.tar.gz"),
+         down_motifs                     = join(homer_dir, "DOWN_{contrast}_{PeakTool}_{differential_app}", "homer.out"),
+         up_motifs                       = join(homer_dir, "UP_{contrast}_{PeakTool}_{differential_app}", "homer.out")
      params:
          rname                           = 'HOMER',
          homer_genome                    = homer_genome,
@@ -191,38 +183,40 @@ rule HOMER:
         if [ "${{uppeaks}}" -ge ${{thres}} ]; then
             echo -e "\\n\\n-------- HOMER UP_GENES_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app} sample sheet --------"
             head ${{tmp}}/homer_up_input.bed
+            echo -e "-------- HOMER UP_GENES_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app} sample sheet --------\\n\\n"
             findMotifsGenome.pl ${{tmp}}/homer_up_input.bed \\
                 ${{TMPDIR}}/{params.genomealias} \\
                 {params.out_dir_up} \\
                 -preparsedDir ${{TMPDIR}} \\
                 -p {threads} \\
                 -size {params.motif_finding_region} \\
-                -len {params.seq_length}
-            tar -czf UP_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app}.tar.gz {params.out_dir_down}/knownResults {params.out_dir_down}/homerResults
-            mv UP_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app}.tar.gz {params.out_dir_up}
-            echo -e "-------- HOMER UP_GENES_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app} sample sheet --------\\n\\n"
+                -len {params.seq_length} | tee {output.up_motifs}
+            if [ ! -f {params.out_dir_up}/homerResults.html ]; then
+                echo "!!! Homer failed to make output"
+                exit 1
+            fi
         else
-            touch {output.up_motifs}
-            echo "Not enough peaks" >> {params.out_dir_up}/UP_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app}.tar.gz
-            echo "{input.up_file} has less than 20 peaks; Not running homer!"
+            echo -e "Not enough peaks\n" >> {output.up_motifs}
+            echo -e "{input.up_file} has less than 20 peaks; Not running homer!\n" >> {output.up_motifs}
         fi
         awk 'BEGIN {{FS="\\t"; OFS="\\t"}} {{print $4, $1, $2, $3, $6}}' {input.down_file} | sed -e 's/\./+/g' > ${{tmp}}/homer_down_input.bed
         if [ "${{downpeaks}}" -ge ${{thres}} ]; then
             echo -e "\\n\\n-------- HOMER DOWN_GENES_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app} sample sheet --------"
             head ${{tmp}}/homer_down_input.bed
+            echo -e "-------- HOMER DOWN_GENES_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app} sample sheet --------\\n\\n"
             findMotifsGenome.pl ${{tmp}}/homer_down_input.bed \\
                 ${{TMPDIR}}/{params.genomealias} \\
                 {params.out_dir_down} \\
                 -preparsedDir ${{TMPDIR}} \\
                 -p {threads} \\
                 -size {params.motif_finding_region} \\
-                -len {params.seq_length}
-            tar -czf DOWN_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app}.tar.gz {params.out_dir_down}/knownResults {params.out_dir_down}/homerResults
-            mv DOWN_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app}.tar.gz {params.out_dir_down}
-            echo -e "-------- HOMER DOWN_GENES_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app} sample sheet --------\\n\\n"
+                -len {params.seq_length} | tee {output.down_motifs}
+            if [ ! -f {params.out_dir_down}/homerResults.html ]; then
+                echo "!!! Homer failed to make output"
+                exit 1
+            fi
         else
-            touch {output.down_motifs}
-            echo "Not enough peaks" >> {params.out_dir_down}/DOWN_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app}.tar.gz
-            echo "{input.down_file} has less than 20 peaks; Not running homer!"
+            echo -e "Not enough peaks\n" >> {output.down_motifs}
+            echo -e "{input.down_file} has less than 20 peaks; Not running homer!\n" >> {output.down_motifs}
         fi
         """)
