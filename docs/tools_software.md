@@ -142,6 +142,29 @@ required for macrophage and B cell identities. Mol Cell 38(4): 576--589.</sup>
 high-throughput experiments. Ann Appl Stat 5(3): 1752-1779.</sup>  
 
 
+## Reference genome resources
+**Blacklist citation**: The ENCODE Project Consortium., Moore, J.E., Purcaro, M.J. et al. 
+Expanded encyclopaedias of DNA elements in the human and mouse genomes. Nature 583, 699–710 (2020).
+
+* hg19:  
+  - blacklist: https://www.encodeproject.org/files/ENCFF001TDO/@@download/ENCFF001TDO.bed.gz  
+* hg38:  
+  - fasta: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_28/GRCh38.p12.genome.fa.gz  
+  - gtf: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_28/gencode.v28.annotation.gtf.gz
+  - blacklist: http://mitra.stanford.edu/kundaje/akundaje/release/blacklists/hg38-human/hg38.blacklist.bed.gz  
+* mm10:  
+  - fasta: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_mouse/release_M18/GRCm38.p6.genome.fa.gz  
+  - gtf: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_mouse/release_M18/gencode.vM18.annotation.gtf.gz  
+  - blacklist: http://mitra.stanford.edu/kundaje/akundaje/release/blacklists/mm10-mouse/mm10.blacklist.bed.gz  
+* rheMac10:  
+  - chr1 example fasta: https://ftp.ensembl.org/pub/release-110/fasta/macaca_mulatta/dna/Macaca_mulatta.Mmul_10.dna.primary_assembly.1.fa.gz  
+  - gtf: https://ftp.ensembl.org/pub/release-110/gtf/macaca_mulatta/Macaca_mulatta.Mmul_10.110.chr.gtf.gz  
+
+
+
+
+
+
 ## Acknowledgements
 
 ### Biowulf
