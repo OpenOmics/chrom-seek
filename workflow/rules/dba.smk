@@ -30,6 +30,8 @@ cfTool_dir                      = join(workpath, "cfChIPtool")
 cfTool_subdir2                  = join(cfTool_dir, "BED", "H3K4me3")  
 group_combos                    = []
 blocking                        = False if set(blocks.values()) in ({None}, {''}) else True
+chip2input                      = config['project']['peaks']['inputs']
+has_inputs                      = False if set(chip2input.values()) in ({''}, {None}) else True
 block_add                       = "_block" if blocking else ""
 
 # ~~ workflow config ~~
@@ -435,9 +437,9 @@ rule diffbind_deseq_blocking:
 
 rule diffbindQC_macsN:
     input:
-        sample_bams                 = expand(join(bam_dir, "{name}.Q5DD.bam"), name=chips),
-        control_bams                = [join(bam_dir, f"{chip2input[sample_name]}.Q5DD.bam") for sample_name in chips],
-        samples_peaks               = expand(join(macsN_dir, "{name}", "{name}_peaks.narrowPeak"), name=chips)
+        sample_bams                 = expand(join(bam_dir, "{name}.Q5DD.bam"), name=chips) if chips else [],
+        control_bams                = [join(bam_dir, f"{chip2input[sample_name]}.Q5DD.bam") for sample_name in chips] if chips and has_inputs else [],
+        samples_peaks               = expand(join(macsN_dir, "{name}", "{name}_peaks.narrowPeak"), name=chips) if chips else []
     output:
         html                        = join(diffbind_qc_dir, "AllSamples-macsNarrow", "AllSamples-macsNarrow_DiffBindQC.html"),
         countsbed                   = join(diffbind_qc_dir, "AllSamples-macsNarrow", "AllSamples-macsNarrow_DiffBindQC_TMMcounts.bed"),
@@ -473,7 +475,7 @@ rule diffbindQC_macsN:
 rule diffbindQC_macsB:
     input:
         sample_bams                 = expand(join(bam_dir, "{name}.Q5DD.bam"), name=chips),
-        control_bams                = [join(bam_dir, f"{chip2input[sample_name]}.Q5DD.bam") for sample_name in chips],
+        control_bams                = [join(bam_dir, f"{chip2input[sample_name]}.Q5DD.bam") for sample_name in chips] if chips and has_inputs else [],
         samples_peaks               = expand(join(macsB_dir, "{name}", "{name}_peaks.broadPeak"), name=chips)
     output:
         html                        = join(diffbind_qc_dir, "AllSamples-macsBroad", "AllSamples-macsBroad_DiffBindQC.html"),
@@ -510,7 +512,7 @@ rule diffbindQC_macsB:
 rule diffbindQC_genrich:
     input:
         sample_bams                 = expand(join(bam_dir, "{name}.Q5DD.bam"), name=chips),
-        control_bams                = [join(bam_dir, f"{chip2input[sample_name]}.Q5DD.bam") for sample_name in chips],
+        control_bams                = [join(bam_dir, f"{chip2input[sample_name]}.Q5DD.bam") for sample_name in chips] if chips and has_inputs else [],
         samples_peaks               = expand(join(genrich_dir, "{name}", "{name}.narrowPeak"), name=chips)
     output:
         html                        = join(diffbind_qc_dir, "AllSamples-Genrich", "AllSamples-Genrich_DiffBindQC.html"),
@@ -547,7 +549,7 @@ rule diffbindQC_genrich:
 rule diffbindQC_SEACR:
     input:
         sample_bams                 = expand(join(bam_dir, "{name}.Q5DD.bam"), name=chips),
-        control_bams                = [join(bam_dir, f"{chip2input[sample_name]}.Q5DD.bam") for sample_name in chips],
+        control_bams                = [join(bam_dir, f"{chip2input[sample_name]}.Q5DD.bam") for sample_name in chips] if chips and has_inputs else [],
         samples_peaks               = expand(join(seacr_dir, "{name}.stringent.bed"), name=chips)
     output:
         html                        = join(diffbind_qc_dir, "AllSamples-SEACR", "AllSamples-SEACR_DiffBindQC.html"),

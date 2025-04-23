@@ -29,8 +29,12 @@ def main(args):
     tbl["Condition"] = list(repeat("", n))
     tbl["Replicate"] = list(repeat("1", n))
     tbl["bamReads"] = args.sample
-    tbl["ControlID"] = list(map(extract_sid, args.control))
-    tbl["bamControl"] = args.control
+    if args.control:
+        tbl["ControlID"] = list(map(extract_sid, args.control))
+        tbl["bamControl"] = args.control
+    else:
+        tbl["ControlID"] = list(repeat("", n))
+        tbl["bamControl"] = list(repeat("", n))
     tbl["Peaks"] = args.peaks
     tbl["PeakCaller"] = list(repeat(args.pktool, n))
     csv = []
@@ -82,7 +86,8 @@ if __name__ == "__main__":
         "-c",
         "--controlbams",
         dest="control",
-        nargs="+",
+        nargs="?",
+        default=None,
         help="List of the control BAM files",
     )
     parser.add_argument(

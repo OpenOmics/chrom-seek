@@ -60,9 +60,8 @@ alignment with Burrows-Wheeler Transform. Bioinformatics 25: 1754-60.
 http://bio-bwa.sourceforge.net/bwa.shtml </sup>  
 <sup>3. **Picard:** The Picard toolkit.
 https://broadinstitute.github.io/picard/</sup>  
-<sup>4. **SAMtools:** Li, H., et al. (2009). "The Sequence Alignment/Map format
-and SAMtools." Bioinformatics 25(16): 2078-2079.
-http://www.htslib.org/doc/samtools.html</sup>  
+<sup>4. **SAMtools:** Danecek, Petr et al. “Twelve years of SAMtools and BCFtools.” 
+GigaScience vol. 10,2 (2021): giab008. </sup>  
 <sup>5. **MACS:** Zhang, Y., et al. (2008). Model-based Analysis of ChIP-Seq
 (MACS). Genome Biol 9: R137. https://github.com/macs3-project/MACS</sup>  
 <sup>6. **Bedtools:** Quinlan, A.R. (2014). BEDTools: The Swiss‐Army Tool for
@@ -86,9 +85,10 @@ The pipeline includes peak calling and differential peak calling tools to identi
 | ----------------------- | :---------: | :----------------------------------------------------- |
 | MACS<sup>1</sup>        | 2.2.7.1     | **`macsNarrow`**: The macs2 caller optimized for narrow peaks, widely recognized as the most popular peak calling algorithm. Typically used in large databases, it identifies peaks within the range of 150bp to 10kb. Originally designed to handle peaks with a single maxima/summit, its false discovery rate (FDR) has been greatly improved with the addition of an "input" control. It is generally more accurate than most other peak callers, even without controls. **`macsBroad`**: The macs2 caller for slightly broader peaks, sharing a similar algorithm with macsNarrow. It is particularly useful when peaks exhibit more than one maxima/summit. |
 | Sicer<sup>2</sup>       | 2-1.0.3     | Sicer is a broad peak caller that can be highly effective for certain histone marks. However, it may not perform well for extra broad domains such as lamins or some repressive marks. It allows for a small amount of gaps between peaks, and users may need to adjust window and gap parameters for optimal results. |
-| Genrich<sup>3</sup>     | 0.6         | Designed with ATAC-seq data in mind, Genrich   can yield excellent results. However, it may not be universally favored by all collaborators due to its lack of formal publication or review. |
-| MANorm<sup>4</sup>      | 1.1.4       | Differential peak calling when no replicates. This tool has not been incorporated into the pipeline. |
-| DiffBind<sup>5,6</sup>  | 2.15.2      | Used for conducting differential peak calling analyses, this tool integrates with Deseq2 and EdgeR for analysis. Here is a [link](https://bioconductor.org/packages/release/bioc/vignettes/DiffBind/inst/doc/DiffBind.pdf) to DiffBind's documentation. |
+| Genrich<sup>3</sup>     | 0.6         | Designed with ATAC-seq data in mind, Genrich can yield excellent results. However, it may not be universally favored by all collaborators due to its lack of formal publication or review. |
+| SEACR<sup>4</sup>       | 1.3         | Peak caller for CUT & RUN or CUT & TAG only; can utilize IgG as if it was an input control |
+| MANorm<sup>5</sup>      | 1.1.4       | Differential peak calling when no replicates. This tool has not been incorporated into the pipeline. |
+| DiffBind<sup>6,7</sup>  | 2.15.2      | Used for conducting differential peak calling analyses, this tool integrates with Deseq2 and EdgeR for analysis. Here is a [link](https://bioconductor.org/packages/release/bioc/vignettes/DiffBind/inst/doc/DiffBind.pdf) to DiffBind's documentation. |
 
 **References**
 
@@ -100,15 +100,20 @@ Patterns in Embryonic Stem Cells. Methods Mol Biol 1150: 97--111.
 https://zanglab.github.io/SICER2/</sup>  
 <sup>3. **Genrich:** Gaspar,J.M. (2018) Genrich: Detecting sites of genomic
 enrichment. https://github.com/jsh58/Genrich.</sup>  
-<sup>4. **MANorm:** Shao, Z., et al. (2012). MAnorm: a robust model for
+<sup>4. **SEACR:** Meers MP, Tenenbaum D, Henikoff S. (2019). Peak calling by Sparse 
+Enrichment Analysis for CUT&RUN chromatin profiling. Epigenetics and Chromatin 12(1):42. 
+https://github.com/FredHutch/SEACR</sup>  
+<sup>5. **MANorm:** Shao, Z., et al. (2012). MAnorm: a robust model for
 quantitative comparison of ChIP-Seq data sets. Genome Biology 13: R16.
 https://manorm.readthedocs.io/en/latest/index.html</sup>  
-<sup>5. **DiffBind:** Ross-Innes C.S., et al. (2012). Differential oestrogen
+<sup>6. **DiffBind:** Ross-Innes C.S., et al. (2012). Differential oestrogen
 receptor binding is associated with clinical outcome in breast cancer.
 Nature 481: 389--393.</sup>  
-<sup>6. **DiffBind:** Stark R. and G. Brown. (2011). DiffBind: differential
+<sup>7. **DiffBind:** Stark R. and G. Brown. (2011). DiffBind: differential
 binding analysis of ChIP-Seq peak data.
 http://bioconductor.org/packages/release/bioc/vignettes/DiffBind/inst/doc/DiffBind.pdf</sup>  
+<sup>8. **Deseq2:** Love, Michael I et al. “Moderated estimation of fold change and dispersion 
+for RNA-seq data with DESeq2.” Genome biology vol. 15,12 (2014): 550.</sup>  
 
 
 ## Annotations, motifs, and QC metrics
@@ -117,7 +122,7 @@ The pipeline includes tools for peak annotation, motif calling, and quality-cont
 
 | **Tool**                | **Version** | **Notes**                                              |
 | ----------------------- | :---------: | :----------------------------------------------------- |
-| Uropa<sup>1</sup>       | 4.0.2       | Uropa is utilized for peak annotations, providing comprehensive annotation features. Here is a [link](https://uropa-manual.readthedocs.io/introduction.html) to Uropa's documentation. See the glossary for options in this pipeline. |
+| Uropa<sup>1</sup>       | 4.0.3       | Uropa is utilized for peak annotations, providing comprehensive annotation features. Here is a [link](https://uropa-manual.readthedocs.io/introduction.html) to Uropa's documentation. See the glossary for options in this pipeline. |
 | Homer<sup>2</sup>       | 4.11.1      | Homer is being used for motif calling                  |
 | MEME<sup>3</sup>        | 5.5.5       | Employed for motif analysis, the MEME suite includes MEME-ChIP for *de novo* motif discovery and AME for known motif analysis. Note that the Centrimo subcomponent of MEME-ChIP may produce inaccurate results for broad peak calling tools. Here is a [link](https://meme-suite.org/meme/index.html) to MEME suite'sdocumentation. |
 | IDR<sup>4</sup>         | 2.0.3       |  One method for identifying consensus peaks. Only works for 2 replicates. This tool is not currently in the pipeline. |
@@ -135,6 +140,25 @@ required for macrophage and B cell identities. Mol Cell 38(4): 576--589.</sup>
 43(W1):W39-W49.</sup>  
 <sup>4. **IDR:** Li Q., et al. (2011). Measuring reproducibility of
 high-throughput experiments. Ann Appl Stat 5(3): 1752-1779.</sup>  
+
+
+## Reference genome resources
+**Blacklist citation**: The ENCODE Project Consortium., Moore, J.E., Purcaro, M.J. et al. 
+Expanded encyclopaedias of DNA elements in the human and mouse genomes. Nature 583, 699–710 (2020).
+
+* hg19:  
+    - blacklist: https://www.encodeproject.org/files/ENCFF001TDO/@@download/ENCFF001TDO.bed.gz  
+* hg38:  
+    - fasta: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_28/GRCh38.p12.genome.fa.gz  
+    - gtf: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_28/gencode.v28.annotation.gtf.gz
+    - blacklist: http://mitra.stanford.edu/kundaje/akundaje/release/blacklists/hg38-human/hg38.blacklist.bed.gz  
+* mm10:  
+    - fasta: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_mouse/release_M18/GRCm38.p6.genome.fa.gz  
+    - gtf: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_mouse/release_M18/gencode.vM18.annotation.gtf.gz  
+    - blacklist: http://mitra.stanford.edu/kundaje/akundaje/release/blacklists/mm10-mouse/mm10.blacklist.bed.gz  
+* rheMac10:  
+    - chr1 example fasta: https://ftp.ensembl.org/pub/release-110/fasta/macaca_mulatta/dna/Macaca_mulatta.Mmul_10.dna.primary_assembly.1.fa.gz  
+    - gtf: https://ftp.ensembl.org/pub/release-110/gtf/macaca_mulatta/Macaca_mulatta.Mmul_10.110.chr.gtf.gz  
 
 
 ## Acknowledgements
