@@ -20,9 +20,11 @@ uropaver                        = config["tools"]["UROPAVER"]
 gtf                             = config["references"][genome]["GTFFILE"]
 chips                           = config['project']['peaks']['chips']
 
+
 ######### Output Directory preparation #########
-local_log_dir                   = join(workpath, "logfiles", "local")
 diffbind_dir2                   = join(workpath, "DiffBind_block")
+log_dir                         = join(workpath, "logfiles")
+local_log_dir                   = join(log_dir, "local")
 diffbind_dir                    = join(workpath, "DiffBind")
 diffbind_qc_dir                 = join(workpath, "DB_TABLES")
 uropa_dir                       = join(workpath, "UROPA_annotations")
@@ -39,6 +41,10 @@ chip2input                      = config['project']['peaks']['inputs']
 has_inputs                      = False if set(chip2input.values()) in ({''}, {None}) else True
 block_add                       = "_block" if blocking else ""
 blocking                        = False if set(blocks.values()) in ({None}, {""}) else True
+
+
+######## CSV generation locally executed ########
+localrules: diffbind_csv_macsN, diffbind_csv_macsB, diffbind_csv_genrich, diffbind_csv_SEACR
 
 
 ######### Diffbind binding analysis #########
@@ -75,11 +81,8 @@ rule diffbind_count:
             --peakcaller {params.this_peaktool}
         """)
 
-
+        
 ######### Diffbind input preparation #########
-localrules: diffbind_csv_macsN, diffbind_csv_macsB, diffbind_csv_genrich
-
-
 rule diffbind_csv_macsN:
     input:
         bed                            = expand(join(macsN_dir, "{name}", "{name}_peaks.narrowPeak"), name=chips)
@@ -292,8 +295,19 @@ rule diffbind_edger_blocking:
         diffbind_block_report           = join(
                                             diffbind_dir,
                                             "{contrast}-{PeakTool}",
-                                            "{contrast}-{PeakTool}_Diffbind_blocking_EdgeR.html",
+                                            "{contrast}-{PeakTool}_Diffbind_block_EdgeR.html",
                                           ),
+        up_file                         = join(
+                                            diffbind_dir,
+                                            "{contrast}-{PeakTool}",
+                                            "{contrast}-{PeakTool}_Diffbind_block_EdgeR_up.bed",
+                                          ),
+        down_file                       = join(
+                                            diffbind_dir,
+                                            "{contrast}-{PeakTool}",
+                                            "{contrast}-{PeakTool}_Diffbind_block_EdgeR_down.bed",
+                                          ),
+
         peak_list                       = join(
                                             diffbind_dir,
                                             "{contrast}-{PeakTool}",
@@ -318,7 +332,7 @@ rule diffbind_edger_blocking:
         #!/bin/bash
         Rscript -e 'rmarkdown::render("{params.blocking_rscript}", output_file="{output.diffbind_block_report}",
             params=list(csvfile="{input.csvfile}", peakcaller="{wildcards.PeakTool}", list_file="{output.peak_list}",
-            contrasts="{wildcards.contrast}", counts="{input.peak_counts}"))'
+            up_file="{output.up_file}", down_file="{output.down_file}", contrasts="{wildcards.contrast}", counts="{input.peak_counts}"))'
         EOF
 
         chmod +x ${{tmp}}/rscript.sh
@@ -411,7 +425,17 @@ rule diffbind_deseq_blocking:
         diffbind_block_report           = join(
                                             diffbind_dir,
                                             "{contrast}-{PeakTool}",
-                                            "{contrast}-{PeakTool}_Diffbind_blocking_DeSeq2.html",
+                                            "{contrast}-{PeakTool}_Diffbind_block_DeSeq2.html",
+                                          ),
+        up_file                         = join(
+                                            diffbind_dir,
+                                            "{contrast}-{PeakTool}",
+                                            "{contrast}-{PeakTool}_Diffbind_block_DeSeq2_up.bed",
+                                          ),
+        down_file                       = join(
+                                            diffbind_dir,
+                                            "{contrast}-{PeakTool}",
+                                            "{contrast}-{PeakTool}_Diffbind_block_DeSeq2_down.bed",
                                           ),
         peak_list                       = join(
                                             diffbind_dir,
@@ -436,7 +460,7 @@ rule diffbind_deseq_blocking:
         #!/bin/bash
         Rscript -e 'rmarkdown::render("{params.blocking_rscript}", output_file="{output.diffbind_block_report}", 
             params=list(csvfile="{input.csvfile}", peakcaller="{wildcards.PeakTool}", list_file="{output.peak_list}", 
-            contrasts="{wildcards.contrast}", counts="{input.peak_counts}"))'
+            up_file="{output.up_file}", down_file="{output.down_file}", contrasts="{wildcards.contrast}", counts="{input.peak_counts}"))'
         EOF
 
         chmod +x ${{tmp}}/rscript.sh
