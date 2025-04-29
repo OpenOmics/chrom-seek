@@ -171,11 +171,20 @@
         "mem": "32g",
         "threads": "2"
     },
-    "diffbindQC_SEARC": {},
+    "diffbindQC_SEACR": {
+        "threads": "4",
+        "mem": "32g",
+        "time": "04:00:00"
+    },
     "join_diffbind_uropa": {
         "mem": "32g",
         "threads": "2",
         "partition": "quick",
         "time": "04:00:00"
+    },
+    "HOMER" : {
+        "threads": "32",
+        "mem": "128g",
+        "gres": "lscratch:800"
     }
 }

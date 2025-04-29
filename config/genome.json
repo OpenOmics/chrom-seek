@@ -16,7 +16,8 @@
             "FRAC": "0.8970265870106838",
             "MEME_VERTEBRATES_DB": "/fdb/meme/motif_databases/JASPAR/JASPAR2018_CORE_vertebrates_non-redundant.meme",
             "MEME_EUKARYOTE_DB": "/fdb/meme/motif_databases/EUKARYOTE/jolma2013.meme",
-            "MEME_GENOME_DB": "/fdb/meme/motif_databases/HUMAN/HOCOMOCOv11_full_HUMAN_mono_meme_format.meme"
+            "MEME_GENOME_DB": "/fdb/meme/motif_databases/HUMAN/HOCOMOCOv11_full_HUMAN_mono_meme_format.meme",
+            "HOMER_REF": "/fdb/homer/genomes/hg19"
         },
         "hg38": {
             "ALIAS": "hg38",
@@ -34,7 +35,8 @@
             "FRAC": "0.9084767300375779",
             "MEME_VERTEBRATES_DB": "/fdb/meme/motif_databases/JASPAR/JASPAR2018_CORE_vertebrates_non-redundant.meme",
             "MEME_EUKARYOTE_DB": "/fdb/meme/motif_databases/EUKARYOTE/jolma2013.meme",
-            "MEME_GENOME_DB": "/fdb/meme/motif_databases/HUMAN/HOCOMOCOv11_full_HUMAN_mono_meme_format.meme"
+            "MEME_GENOME_DB": "/fdb/meme/motif_databases/HUMAN/HOCOMOCOv11_full_HUMAN_mono_meme_format.meme",
+            "HOMER_REF": "/fdb/homer/genomes/hg38"
         },
         "mm10": {
             "ALIAS": "mm10",
@@ -52,7 +54,8 @@
             "FRAC": "0.9053190260640642",
             "MEME_VERTEBRATES_DB": "/fdb/meme/motif_databases/JASPAR/JASPAR2018_CORE_vertebrates_non-redundant.meme",
             "MEME_EUKARYOTE_DB": "/fdb/meme/motif_databases/EUKARYOTE/jolma2013.meme",
-            "MEME_GENOME_DB": "/fdb/meme/motif_databases/MOUSE/HOCOMOCOv11_full_MOUSE_mono_meme_format.meme"
+            "MEME_GENOME_DB": "/fdb/meme/motif_databases/MOUSE/HOCOMOCOv11_full_MOUSE_mono_meme_format.meme",
+            "HOMER_REF": "/fdb/homer/genomes/mm10"
         },
         "rheMac10": {
             "ALIAS": "rheMac10",
@@ -70,7 +73,8 @@
             "FRAC": "0.9643910116868353",
             "MEME_VERTEBRATES_DB": "/fdb/meme/motif_databases/JASPAR/JASPAR2018_CORE_vertebrates_non-redundant.meme",
             "MEME_EUKARYOTE_DB": "/fdb/meme/motif_databases/EUKARYOTE/jolma2013.meme",
-            "MEME_GENOME_DB": ""
+            "MEME_GENOME_DB": "",
+            "HOMER_REF": "/fdb/homer/genomes/rheMac10"
         }
     }
 }

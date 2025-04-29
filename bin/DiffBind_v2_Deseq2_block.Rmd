@@ -15,6 +15,8 @@ params:
    contrasts: "group1_vs_group2"
    peakcaller: "macsNarrow"
    counts: ""
+   up_file: ""
+   down_file: ""
    list_file: ""
 ---
 
@@ -32,6 +34,8 @@ contrasts <- params$contrasts
 peakcaller <- params$peakcaller
 peak_counts <- params$counts
 list_file <- params$list_file
+up_file <- params$up_file
+down_file <- params$down_file
 
 # knittr configuration
 knitr::opts_chunk$set(echo = FALSE, include=TRUE, message=FALSE, warning=FALSE, error=FALSE)
@@ -137,6 +141,12 @@ All concentrations are on log2 scale.
 ```{r analyze}
 DBAnalysisDeseq2 <- dba.analyze(DBdatacontrast, method = DBA_DESEQ2)
 DBReportDeseq2 <- dba.report(DBAnalysisDeseq2, method = DBA_DESEQ2_BLOCK)
+
+UpPeaks <- DBReportDeseq2[which(DBReportDeseq2$Fold > 0)]
+rtracklayer::export(UpPeaks, up_file)
+
+DownPeaks <- DBReportDeseq2[which(DBReportDeseq2$Fold < 0)]
+rtracklayer::export(DownPeaks, down_file)
 ```
 
 ## PCA
