@@ -26,7 +26,8 @@ diffbind_dir2                   = join(workpath, "DiffBind_block")
 log_dir                         = join(workpath, "logfiles")
 local_log_dir                   = join(log_dir, "local")
 diffbind_dir                    = join(workpath, "DiffBind")
-diffbind_qc_dir                 = join(workpath, "DB_TABLES")
+peakqc_dir                      = join(workpath, "PeakQC")
+diffbind_qc_dir                 = join(peakqc_dir, "DB_QC")
 uropa_dir                       = join(workpath, "UROPA_annotations")
 uropa_diffbind_dir              = join(uropa_dir, "DiffBind")
 uropa_diffbind_join_dir         = join(workpath, "UROPA_DIFFBIND_TBLS")
@@ -617,7 +618,7 @@ rule diffbindQC_SEACR:
     input:
         sample_bams                 = expand(join(bam_dir, "{name}.Q5DD.bam"), name=chips),
         control_bams                = [join(bam_dir, f"{chip2input[sample_name]}.Q5DD.bam") for sample_name in chips] if chips and has_inputs else [],
-        samples_peaks               = expand(join(seacr_dir, "{name}.stringent.bed"), name=chips)
+        samples_peaks               = expand(join(seacr_dir, "{name}", "{name}.stringent.bed"), name=chips)
     output:
         html                        = join(diffbind_qc_dir, "AllSamples-SEACR", "AllSamples-SEACR_DiffBindQC.html"),
         countsbed                   = join(diffbind_qc_dir, "AllSamples-SEACR", "AllSamples-SEACR_DiffBindQC_TMMcounts.bed"),

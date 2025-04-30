@@ -57,9 +57,7 @@ def get_peaktools(assay_type):
     if assay_type == "atac":
         tools.append("Genrich")
     elif assay_type == "chip":
-        tools.append("macsBroad")
-        # turn sicer off for now
-        # tools.extend(["macsBroad", "sicer"])
+        tools.extend(["macsBroad", "Genrich", "SEACR"])
     elif assay_type == "cutnrun":
         tools.append("SEACR")
     return tools

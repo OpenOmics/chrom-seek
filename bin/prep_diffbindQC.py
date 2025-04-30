@@ -19,6 +19,21 @@ def valid_json(path):
     with open(path, "r") as file:
         data = json.load(file)
         return data
+    
+
+def sids2group(sids, group):
+    n = len(sids)
+    if group is None:
+        return repeat("", n)
+    out_groups = []
+    for sid in sids:
+        this_group = ""
+        for _group, samples in group.items():
+            if sid in samples:
+                this_group = _group
+                break
+        out_groups.append(this_group)
+    return out_groups
 
 
 def main(args):
@@ -36,7 +51,7 @@ def main(args):
     ]
     tbl = {}
     tbl["SampleID"] = list(map(extract_sid, args.sample))
-    tbl["Condition"] = list(repeat("", n))
+    tbl["Condition"] = sids2group(args.sample, args.groups)
     tbl["Replicate"] = list(repeat("1", n))
     tbl["bamReads"] = args.sample
     if args.control:
@@ -109,6 +124,7 @@ if __name__ == "__main__":
         dest="groups",
         type=valid_json,
         help="JSON file of group mappings",
+        default=None,
         required=False,
     )
     main(parser.parse_args())

@@ -11,7 +11,6 @@ workpath                        = config['project']['workpath']
 uropa_dir                       = join(workpath, "UROPA_annotations")
 uropa_diffbind_dir              = join(uropa_dir, "DiffBind")
 diffbind_dir                    = join(workpath, "DiffBind")
-dba_anno_path                   = join(workpath, 'dba_annotations')
 
 
 rule UROPA_prep_diffbind_edgeR:
@@ -115,43 +114,6 @@ rule UROPA_diffbind:
                 -p {params.uropa_prefix} \\
                 -t {threads} -s
             """)
-
-rule rename_edger_dba_uropa:
-    input:
-        allhits_txt                     = join(uropa_diffbind_dir, 
-                                               "{group1}_vs_{group2}-{PeakTool}-EdgeR", 
-                                               "{group1}_vs_{group2}_{PeakTool}_EdgeR_{_type}_uropa_allhits.txt"),
-        allhits_bed                     = join(uropa_diffbind_dir, 
-                                               "{group1}_vs_{group2}-{PeakTool}-EdgeR", 
-                                               "{group1}_vs_{group2}_{PeakTool}_EdgeR_{_type}_uropa_allhits.bed"),
-        finalhits_txt                   = join(uropa_diffbind_dir, 
-                                               "{group1}_vs_{group2}-{PeakTool}-EdgeR", 
-                                               "{group1}_vs_{group2}_{PeakTool}_EdgeR_{_type}_uropa_finalhits.txt"),
-        finalhits_bed                   = join(uropa_diffbind_dir, 
-                                                "{group1}_vs_{group2}-{PeakTool}-EdgeR", 
-                                                "{group1}_vs_{group2}_{PeakTool}_EdgeR_{_type}_uropa_finalhits.bed"),
-        summary                         = join(uropa_diffbind_dir, 
-                                                "{group1}_vs_{group2}-{PeakTool}-EdgeR", 
-                                                "{group1}_vs_{group2}_{PeakTool}_EdgeR_{_type}_uropa_summary.pdf"),
-        json                            = join(uropa_diffbind_dir, 
-                                                "{group1}_vs_{group2}-{PeakTool}-EdgeR", 
-                                                "{group1}_vs_{group2}_{PeakTool}_EdgeR_{_type}_uropa.json"),
-    output:
-        allhits_txt                     = join(dba_anno_path, "{group1}_vs_{group2}_{PeakTool}_{_type}_uropa_allhits.txt"),
-        allhits_bed                     = join(dba_anno_path, "{group1}_vs_{group2}_{PeakTool}_{_type}_allhits.bed"),
-        finalhits_txt                   = join(dba_anno_path, "{group1}_vs_{group2}_{PeakTool}_{_type}_finalhits.txt"),
-        finalhits_bed                   = join(dba_anno_path, "{group1}_vs_{group2}_{PeakTool}_{_type}_finalhits.bed"),
-        summary                         = join(dba_anno_path, "{group1}_vs_{group2}_{PeakTool}_{_type}_summary.pdf"),
-        json                            = join(dba_anno_path, "{group1}_vs_{group2}_{PeakTool}_{_type}.json")
-    shell:
-        """
-        cp {input.allhits_txt} {output.allhits_txt}
-        cp {input.allhits_bed} {output.allhits_bed}
-        cp {input.finalhits_txt} {output.finalhits_txt}
-        cp {input.finalhits_bed} {output.finalhits_bed}
-        cp {input.summary} {output.summary}
-        cp {input.json} {output.json}
-        """
 
 
 # ~~ macs Narrow peak annotation  ~~ #

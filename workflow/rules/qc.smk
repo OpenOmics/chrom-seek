@@ -415,7 +415,7 @@ rule FRiP_macsB:
 
 rule FRiP_SEACR:
     input:
-        peaks                   = expand(join(seacr_dir, "{SID}.stringent.bed"), SID=chips),
+        peaks                   = expand(join(seacr_dir, "{SID}", "{SID}.stringent.bed"), SID=chips),
         bam                     = join(bam_dir, "{name}.Q5DD.bam"),
     output:
         join(peakqc_dir, "SEACR", "SEACR.{name}.Q5DD.FRiP_table.txt"),
