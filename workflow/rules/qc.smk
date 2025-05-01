@@ -24,6 +24,9 @@ extra_fingerprint_dir           = join(deeptools_dir, 'sorted_fingerprint')
 tmpdir                          = config['options']['tmp_dir']
 
 
+localrules: jaccard_genrich, jaccard_macsbroad, jaccard_macsbroad, jaccard_seacr
+
+
 rule preseq:
     """
     Quality step to estimate library complexity. Low library complexity may indicate
@@ -319,10 +322,10 @@ rule deeptools_gene_all:
 
 rule FRiP_macsN:
     input:
-        peaks                   = expand(join(macsN_dir, "{SID}", "{SID}_peaks.narrowPeak"), SID=chips),
+        peaks                   = join(macsN_dir, "{name}", "{name}_peaks.narrowPeak"),
         bam                     = join(bam_dir, "{name}.Q5DD.bam"),
     output:
-        join(peakqc_dir, "macsNarrow", "macsNarrow.{name}.Q5DD.FRiP_table.txt"),
+        join(peakqc_dir, "FRiP", "macsNarrow", "macsNarrow.{name}.Q5DD.FRiP_table.txt"),
     params:
         rname                   = "FRiP_macsN",
         script                  = join(bin_path, "frip.py"),
@@ -351,10 +354,10 @@ rule FRiP_macsN:
 
 rule FRiP_Genrich:
     input:
-        peaks                   = expand(join(genrich_dir, "{SID}", "{SID}.narrowPeak"), SID=chips),
+        peaks                   = join(genrich_dir, "{name}", "{name}.narrowPeak"),
         bam                     = join(bam_dir, "{name}.Q5DD.bam"),
     output:
-        join(peakqc_dir, "Genrich", "Genrich.{name}.Q5DD.FRiP_table.txt"),
+        join(peakqc_dir, "FRiP", "Genrich", "Genrich.{name}.Q5DD.FRiP_table.txt"),
     params:
         rname                   = "FRiP_Genrich",
         script                  = join(bin_path, "frip.py"),
@@ -383,10 +386,10 @@ rule FRiP_Genrich:
 
 rule FRiP_macsB:
     input:
-        peaks                   = expand(join(macsB_dir, "{SID}", "{SID}_peaks.broadPeak"), SID=chips),
+        peaks                   = join(macsB_dir, "{name}", "{name}_peaks.broadPeak"),
         bam                     = join(bam_dir, "{name}.Q5DD.bam"),
     output:
-        join(peakqc_dir, "macsBroad", "macsBroad.{name}.Q5DD.FRiP_table.txt"),
+        join(peakqc_dir, "FRiP", "macsBroad", "macsBroad.{name}.Q5DD.FRiP_table.txt"),
     params:
         rname                   = "FRiP_macsB",
         script                  = join(bin_path, "frip.py"),
@@ -415,10 +418,10 @@ rule FRiP_macsB:
 
 rule FRiP_SEACR:
     input:
-        peaks                   = expand(join(seacr_dir, "{SID}", "{SID}.stringent.bed"), SID=chips),
+        peaks                   = join(seacr_dir, "{name}", "{name}.stringent.bed"),
         bam                     = join(bam_dir, "{name}.Q5DD.bam"),
     output:
-        join(peakqc_dir, "SEACR", "SEACR.{name}.Q5DD.FRiP_table.txt"),
+        join(peakqc_dir, "FRiP", "SEACR", "SEACR.{name}.Q5DD.FRiP_table.txt"),
     params:
         rname                   = "FRiP_SEACR",
         script                  = join(bin_path, "frip.py"),
@@ -445,14 +448,16 @@ rule FRiP_SEACR:
         """
 
 
-rule jaccard:
+rule jaccard_genrich:
     input:
-        lambda w: [ join(workpath, w.PeakTool, chip, chip + PeakExtensions[w.PeakTool]) for chip in chips ],
+        expand(join(genrich_dir, "{SID}", "{SID}.narrowPeak"), SID=chips),
     output:
-        join(qc_dir, '{PeakTool}_jaccard.txt'),
+        table                   = join(peakqc_dir, "jaccard", 'Genrich_jaccard.txt'),
+        pca                     = join(peakqc_dir, "jaccard", 'Genrich_jaccard_pca.pdf'),
+        heatmap                 = join(peakqc_dir, "jaccard", 'Genrich_jaccard_heatmap.pdf'),
     params:
-        rname                   = "jaccard",
-        outroot                 = lambda w: join(qc_dir, w.PeakTool),
+        rname                   = "jaccard_genrich",
+        outroot                 = join(peakqc_dir, "jaccard"),
         script                  = join(bin_path, "jaccard_score.py"),
         genome                  = config['references'][genome]['REFLEN']
     envmodules:
@@ -461,6 +466,83 @@ rule jaccard:
         """
         python {params.script} \\
             -i "{input}" \\
-            -o "{params.outroot}" \\
+            --outtable {output.table} \\
+            --outpca {output.pca} \\
+            --outheatmap {output.heatmap} \\ 
+            -g {params.genome}
+        """
+
+
+rule jaccard_macsbroad:
+    input:
+        expand(join(macsB_dir, "{SID}", "{SID}_peaks.broadPeak"), SID=chips),
+    output:
+        table                   = join(peakqc_dir, "jaccard", 'macsBroad_jaccard.txt'),
+        pca                     = join(peakqc_dir, "jaccard", 'macsBroad_jaccard_pca.pdf'),
+        heatmap                 = join(peakqc_dir, "jaccard", 'macsBroad_jaccard_heatmap.pdf'),
+    params:
+        rname                   = "jaccard_macsbroad",
+        outroot                 = join(peakqc_dir, "jaccard"),
+        script                  = join(bin_path, "jaccard_score.py"),
+        genome                  = config['references'][genome]['REFLEN']
+    envmodules:
+        config['tools']['BEDTOOLSVER']
+    shell: 
+        """
+        python {params.script} \\
+            -i "{input}" \\
+            --outtable {output.table} \\
+            --outpca {output.pca} \\
+            --outheatmap {output.heatmap} \\ 
+            -g {params.genome}
+        """
+
+
+rule jaccard_macsnarrow:
+    input:
+        expand(join(macsN_dir, "{SID}", "{SID}_peaks.narrowPeak"), SID=chips),
+    output:
+        table                   = join(peakqc_dir, "jaccard", 'macsNarrow_jaccard.txt'),
+        pca                     = join(peakqc_dir, "jaccard", 'macsNarrow_jaccard_pca.pdf'),
+        heatmap                 = join(peakqc_dir, "jaccard", 'macsNarrow_jaccard_heatmap.pdf'),
+    params:
+        rname                   = "jaccard_macsnarrow",
+        outroot                 = join(peakqc_dir, "jaccard"),
+        script                  = join(bin_path, "jaccard_score.py"),
+        genome                  = config['references'][genome]['REFLEN']
+    envmodules:
+        config['tools']['BEDTOOLSVER']
+    shell: 
+        """
+        python {params.script} \\
+            -i "{input}" \\
+            --outtable {output.table} \\
+            --outpca {output.pca} \\
+            --outheatmap {output.heatmap} \\ 
+            -g {params.genome}
+        """
+
+
+rule jaccard_seacr:
+    input:
+        expand(join(seacr_dir, "{SID}", "{SID}.stringent.bed"), SID=chips),
+    output:
+        table                   = join(peakqc_dir, "jaccard", 'SEACR_jaccard.txt'),
+        pca                     = join(peakqc_dir, "jaccard", 'SEACR_jaccard_pca.pdf'),
+        heatmap                 = join(peakqc_dir, "jaccard", 'SEACR_jaccard_heatmap.pdf'),
+    params:
+        rname                   = "jaccard_seacr",
+        outroot                 = join(peakqc_dir, "jaccard"),
+        script                  = join(bin_path, "jaccard_score.py"),
+        genome                  = config['references'][genome]['REFLEN']
+    envmodules:
+        config['tools']['BEDTOOLSVER']
+    shell: 
+        """
+        python {params.script} \\
+            -i "{input}" \\
+            --outtable {output.table} \\
+            --outpca {output.pca} \\
+            --outheatmap {output.heatmap} \\ 
             -g {params.genome}
         """

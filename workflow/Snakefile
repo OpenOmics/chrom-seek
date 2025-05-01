@@ -104,9 +104,11 @@ else:
         ))
     # macsNarrow
     rule_all_ins.extend(expand(join(macsN_dir, "{name}", "{name}_peaks.narrowPeak"), name=chips))
+    rule_all_ins.append(join(peakqc_dir, "jaccard", 'macsNarrow_jaccard.txt'))
     if assay == "chip":
         # macsBroad
         rule_all_ins.extend(expand(join(macsB_dir, "{name}", "{name}_peaks.broadPeak"), name=chips))
+        rule_all_ins.append(join(peakqc_dir, "jaccard", 'macsBroad_jaccard.txt'))
         rule_all_ins.extend(expand(
             join(uropa_dir, "{application}", "{name}_uropa_{_type}_allhits.txt"), 
             name=chips,
@@ -115,11 +117,13 @@ else:
         ))
     if assay in ("chip", "cutnrun"):
         # SEACR
+        rule_all_ins.append(join(peakqc_dir, "jaccard", 'SEACR_jaccard.txt'))
         rule_all_ins.extend(expand(
             join(seacr_dir, "{name}", "{name}.stringent.bed"), name=chips
         ))
     if assay in ("atac", "chip"):
         # Genrich
+        rule_all_ins.append(join(peakqc_dir, "jaccard", "Genrich_jaccard.txt"))
         rule_all_ins.extend(expand(
             join(genrich_dir, "{name}", "{name}.narrowPeak"), name=chips
         ))
@@ -144,7 +148,7 @@ rule_all_ins.append(expand(
 rule_all_ins.append(join(workpath, "multiqc_report.html"))
 rule_all_ins.extend(expand(join(qc_dir, "{name}.preseq.dat"), name=samples))
 rule_all_ins.extend(
-    expand(join(peakqc_dir, "{PeakTool}", "{PeakTool}.{name}.Q5DD.FRiP_table.txt"), 
+    expand(join(peakqc_dir, "FRiP", "{PeakTool}", "{PeakTool}.{name}.Q5DD.FRiP_table.txt"), 
     PeakTool=PeakTools, 
     name=chips)
 )

@@ -85,21 +85,6 @@ def get_colnames(infileList, filetypeList):
         colnames = [ snames[i] + "_" + filetypeList[i] for i in range(len(snames)) ]
     return(colnames, snames)
 
-def create_outfile_names(outroot):
-    """ uses outroot to create the output file names """
-    outTableFile = "jaccard.txt"
-    outPCAFile = "jaccard_PCA.pdf"
-    outHeatmapFile = "jaccard_heatmap.pdf"
-    if outroot != "":
-        if outroot[-1] == "/":
-            outTableFile= outroot + outTableFile
-            outPCAFile = outroot + outPCAFile
-            outHeatmapFile = outroot + outHeatmapFile
-        else:
-            outTableFile= outroot + "_" + outTableFile
-            outPCAFile = outroot + "." + outPCAFile
-            outHeatmapFile = outroot + "." + outHeatmapFile
-    return(outTableFile, outPCAFile, outHeatmapFile)
 
 def pca_plot(out, filetypeList, snames, outPCAFile):
     """ creates a 2D PCA plot comparing the files based upon jaccard scores
@@ -178,20 +163,22 @@ def main():
 input files for analysis.')
     parser.add_option('-t', dest='filetypes', default='', help='A space- or semicolon-delimited list \
 of input file sources/types.')
-    parser.add_option('-o', dest='outroot', default='', help='The root name of the output files \
-where all the jaccard score information will be saved.')
+    parser.add_option('-ot', '--outtable', dest='table', default='', help='')
+    parser.add_option('-op', '--outpca', dest='pca', default='', help='')
+    parser.add_option('-oh', '--outheatmap', dest='heatmap', default='', help='')
     parser.add_option('-g', dest='genomefile', default='', help='The name of the .genome file.')
 
     (options,args) = parser.parse_args()
     infiles = options.infiles
     filetypes = options.filetypes
-    outroot = options.outroot
     genomefile = options.genomefile
 
     infileList = split_infiles(infiles)
     filetypeList = split_infiles(filetypes)
     (outTable, out, snames) = loop_jaccard(infileList, genomefile, filetypeList)
-    (outTableFile, outPCAFile, outHeatmapFile) = create_outfile_names(outroot)
+    outTableFile = options.table
+    outPCAFile = options.pca
+    outHeatmapFile = options.heatmap
     write_out(outTable, outTableFile)
     pca_plot(out, filetypeList, snames, outPCAFile)
     plot_heatmap(out, outHeatmapFile, snames, filetypeList)

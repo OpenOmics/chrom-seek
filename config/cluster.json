@@ -187,12 +187,6 @@
         "mem": "32g",
         "threads": "2"
     },
-    "diffbindQC_SEACR": {
-        "threads": "4",
-        "mem": "32g",
-        "time": "04:00:00"
-    },
-
     "join_diffbind_uropa": {
         "mem": "32g",
         "threads": "2",

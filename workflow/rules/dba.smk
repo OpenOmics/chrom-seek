@@ -40,7 +40,6 @@ group_combos                    = []
 blocking                        = False if set(blocks.values()) in ({None}, {''}) else True
 chip2input                      = config['project']['peaks']['inputs']
 has_inputs                      = False if set(chip2input.values()) in ({''}, {None}) else True
-block_add                       = "_block" if blocking else ""
 blocking                        = False if set(blocks.values()) in ({None}, {""}) else True
 
 
@@ -643,7 +642,7 @@ rule diffbindQC_SEACR:
         echo "{params.groups}" | python -m json.tool >> ${{tmp}}/groups.json
         grp="";
         if [ -s "${{tmp}}/groups.json" ]; then
-            grp="-g ${{tmp}}/groups.json";
+            grp="-g ${{tmp}}/groups.json ";
         fi
         {params.pythonscript} \\
             -p {input.samples_peaks} \\
@@ -671,7 +670,7 @@ rule join_diffbind_uropa:
         peak_list                       = join(
                                             diffbind_dir,
                                             "{contrast}-{PeakTool}",
-                                            "{contrast}-{PeakTool}_Diffbind" + block_add + "_{differential_app}_peak_list.tab",
+                                            "{contrast}-{PeakTool}_Diffbind_{differential_app}_peak_list.tab",
                                           ),
     output:
         joined_tbl                      = join(
