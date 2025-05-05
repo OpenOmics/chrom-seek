@@ -641,9 +641,8 @@ rule diffbindQC_SEACR:
         trap 'rm -rf "${{tmp}}"' EXIT
         echo "{params.groups}" | python -m json.tool >> ${{tmp}}/groups.json
         grp="";
-        if [ -s "${{tmp}}/groups.json" ]; then
-            grp="-g ${{tmp}}/groups.json ";
-        fi
+        if [ -s ${{tmp}}/groups.json ]; then grp="-g ${{tmp}}/groups.json "; fi
+        echo $grp
         {params.pythonscript} \\
             -p {input.samples_peaks} \\
             -t {params.peak_type} \\

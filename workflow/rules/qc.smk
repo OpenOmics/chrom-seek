@@ -24,9 +24,6 @@ extra_fingerprint_dir           = join(deeptools_dir, 'sorted_fingerprint')
 tmpdir                          = config['options']['tmp_dir']
 
 
-localrules: jaccard_genrich, jaccard_macsbroad, jaccard_macsbroad, jaccard_seacr
-
-
 rule preseq:
     """
     Quality step to estimate library complexity. Low library complexity may indicate
@@ -460,17 +457,17 @@ rule jaccard_genrich:
         outroot                 = join(peakqc_dir, "jaccard"),
         script                  = join(bin_path, "jaccard_score.py"),
         genome                  = config['references'][genome]['REFLEN']
-    envmodules:
-        config['tools']['BEDTOOLSVER']
+    container: 
+        config['images']['python']
     shell: 
-        """
+        dedent("""
         python {params.script} \\
             -i "{input}" \\
             --outtable {output.table} \\
             --outpca {output.pca} \\
-            --outheatmap {output.heatmap} \\ 
+            --outheatmap {output.heatmap} \\
             -g {params.genome}
-        """
+        """)
 
 
 rule jaccard_macsbroad:
@@ -485,17 +482,17 @@ rule jaccard_macsbroad:
         outroot                 = join(peakqc_dir, "jaccard"),
         script                  = join(bin_path, "jaccard_score.py"),
         genome                  = config['references'][genome]['REFLEN']
-    envmodules:
-        config['tools']['BEDTOOLSVER']
+    container: 
+        config['images']['python']
     shell: 
-        """
+        dedent("""
         python {params.script} \\
             -i "{input}" \\
             --outtable {output.table} \\
             --outpca {output.pca} \\
-            --outheatmap {output.heatmap} \\ 
+            --outheatmap {output.heatmap} \\
             -g {params.genome}
-        """
+        """)
 
 
 rule jaccard_macsnarrow:
@@ -510,17 +507,17 @@ rule jaccard_macsnarrow:
         outroot                 = join(peakqc_dir, "jaccard"),
         script                  = join(bin_path, "jaccard_score.py"),
         genome                  = config['references'][genome]['REFLEN']
-    envmodules:
-        config['tools']['BEDTOOLSVER']
+    container: 
+        config['images']['python']
     shell: 
-        """
+        dedent("""
         python {params.script} \\
             -i "{input}" \\
             --outtable {output.table} \\
             --outpca {output.pca} \\
-            --outheatmap {output.heatmap} \\ 
+            --outheatmap {output.heatmap} \\
             -g {params.genome}
-        """
+        """)
 
 
 rule jaccard_seacr:
@@ -535,14 +532,14 @@ rule jaccard_seacr:
         outroot                 = join(peakqc_dir, "jaccard"),
         script                  = join(bin_path, "jaccard_score.py"),
         genome                  = config['references'][genome]['REFLEN']
-    envmodules:
-        config['tools']['BEDTOOLSVER']
+    container: 
+        config['images']['python']
     shell: 
-        """
+        dedent("""
         python {params.script} \\
             -i "{input}" \\
             --outtable {output.table} \\
             --outpca {output.pca} \\
-            --outheatmap {output.heatmap} \\ 
+            --outheatmap {output.heatmap} \\
             -g {params.genome}
-        """
+        """)

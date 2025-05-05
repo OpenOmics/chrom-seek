@@ -51,7 +51,7 @@ def main(args):
     ]
     tbl = {}
     tbl["SampleID"] = list(map(extract_sid, args.sample))
-    tbl["Condition"] = sids2group(args.sample, args.groups)
+    tbl["Condition"] = sids2group(tbl["SampleID"], args.groups)
     tbl["Replicate"] = list(repeat("1", n))
     tbl["bamReads"] = args.sample
     if args.control:

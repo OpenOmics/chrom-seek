@@ -14,17 +14,21 @@ single tab-delimited file.
 ##########################################
 # Modules
 import optparse
-from pybedtools import BedTool
 import pandas as pd
-from sklearn.decomposition import PCA as sklearnPCA
-import matplotlib as mpl
-mpl.use('Agg')
 import matplotlib.pyplot as plt
 import seaborn as sns
+import matplotlib as mpl
+from textwrap import dedent
+from pybedtools import BedTool
+from sklearn.decomposition import PCA as sklearnPCA
+
+
+# matplotlib
+mpl.use('Agg')
+
 
 ##########################################
 # Functions
-
 def split_infiles(infiles):
     """ breaks the infile string with space-delimited file names and creates a list.
     also works for infile types
@@ -33,6 +37,7 @@ def split_infiles(infiles):
     if len(infileList) == 1:
         infileList = infileList[0].split(";")
     return(infileList)
+
 
 def loop_jaccard(infileList, genomefile, filetypeList):
     """ Uses two loops to do all possible pairwise comparisons of files 
@@ -59,7 +64,8 @@ def loop_jaccard(infileList, genomefile, filetypeList):
                 outTable.append( "\t".join(keylist) )
             outTable.append( "\t".join(data) )
         out2 = pd.DataFrame(out, columns=colnames, index=colnames,dtype="float")
-    return(outTable, out2, snames)
+    return (outTable, out2, snames)
+
 
 def run_jaccard(fileA, fileB, genomefile):
     """ Running bedtools. Reads in two bedtools approved file types, sorts the files, 
@@ -75,7 +81,8 @@ def run_jaccard(fileA, fileB, genomefile):
     keylist = list(j.keys())
     keylist.sort()
     data = [ str(j[key]) for key in keylist ]
-    return(data, keylist)
+    return (data, keylist)
+
 
 def get_colnames(infileList, filetypeList):
     snames = [ i.split("/")[-1].split(".")[0].strip("_peaks").strip("_broadpeaks") for i in infileList ]
@@ -83,11 +90,12 @@ def get_colnames(infileList, filetypeList):
         colnames = snames
     else:
         colnames = [ snames[i] + "_" + filetypeList[i] for i in range(len(snames)) ]
-    return(colnames, snames)
+    return (colnames, snames)
 
 
 def pca_plot(out, filetypeList, snames, outPCAFile):
-    """ creates a 2D PCA plot comparing the files based upon jaccard scores
+    """
+    creates a 2D PCA plot comparing the files based upon jaccard scores
     """
     sklearn_pca = sklearnPCA(n_components=2)
     Y_sklearn = sklearn_pca.fit_transform(out)
@@ -106,9 +114,10 @@ def pca_plot(out, filetypeList, snames, outPCAFile):
     ax.set(xlabel= "PC1 (" + str(round(100*sklearn_pca.explained_variance_[0],2)) + "%)",
            ylabel= "PC2 (" + str(round(100*sklearn_pca.explained_variance_[1],2)) + "%)")
     plt.legend(bbox_to_anchor=(1.05, 1), loc=2)
-    #plt.show()
     plt.savefig(outPCAFile, bbox_inches='tight')
     plt.close("all")
+    return
+
 
 def plot_heatmap(out, outHeatmapFile, snames, filetypeList):
     snames_pal = sns.hls_palette(len(set(snames)),s=.8)
@@ -139,33 +148,36 @@ def plot_heatmap(out, outHeatmapFile, snames, filetypeList):
     #plt.show()
     plt.savefig(outHeatmapFile, bbox_inches='tight')
     plt.close("all")
+    return
+
 
 def write_out(out, outFile):
     f = open(outFile, 'w')
     f.write( "\n".join(out) )
     f.close()
+    return 
+
 
 ##########################################
 # Main
-
 def main():
-    desc="""
+    desc=\
+    dedent("""
     This function takes a space-delimited list of files (bed, bedgraph, gff, gtf, etc.)
     and calculates all possible pairwise jaccard scores. From bedtools: 'Jaccard is the 
     length of the intersection over the union. Values range from 0 (no intersection) to 
     1 (self intersection)'. The columns of the output file are: fileA, fileB, 
     intersection, jaccard, n_intersections, and union-intersection.
-    """
+    """)
 
     parser = optparse.OptionParser(description=desc)
-
-    parser.add_option('-i', dest='infiles', default='', help='A space- or semicolon-delimited list of \
-input files for analysis.')
-    parser.add_option('-t', dest='filetypes', default='', help='A space- or semicolon-delimited list \
-of input file sources/types.')
-    parser.add_option('-ot', '--outtable', dest='table', default='', help='')
-    parser.add_option('-op', '--outpca', dest='pca', default='', help='')
-    parser.add_option('-oh', '--outheatmap', dest='heatmap', default='', help='')
+    parser.add_option('-i', dest='infiles', default='', help="A space- or semicolon-delimited list of" +
+    "input files for analysis.")
+    parser.add_option('-t', dest='filetypes', default='', help="A space- or semicolon-delimited list" +
+    "of input file sources/types.")
+    parser.add_option('--ot', '--outtable', dest='table', default='', help='')
+    parser.add_option('--op', '--outpca', dest='pca', default='', help='')
+    parser.add_option('--oh', '--outheatmap', dest='heatmap', default='', help='')
     parser.add_option('-g', dest='genomefile', default='', help='The name of the .genome file.')
 
     (options,args) = parser.parse_args()
