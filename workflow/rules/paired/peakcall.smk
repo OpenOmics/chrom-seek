@@ -7,7 +7,7 @@ workpath                        = config['project']['workpath']
 bin_path                        = config['project']['binpath']
 genome                          = config['options']['genome']
 tmpdir                          = config['options']['tmp_dir']
-seacr_dir                       = join(workpath, "seacr")
+seacr_dir                       = join(workpath, "SEACR")
 bg_dir                          = join(workpath, "bedgraph")
 
 
@@ -208,10 +208,10 @@ rule SEACR:
         control                         = lambda w: join(bg_dir, f"{chip2input[w.name]}.bedgraph")
                                             if chip2input[w.name] else [],
     output:
-        peaks                           = join(seacr_dir, "{name}.stringent.bed")
+        peaks                           = join(seacr_dir, "{name}", "{name}.stringent.bed")
     params:
         rname                           = 'SEACR',
-        out_dir                         = seacr_dir,
+        out_dir                         = join(seacr_dir, "{name}"),
         control_flag                    = lambda w, input: input.control if input.control else "0.01",
     container:
         config['images']['seacr']

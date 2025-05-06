@@ -103,9 +103,25 @@
         "threads": "4",
         "mem": "50g"
     },
-    "diffbindQC": {
-        "threads": "16",
-        "mem": "150g"
+    "diffbindQC_macsN": {
+        "threads": "12",
+        "mem": "32g",
+        "gres": "lscratch:400"
+    },
+    "diffbindQC_macsB": {
+        "threads": "12",
+        "mem": "32g",
+        "gres": "lscratch:400"
+    },
+    "diffbindQC_genrich": {
+        "threads": "12",
+        "mem": "32g",
+        "gres": "lscratch:400"
+    },
+    "diffbindQC_SEACR": {
+        "threads": "12",
+        "mem": "32g",
+        "gres": "lscratch:400"
     },
     "diffbind_deseq": {
         "threads": "16",
@@ -171,11 +187,6 @@
         "mem": "32g",
         "threads": "2"
     },
-    "diffbindQC_SEACR": {
-        "threads": "4",
-        "mem": "32g",
-        "time": "04:00:00"
-    },
     "join_diffbind_uropa": {
         "mem": "32g",
         "threads": "2",
@@ -186,5 +197,25 @@
         "threads": "32",
         "mem": "128g",
         "gres": "lscratch:800"
+    },
+    "jaccard_genrich": {
+        "threads": "4",
+        "mem": "32g",
+        "gres": "lscratch:100"
+    },
+    "jaccard_macsbroad": {
+        "threads": "4",
+        "mem": "32g",
+        "gres": "lscratch:100"
+    },
+    "jaccard_macsnarrow": {
+        "threads": "4",
+        "mem": "32g",
+        "gres": "lscratch:100"
+    },
+    "jaccard_seacr": {
+        "threads": "4",
+        "mem": "32g",
+        "gres": "lscratch:100"
     }
 }

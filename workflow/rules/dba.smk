@@ -1,13 +1,15 @@
+import json
 from os.path import join
 from textwrap import dedent
 from itertools import combinations
+from shlex import quote
 from scripts.common import allocated, mk_dir_if_not_exist
 from scripts.peakcall import outputIDR, zip_peak_files, \
     calc_effective_genome_fraction, get_manorm_sizes
 from scripts.grouping import test_for_block
 
 
-# ~~ workflow configuration & directories ~~
+######### workflow configuration value mapping #########
 workpath                        = config["project"]["workpath"]
 bin_path                        = config["project"]["binpath"]
 genome                          = config["options"]["genome"]
@@ -17,33 +19,35 @@ contrast                        = config["project"]["contrast"]
 uropaver                        = config["tools"]["UROPAVER"]
 gtf                             = config["references"][genome]["GTFFILE"]
 chips                           = config['project']['peaks']['chips']
+
+
+######### Output Directory preparation #########
+diffbind_dir2                   = join(workpath, "DiffBind_block")
 log_dir                         = join(workpath, "logfiles")
 local_log_dir                   = join(log_dir, "local")
 diffbind_dir                    = join(workpath, "DiffBind")
-diffbind_qc_dir                 = join(workpath, "DB_TABLES")
+peakqc_dir                      = join(workpath, "PeakQC")
+diffbind_qc_dir                 = join(peakqc_dir, "DB_QC")
 uropa_dir                       = join(workpath, "UROPA_annotations")
 uropa_diffbind_dir              = join(uropa_dir, "DiffBind")
 uropa_diffbind_join_dir         = join(workpath, "UROPA_DIFFBIND_TBLS")
 bam_dir                         = join(workpath, "bam")
-otherDirs                       = [uropa_dir]
-cfTool_dir                      = join(workpath, "cfChIPtool")
-cfTool_subdir2                  = join(cfTool_dir, "BED", "H3K4me3")  
+seacr_dir                       = join(workpath, "SEACR")
+
+
+######### workflow configuration flags #########
 group_combos                    = []
 blocking                        = False if set(blocks.values()) in ({None}, {''}) else True
 chip2input                      = config['project']['peaks']['inputs']
 has_inputs                      = False if set(chip2input.values()) in ({''}, {None}) else True
-block_add                       = "_block" if blocking else ""
-
-# ~~ workflow config ~~
-blocking = False if set(blocks.values()) in ({None}, {""}) else True
-if reps == "yes": otherDirs.append(diffbind_dir)
-mk_dir_if_not_exist(PeakTools + [uropa_dir])
+blocking                        = False if set(blocks.values()) in ({None}, {""}) else True
 
 
-localrules: diffbind_csv_macsN, diffbind_csv_macsB, diffbind_csv_genrich
+######## CSV generation locally executed ########
+localrules: diffbind_csv_macsN, diffbind_csv_macsB, diffbind_csv_genrich, diffbind_csv_SEACR
 
 
-# ~~ differential binding analysis ~~ #
+######### Diffbind binding analysis #########
 rule diffbind_count:
     input:
         csvfile                         = join(
@@ -77,8 +81,8 @@ rule diffbind_count:
             --peakcaller {params.this_peaktool}
         """)
 
-
-
+        
+######### Diffbind input preparation #########
 rule diffbind_csv_macsN:
     input:
         bed                            = expand(join(macsN_dir, "{name}", "{name}_peaks.narrowPeak"), name=chips)
@@ -179,7 +183,39 @@ rule diffbind_csv_macsB:
             ))
 
 
-# ~~ diffbind EdgeR DE analysis ~~ #
+rule diffbind_csv_SEACR:
+    input:
+        beds                            = expand(join(seacr_dir, "{name}", "{name}.stringent.bed"), name=chips),
+    output:
+        csvfile                         = join(
+                                            diffbind_dir,
+                                            "{group1}_vs_{group2}-SEACR",
+                                            "{group1}_vs_{group2}-SEACR_Diffbind_prep.csv",
+                                          ),
+    params:
+        rname                           = "diffbind_csv_SEACR",
+        this_peaktool                   = "SEACR",
+        peakcaller                      = "raw",
+        this_peakextension              = ".stringent.bed",
+        pythonscript                    = join(bin_path, "prep_diffbind.py"),
+        bam_dir                         = bam_dir,
+        workpath                        = workpath,
+        contrast                        = "{group1}_vs_{group2}",
+    log: join(local_log_dir, "diffbind_csv_SEACR", "{group1}_vs_{group2}_diffbind_csv.log")
+    shell: 
+        dedent("""
+            python {params.pythonscript} \\
+                --con {params.contrast} \\
+                --wp {params.workpath} \\
+                --pt {params.this_peaktool} \\
+                --pe {params.this_peakextension} \\
+                --bd {params.bam_dir} \\
+                --pc {params.peakcaller} \\
+                --csv {output.csvfile}
+        """)
+
+
+######### diffbind EdgeR DE analysis #########
 rule diffbind_edger:
     input:
         csvfile                         = join(
@@ -308,7 +344,7 @@ rule diffbind_edger_blocking:
         """)
 
 
-# ~~ diffbind DeSeq2 DE analysis ~~ # 
+######### diffbind DeSeq2 DE analysis #########
 rule diffbind_deseq:
     input:
         csvfile                         = join(
@@ -435,6 +471,7 @@ rule diffbind_deseq_blocking:
         """)
 
 
+######### diffbindQC rules #########
 rule diffbindQC_macsN:
     input:
         sample_bams                 = expand(join(bam_dir, "{name}.Q5DD.bam"), name=chips) if chips else [],
@@ -453,23 +490,33 @@ rule diffbindQC_macsN:
         rscript                     = join(bin_path, "DiffBind_v2_QC.Rmd"),
         outdir                      = join(diffbind_qc_dir, "AllSamples-macsNarrow"),
         pythonscript                = join(bin_path, "prep_diffbindQC.py"),
+        groups                      = json.dumps(config['project']['groups']).replace('"', '\\"')
     container:
        config['images']['diffbind']
     shell:
-        """
-        python {params.pythonscript} \\
-            -s {input.sample_bams} \\
-            -c {input.control_bams} \\
+        dedent("""
+        if [ ! -d \"{tmpdir}\" ]; then mkdir -p \"{tmpdir}\"; fi
+        tmp=$(mktemp -d -p \"{tmpdir}\")
+        trap 'rm -rf "${{tmp}}"' EXIT
+        echo "{params.groups}" | python -m json.tool >> ${{tmp}}/groups.json
+        cat ${{tmp}}/groups.json
+        grp=""
+        if [ -s "${{tmp}}/groups.json" ]; then
+            grp="-g ${{tmp}}/groups.json"
+        fi
+        {params.pythonscript} \\
             -p {input.samples_peaks} \\
             -t {params.peak_type} \\
-            -o {output.csvfile}
+            -o {output.csvfile} ${{grp}}\\
+            -s {input.sample_bams} \\
+            -c {input.control_bams}
         cp {params.rscript} {params.outdir}
         cd {params.outdir}
         Rscript -e 'rmarkdown::render("{params.rscript}", output_file="{output.html}",
             params=list(csvfile="{output.csvfile}", umapfile="{output.umap}", 
             counts_bed="{output.countsbed}", counts_csv="{output.countscsv}",
             peakcaller="{params.peak_tool}"))'
-        """
+        """)
 
 
 rule diffbindQC_macsB:
@@ -490,16 +537,26 @@ rule diffbindQC_macsB:
         rscript                     = join(bin_path, "DiffBind_v2_QC.Rmd"),
         outdir                      = join(diffbind_qc_dir, "AllSamples-macsBroad"),
         pythonscript                = join(bin_path, "prep_diffbindQC.py"),
+        groups                      = json.dumps(config['project']['groups']).replace('"', '\\"')
     container:
        config['images']['diffbind']
     shell:
         """
-        python {params.pythonscript} \\
-            -s {input.sample_bams} \\
-            -c {input.control_bams} \\
+        if [ ! -d \"{tmpdir}\" ]; then mkdir -p \"{tmpdir}\"; fi
+        tmp=$(mktemp -d -p \"{tmpdir}\")
+        trap 'rm -rf "${{tmp}}"' EXIT
+        echo "{params.groups}" | python -m json.tool >> ${{tmp}}/groups.json
+        cat ${{tmp}}/groups.json
+        grp=""
+        if [ -s "${{tmp}}/groups.json" ]; then
+            grp="-g ${{tmp}}/groups.json"
+        fi
+        {params.pythonscript} \\
             -p {input.samples_peaks} \\
             -t {params.peak_type} \\
-            -o {output.csvfile}
+            -o {output.csvfile} ${{grp}}\\
+            -s {input.sample_bams} \\
+            -c {input.control_bams}
         cp {params.rscript} {params.outdir}
         cd {params.outdir}
         Rscript -e 'rmarkdown::render("{params.rscript}", output_file="{output.html}",
@@ -527,16 +584,26 @@ rule diffbindQC_genrich:
         rscript                     = join(bin_path, "DiffBind_v2_QC.Rmd"),
         outdir                      = join(diffbind_qc_dir, "AllSamples-Genrich"),
         pythonscript                = join(bin_path, "prep_diffbindQC.py"),
+        groups                      = json.dumps(config['project']['groups']).replace('"', '\\"')
     container:
        config['images']['diffbind']
     shell:
         """
-        python {params.pythonscript} \\
-            -s {input.sample_bams} \\
-            -c {input.control_bams} \\
+        if [ ! -d \"{tmpdir}\" ]; then mkdir -p \"{tmpdir}\"; fi
+        tmp=$(mktemp -d -p \"{tmpdir}\")
+        trap 'rm -rf "${{tmp}}"' EXIT
+        echo "{params.groups}" | python -m json.tool >> ${{tmp}}/groups.json
+        cat ${{tmp}}/groups.json
+        grp=""
+        if [ -s "${{tmp}}/groups.json" ]; then
+            grp="-g ${{tmp}}/groups.json"
+        fi
+        {params.pythonscript} \\
             -p {input.samples_peaks} \\
             -t {params.peak_type} \\
-            -o {output.csvfile}
+            -o {output.csvfile} ${{grp}}\\
+            -s {input.sample_bams} \\
+            -c {input.control_bams}
         cp {params.rscript} {params.outdir}
         cd {params.outdir}
         Rscript -e 'rmarkdown::render("{params.rscript}", output_file="{output.html}",
@@ -550,7 +617,7 @@ rule diffbindQC_SEACR:
     input:
         sample_bams                 = expand(join(bam_dir, "{name}.Q5DD.bam"), name=chips),
         control_bams                = [join(bam_dir, f"{chip2input[sample_name]}.Q5DD.bam") for sample_name in chips] if chips and has_inputs else [],
-        samples_peaks               = expand(join(seacr_dir, "{name}.stringent.bed"), name=chips)
+        samples_peaks               = expand(join(seacr_dir, "{name}", "{name}.stringent.bed"), name=chips)
     output:
         html                        = join(diffbind_qc_dir, "AllSamples-SEACR", "AllSamples-SEACR_DiffBindQC.html"),
         countsbed                   = join(diffbind_qc_dir, "AllSamples-SEACR", "AllSamples-SEACR_DiffBindQC_TMMcounts.bed"),
@@ -564,16 +631,24 @@ rule diffbindQC_SEACR:
         rscript                     = join(bin_path, "DiffBind_v2_QC.Rmd"),
         outdir                      = join(diffbind_qc_dir, "AllSamples-SEACR"),
         pythonscript                = join(bin_path, "prep_diffbindQC.py"),
+        groups                      = json.dumps(config['project']['groups']).replace('"', '\\"')
     container:
        config['images']['diffbind']
     shell:
         """
-        python {params.pythonscript} \\
-            -s {input.sample_bams} \\
-            -c {input.control_bams} \\
+        if [ ! -d \"{tmpdir}\" ]; then mkdir -p \"{tmpdir}\"; fi
+        tmp=$(mktemp -d -p \"{tmpdir}\")
+        trap 'rm -rf "${{tmp}}"' EXIT
+        echo "{params.groups}" | python -m json.tool >> ${{tmp}}/groups.json
+        grp="";
+        if [ -s ${{tmp}}/groups.json ]; then grp="-g ${{tmp}}/groups.json "; fi
+        echo $grp
+        {params.pythonscript} \\
             -p {input.samples_peaks} \\
             -t {params.peak_type} \\
-            -o {output.csvfile}
+            -o {output.csvfile} ${{grp}}\\
+            -s {input.sample_bams} \\
+            -c {input.control_bams}
         cp {params.rscript} {params.outdir}
         cd {params.outdir}
         Rscript -e 'rmarkdown::render("{params.rscript}", output_file="{output.html}",
@@ -583,6 +658,7 @@ rule diffbindQC_SEACR:
         """
 
 
+######### UROPA + Diffbind #########
 rule join_diffbind_uropa:
     input:
         finalhits_txt                   = join(
@@ -593,7 +669,7 @@ rule join_diffbind_uropa:
         peak_list                       = join(
                                             diffbind_dir,
                                             "{contrast}-{PeakTool}",
-                                            "{contrast}-{PeakTool}_Diffbind" + block_add + "_{differential_app}_peak_list.tab",
+                                            "{contrast}-{PeakTool}_Diffbind_{differential_app}_peak_list.tab",
                                           ),
     output:
         joined_tbl                      = join(

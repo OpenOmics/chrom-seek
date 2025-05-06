@@ -85,26 +85,78 @@ def valid_path(path_str):
     return path_str
 
 
+def fuzz_merge(db, uropa):
+    uropa_small = uropa[["chr", "start", "end"]]
+    db_small = db[["chr", "start", "end"]]
+    db_uropa_map = {}
+
+    for contig in db_small["chr"].unique():
+        this_db = db_small[db_small["chr"] == contig]
+        this_uropa = uropa_small[uropa_small["chr"] == contig]
+        this_uropa['distance'] = 0
+        for i, row in this_db.iterrows():
+            check_uropa = this_uropa
+            check_uropa['distance'] = check_uropa['start'].apply(lambda x: abs(row['start'] - x))
+            check_uropa = check_uropa.dropna(subset=['distance'])
+            check_uropa = check_uropa[check_uropa['distance'] <= 2]
+            if check_uropa.shape[0] > 1:
+                raise ValueError
+            elif check_uropa.shape[0] < 1:
+                continue
+            else:
+                db_uropa_map[i] = check_uropa.index[0]
+
+    merge_df = pd.DataFrame()
+    for db_i, ur_i in db_uropa_map.items():
+        this_db_row = db.loc[db_i].to_dict()
+        this_ur_row = uropa.loc[ur_i].fillna('NA').to_dict()
+        del this_ur_row['chr']
+        del this_ur_row['start']
+        del this_ur_row['end']
+        newrow = this_db_row
+        newrow.update(this_ur_row)
+        merge_df = pd.concat([merge_df, pd.DataFrame([newrow])], ignore_index=True)
+    return merge_df
+
+
 def main(args):
     diffbind = pd.read_csv(args.diffbind, sep="\t")
     diffbind = diffbind.rename(columns={"seqnames": "chr"})  # start & end exist
+    # count filter
+    fold_filter = diffbind[diffbind["Fold"].abs() < args.fold]
+    n_filter_fold = fold_filter.shape[0]
+    fdr_filter = diffbind[diffbind["FDR"] > args.fdr]
+    n_filter_fdr = fdr_filter.shape[0]
+    # filter
     diffbind = diffbind[
-        (diffbind["Fold"] >= args.fold) & (diffbind["FDR"] <= args.fdr)
-    ]  # filter
+        (diffbind["Fold"].abs() >= args.fold) & (diffbind["FDR"] <= args.fdr)
+    ]
+    diffbind.reset_index(drop=True, inplace=True)
+    n_after_filter = diffbind.shape[0]
+    # describe filter
+    print(f"-- {str(n_filter_fdr)} peaks filtered for being > {str(args.fdr)} FDR --\n")
+    print(str(fold_filter) + "\n\n")
+    print(f"-- {str(n_filter_fold)} peaks filtered for being < abs({str(args.fold)}) fold-change --\n")
+    print(str(fdr_filter) + "\n\n")
+    print(f"-- {str(n_after_filter)} total peaks removed by FDR and fold-change filters")
+    # format
     diffbind = diffbind.drop(columns=["strand", "Conc"])
     diffbind = diffbind.reset_index(drop=True)
-
     uropa = pd.read_csv(args.uropa, sep="\t")
     uropa = uropa.rename(
         columns={"peak_chr": "chr", "peak_start": "start", "peak_end": "end"}
     )
     uropa = uropa.drop(columns=["peak_score", "peak_strand"])
     uropa = uropa.reset_index(drop=True)
-
-    merged = uropa.merge(diffbind, on=["chr", "start", "end"])
+    # join tables
+    n_uropa = uropa.shape[0]
+    n_diffbind = diffbind.shape[0]
+    merged = fuzz_merge(diffbind, uropa)
     merged = merged.reset_index(drop=True)
+    n_merged = merged.shape[0]
+    print(f"-- {n_uropa} peaks from uropa annotation, {n_diffbind} peaks from diffbind consensus -- \n\n")
+    print(f"-- {n_merged} peaks merged from uropa + diffbind sources -- \n\n")
     merged.to_csv(args.output, sep="\t", index=False)
-
     return
 
 

@@ -62,13 +62,12 @@ uropa_dir                       = join(workpath, "UROPA_annotations")
 uropa_diffbind_dir              = join(uropa_dir, "DiffBind")
 uropa_diffbind_join_dir         = join(workpath, "UROPA_DIFFBIND_TBLS")
 diffbind_dir                    = join(workpath, "DiffBind")
-diffbind_qc_dir                 = join(workpath, "DB_TABLES")
+diffbind_qc_dir                 = join(peakqc_dir, "DB_QC")
 cfTool_dir                      = join(workpath, "cfChIPtool")
 genrich_dir                     = join(workpath, "Genrich")
 MEME_dir                        = join(workpath, "MEME")
 manorm_dir                      = join(workpath, "MANorm")
-dba_anno_path                   = join(workpath, 'dba_annotations')
-seacr_dir                       = join(workpath, "seacr")
+seacr_dir                       = join(workpath, "SEACR")
 homer_dir                       = join(workpath, "HOMER")
 
 
@@ -92,7 +91,10 @@ if assay == "cfchip":
         join(cfTool_dir, "Output", "H3K4me3", "Signatures", "{name}.Q5DD.csv"), 
         name=chips
     ))
-elif assay in ["atac", "chip", "cutnrun"]:
+else:
+    if paired_end:
+        rule_all_ins.extend(expand(join(qc_dir, "{name}.sorted.insert_size_metrics.txt"), name=samples))
+        rule_all_ins.extend(expand(join(qc_dir, "{name}.Q5DD.insert_size_metrics.txt"), name=samples))
     if assay in ("atac", "chip"):
         rule_all_ins.extend(expand(
             join(homer_dir, "UP_{contrast}_{PeakTool}_{differential_app}", "homer.out"),
@@ -100,35 +102,37 @@ elif assay in ["atac", "chip", "cutnrun"]:
             PeakTool=PeakTools,
             differential_app=["DeSeq2", "EdgeR"],
         ))
-    if paired_end:
-        rule_all_ins.extend(expand(join(qc_dir, "{name}.sorted.insert_size_metrics.txt"), name=samples))
-        rule_all_ins.extend(expand(join(qc_dir, "{name}.Q5DD.insert_size_metrics.txt"), name=samples))
-    if assay in ("chip"):
+    # macsNarrow
+    rule_all_ins.extend(expand(join(macsN_dir, "{name}", "{name}_peaks.narrowPeak"), name=chips))
+    rule_all_ins.append(join(peakqc_dir, "jaccard", 'macsNarrow_jaccard.txt'))
+    if assay == "chip":
+        # macsBroad
         rule_all_ins.extend(expand(join(macsB_dir, "{name}", "{name}_peaks.broadPeak"), name=chips))
-        # sicer outputs turned off for now
-        # if has_inputs:
-        #     rule_all_ins.extend(expand(join(sicer_dir, "{name}", "{name}_broadpeaks.bed"), name=chips))
+        rule_all_ins.append(join(peakqc_dir, "jaccard", 'macsBroad_jaccard.txt'))
         rule_all_ins.extend(expand(
             join(uropa_dir, "{application}", "{name}_uropa_{_type}_allhits.txt"), 
             name=chips,
             application=["macsBroad"],
             _type=peak_types,
         ))
+    if assay in ("chip", "cutnrun"):
+        # SEACR
+        rule_all_ins.append(join(peakqc_dir, "jaccard", 'SEACR_jaccard.txt'))
         rule_all_ins.extend(expand(
-            join(uropa_diffbind_join_dir, "{contrast}-{PeakTool}-{differential_app}_{_type}_UROPA_DIFFBIND_JOIN.txt"),
-            differential_app=["DeSeq2"],
-            contrast=contrasts,
-            _type=peak_types,
-            PeakTool=['macsNarrow']
+            join(seacr_dir, "{name}", "{name}.stringent.bed"), name=chips
         ))
-    elif assay == "atac":
+    if assay in ("atac", "chip"):
+        # Genrich
+        rule_all_ins.append(join(peakqc_dir, "jaccard", "Genrich_jaccard.txt"))
         rule_all_ins.extend(expand(
             join(genrich_dir, "{name}", "{name}.narrowPeak"), name=chips
         ))
-    elif assay == "cutnrun":
-        rule_all_ins.extend(expand(
-            join(seacr_dir, "{name}.stringent.bed"), name=chips
-        ))
+
+# meme outputs turned off for now
+# if has_inputs:
+#     rule_all_ins.extend(expand(join(MEME_dir, "{PeakTool}", "{name}_meme", "meme-chip.html"), PeakTool=PeakTools, name=chips))
+#     rule_all_ins.extend(expand(join(MEME_dir, "{PeakTool}", "{name}_ame", "ame.html"), PeakTool=PeakTools, name=chips))
+
 rule_all_ins.append(expand(
     join(diffbind_qc_dir, "AllSamples-{pktool}", "AllSamples-{pktool}_DiffBindQC.html"),
     pktool=PeakTools
@@ -144,7 +148,7 @@ rule_all_ins.append(expand(
 rule_all_ins.append(join(workpath, "multiqc_report.html"))
 rule_all_ins.extend(expand(join(qc_dir, "{name}.preseq.dat"), name=samples))
 rule_all_ins.extend(
-    expand(join(peakqc_dir, "{PeakTool}", "{PeakTool}.{name}.Q5DD.FRiP_table.txt"), 
+    expand(join(peakqc_dir, "FRiP", "{PeakTool}", "{PeakTool}.{name}.Q5DD.FRiP_table.txt"), 
     PeakTool=PeakTools, 
     name=chips)
 )
@@ -196,10 +200,6 @@ if reps and contrast:
     rule_all_ins.extend(expand(
         join(uropa_dir, "DiffBind", "{contrast}-{PeakTool}-{differential_app}", "{contrast}_{PeakTool}_{differential_app}_{_type}_uropa_allhits.txt"), 
         contrast=contrasts, PeakTool=PeakTools, differential_app=['EdgeR'], _type=peak_types
-    )),
-    rule_all_ins.extend(expand(
-        join(dba_anno_path, "{contrast}_{PeakTool}_{_type}_uropa_allhits.txt"), 
-        contrast=contrasts, PeakTool=PeakTools, _type=peak_types
     )),
     if blocking:
         rule_all_ins.extend(expand(

@@ -55,8 +55,8 @@ Read in sample sheet information and peak information
 samples <- dba(sampleSheet=csvfile)
 
 # if samples have Condition values
-if ( sum(samples$class["Condition",] != "") == ncol(samples$class) ) {
-  consensus <- dba.peakset(samples,consensus=DBA_CONDITION, minOverlap = min(table(samples$samples$Condition)))
+if ( sum(samples$class["Condition", ] != "") == ncol(samples$class) ) {
+  try(consensus <- dba.peakset(samples, consensus=DBA_CONDITION, minOverlap=min(table(samples$samples$Condition))), silent=TRUE) 
 }
 print(samples)
 ```
@@ -64,7 +64,7 @@ print(samples)
 ## Correlation heatmap: Only peaks
 Pearson correlation of peak positions: all samples versus all samples  
 ```{r heatmap1}
-try(dba.plotHeatmap(samples,main="",cexRow=1,cexCol=1),silent=TRUE)
+try(dba.plotHeatmap(samples, main="", cexRow=1, cexCol=1),silent=TRUE)
 ```
 
 ## PCA: Only peaks
@@ -80,10 +80,10 @@ the consensus peak set are the peaks identified in at least 2 samples for that c
 from the consensus peak set used for differential analyses.
 ```{r Venn, fig_height=4}
 if (nrow(samples$samples) < 5) {
-   dba.plotVenn(samples,1:nrow(samples$samples)) 
+   dba.plotVenn(samples, 1:nrow(samples$samples)) 
 } else {
-   if ( sum(samples$class["Condition",] != "") == ncol(samples$class) ) {
-      dba.plotVenn(consensus,consensus$masks$Consensus,main="Binding Site Overlaps: 'consensus', comparing between groups")
+   if (exists("consensus")) {
+      dba.plotVenn(consensus, consensus$masks$Consensus,main="Binding Site Overlaps: 'consensus', comparing between groups")
    } else {
       print("Consensus peaks were not called")
    }
@@ -152,7 +152,7 @@ consensus2 <- dba.peakset(DBdataCounts, bRetrieve=TRUE) %>% ##extracts TMM-norma
   as.data.frame() %>% 
   setNames(vec) %>% 
   arrange(start, end) %>% 
-  mutate(Peaks = paste0("Peak",1:nrow(.))) %>% 
+  mutate(Peaks = paste0("Peak", 1:nrow(.))) %>% 
   dplyr::select(1:4, Peaks, samples$samples$SampleID)
 
 write.csv(consensus2, counts_csv, row.names = F)

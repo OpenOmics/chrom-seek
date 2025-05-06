@@ -11,19 +11,19 @@ USAGE:
           -t TMP_DIR \\
           -r RERUN_TRIGGERS
 SYNOPSIS:
-  This script creates/submits the pipeline's master job  to  the 
-cluster. The master job acts as the pipeline's main controller or 
-its main process. This main job dictates how subsequent jobs are 
+  This script creates/submits the pipeline's master job  to  the
+cluster. The master job acts as the pipeline's main controller or
+its main process. This main job dictates how subsequent jobs are
 submitted to the cluster via the job scheduler, SLURM. Support for
 additional job schedulers (i.e. PBS, SGE, LSF, Tibanna) may be added
 in the future.
-  The main entry point of the pipeline calls this job submission 
-wrapper script. As so, this script can be used to by-pass a previously 
-failed run; meaning, it can be used to re-run the pipeline to pick back 
+  The main entry point of the pipeline calls this job submission
+wrapper script. As so, this script can be used to by-pass a previously
+failed run; meaning, it can be used to re-run the pipeline to pick back
 off where the last failure occurred or re-start the pipeline.
   Please Note: it is highly recommended to use the main entry point of
 the pipeline instead of directly invoking this script. As so, please use
-main entry point of the pipeline. If you are experiencing an error, it 
+main entry point of the pipeline. If you are experiencing an error, it
 maybe due to improperly mounting singularity bind paths which the main
 entry point will internally handle. Only advanced users should directly
 invoke this script.
@@ -32,8 +32,8 @@ Required Positional Argument:
                         Valid mode options include: <slurm, ...>
                           slurm: uses slurm and singularity/snakemake
                              backend. This EXECUTOR will submit child
-                             jobs to the cluster. It is recommended 
-                             running the pipeline in this mode, as most 
+                             jobs to the cluster. It is recommended
+                             running the pipeline in this mode, as most
                              of the steps are computationally intensive.
 Required Arguments:
   -o,  --outdir  [Type: Path]   Path to output directory of the pipeline.
@@ -41,35 +41,35 @@ Required Arguments:
                                  where all output files will be generated.
   -j, --job-name [Type: Str]    Name of pipeline's master job.
   -b, --bind-paths [Type:Path]  Singularity bind paths. The pipeline uses
-                                 singularity images for exection. Bind 
-                                 paths are used to mount the host file 
-                                 system to the container's file system. 
-                                 Multiple bind paths can be provided as 
-                                 a comma seperated list. The main entry 
+                                 singularity images for exection. Bind
+                                 paths are used to mount the host file
+                                 system to the container's file system.
+                                 Multiple bind paths can be provided as
+                                 a comma seperated list. The main entry
                                  point of the pipeline internally collects
                                  and aggregates bind paths to mount to the
-                                 container's filesystem. 
+                                 container's filesystem.
                                  If you are manually running this script
-                                 or by-passing the main entry point, you 
-                                 will need to provide the bind paths of 
-                                 the rawdata directory(s) along with the 
+                                 or by-passing the main entry point, you
+                                 will need to provide the bind paths of
+                                 the rawdata directory(s) along with the
                                  pipeline's output directory and any other
-                                 directories for reference files. Please see 
+                                 directories for reference files. Please see
                                  example usage below.
  -t, --tmp-dir [Type:Path]      Temporary directory. The pipeline generates
-                                 intermediate, temporary output files. Any 
+                                 intermediate, temporary output files. Any
                                  temporary output files will be written to
-                                 this location. On Biowulf, it should be 
+                                 this location. On Biowulf, it should be
                                  set to '/lscratch/\$SLURM_JOBID/'. On FRCE,
-                                 this value should be set to the following: 
+                                 this value should be set to the following:
                                  '/scratch/cluster_scratch/\$USER/'.
- -r, --triggers [Type: Str]      Snakemake rerun triggers. See 
+ -r, --triggers [Type: Str]      Snakemake rerun triggers. See
                                  description of flag '--rerun-triggers', at
                                  https://snakemake.readthedocs.io/en/stable/executing/cli.html#all-options
                                  for more details.
                                  Default: code params software_env input mtime
 OPTIONS:
-  -c,  --cache  [Type: Path]   Path to singularity cache. If not provided, 
+  -c,  --cache  [Type: Path]   Path to singularity cache. If not provided,
                                 the path will default to the current working
                                 directory of this script.
                                 [Default: $(dirname  "$0")/.singularity/]
@@ -190,32 +190,32 @@ function submit(){
           # Create directory for logfiles
           mkdir -p "$3"/logfiles/slurmfiles/
           # Submit the master job to the cluster
-          # sbatch --parsable -J {jobname} --time=5-00:00:00 --mail-type=BEGIN,END,FAIL 
-          # --cpus-per-task=24 --mem=96g --gres=lscratch:500 
-          # --output os.path.join({outdir}, 'logfiles', 'snakemake.log') --error os.path.join({outdir}, 'logfiles', 'snakemake.log') 
-          # snakemake -pr --latency-wait 120 -d {outdir} --configfile=config.json 
-          # --cluster-config os.path.join({outdir}, 'config', 'cluster.json') 
-          # --cluster {CLUSTER_OPTS} --stats os.path.join({outdir}, 'logfiles', 'runtime_statistics.json') 
-          # --printshellcmds --keep-going --rerun-incomplete 
-          # --keep-remote --restart-times 3 -j 500 --use-singularity 
+          # sbatch --parsable -J {jobname} --time=5-00:00:00 --mail-type=BEGIN,END,FAIL
+          # --cpus-per-task=24 --mem=96g --gres=lscratch:500
+          # --output os.path.join({outdir}, 'logfiles', 'snakemake.log') --error os.path.join({outdir}, 'logfiles', 'snakemake.log')
+          # snakemake -pr --latency-wait 120 -d {outdir} --configfile=config.json
+          # --cluster-config os.path.join({outdir}, 'config', 'cluster.json')
+          # --cluster {CLUSTER_OPTS} --stats os.path.join({outdir}, 'logfiles', 'runtime_statistics.json')
+          # --printshellcmds --keep-going --rerun-incomplete
+          # --keep-remote --restart-times 3 -j 500 --use-singularity
           # --singularity-args -B {}.format({bindpaths}) --local-cores 24
           triggers="${7:-"code params software-env input mtime"}"
           rerun="--rerun-triggers $triggers"
-          
+
           SLURM_DIR="$3/logfiles/slurmfiles"
           CLUSTER_OPTS="sbatch --gres {cluster.gres} --cpus-per-task {cluster.threads} -p {cluster.partition} -t {cluster.time} --mem {cluster.mem} --job-name={params.rname} -e $SLURM_DIR/slurm-%j_{params.rname}.out -o $SLURM_DIR/slurm-%j_{params.rname}.out"
           # Check if NOT running on Biowulf
-          # Assumes other clusters do NOT 
+          # Assumes other clusters do NOT
           # have GRES for local node disk,
-          # long term it might be worth 
-          # adding a new option to allow 
-          # a user to decide whether to 
+          # long term it might be worth
+          # adding a new option to allow
+          # a user to decide whether to
           # use GRES at job submission,
           # trying to infer this because
           # most users will not even know
           # what GRES is and how or why
           # it should be used and by default
-          # SLURM is not configured to use 
+          # SLURM is not configured to use
           # GRES, remove prefix single quote
           if [[ ${6#\'} != /lscratch* ]]; then
             CLUSTER_OPTS="sbatch --cpus-per-task {cluster.threads} -p {cluster.partition} -t {cluster.time} --mem {cluster.mem} --job-name={params.rname} -e $SLURM_DIR/slurm-%j_{params.rname}.out -o $SLURM_DIR/slurm-%j_{params.rname}.out"
@@ -224,9 +224,9 @@ function submit(){
 #!/usr/bin/env bash
 #SBATCH --cpus-per-task=16
 #SBATCH --mem=32g
-#SBATCH --time=10-00:00:00
+#SBATCH --time=5-00:00:00
 #SBATCH --parsable
-#SBATCH -p unlimited
+#SBATCH -p norm
 #SBATCH -J "$2"
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --output "$3/logfiles/snakemake.log"
