@@ -122,9 +122,9 @@ The pipeline includes tools for peak annotation, motif calling, and quality-cont
 
 | **Tool**                | **Version** | **Notes**                                              |
 | ----------------------- | :---------: | :----------------------------------------------------- |
-| Uropa<sup>1</sup>       | 4.0.3       | Uropa is utilized for peak annotations, providing comprehensive annotation features. Here is a [link](https://uropa-manual.readthedocs.io/introduction.html) to Uropa's documentation. See the glossary for options in this pipeline. |
+| Uropa<sup>1</sup>       | 4.0.3       | Uropa is utilized for peak annotations, providing comprehensive annotation features. Here is a [link](https://uropa-manual.readthedocs.io/introduction.html) to Uropa's documentation. See the glossary for options in this pipeline: [link](https://openomics.github.io/chrom-seek/faq/glossary/#annotation-options). |
 | Homer<sup>2</sup>       | 4.11.1      | Homer is being used for motif calling                  |
-| MEME<sup>3</sup>        | 5.5.5       | Employed for motif analysis, the MEME suite includes MEME-ChIP for *de novo* motif discovery and AME for known motif analysis. Note that the Centrimo subcomponent of MEME-ChIP may produce inaccurate results for broad peak calling tools. Here is a [link](https://meme-suite.org/meme/index.html) to MEME suite'sdocumentation. |
+| MEME<sup>3</sup>        | 5.5.5       | Employed for motif analysis, the MEME suite includes MEME-ChIP for *de novo* motif discovery and AME for known motif analysis. Note that the Centrimo subcomponent of MEME-ChIP may produce inaccurate results for broad peak calling tools. Here is a [link](https://meme-suite.org/meme/index.html) to MEME suite's documentation. |
 | IDR<sup>4</sup>         | 2.0.3       |  One method for identifying consensus peaks. Only works for 2 replicates. This tool is not currently in the pipeline. |
 | Jaccard                 | NA          | Calculation of peak call consistency between two conditions. This is currently is not included in the pipeline. Requires: `pybedtools` `pysam`. |
 | FRiP                    | NA          | Represents the _"fraction of reads in peaks"_ calculated as the proportion of aligned reads falling within the peaks called by specific tool for a given sample. Requires: `pybedtools` `pysam` |
@@ -146,19 +146,23 @@ high-throughput experiments. Ann Appl Stat 5(3): 1752-1779.</sup>
 **Blacklist citation**: The ENCODE Project Consortium., Moore, J.E., Purcaro, M.J. et al. 
 Expanded encyclopaedias of DNA elements in the human and mouse genomes. Nature 583, 699–710 (2020).
 
-* hg19:  
-    - blacklist: https://www.encodeproject.org/files/ENCFF001TDO/@@download/ENCFF001TDO.bed.gz  
-* hg38:  
-    - fasta: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_28/GRCh38.p12.genome.fa.gz  
-    - gtf: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_28/gencode.v28.annotation.gtf.gz
-    - blacklist: http://mitra.stanford.edu/kundaje/akundaje/release/blacklists/hg38-human/hg38.blacklist.bed.gz  
-* mm10:  
-    - fasta: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_mouse/release_M18/GRCm38.p6.genome.fa.gz  
-    - gtf: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_mouse/release_M18/gencode.vM18.annotation.gtf.gz  
-    - blacklist: http://mitra.stanford.edu/kundaje/akundaje/release/blacklists/mm10-mouse/mm10.blacklist.bed.gz  
-* rheMac10:  
-    - chr1 example fasta: https://ftp.ensembl.org/pub/release-110/fasta/macaca_mulatta/dna/Macaca_mulatta.Mmul_10.dna.primary_assembly.1.fa.gz  
-    - gtf: https://ftp.ensembl.org/pub/release-110/gtf/macaca_mulatta/Macaca_mulatta.Mmul_10.110.chr.gtf.gz  
+| **Reference**  | **Version**       | **Website**                                            |
+| -------------- | :---------------: | :----------------------------------------------------- |
+| hg19           | GrCh37.p13     | https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_19/GRCh37.p13.genome.fa.gz |
+|                | Gencode v19    | https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_19/gencode.v19.annotation.gtf.gz |
+|                | Blacklist v1   | https://www.encodeproject.org/files/ENCFF001TDO/@@download/ENCFF001TDO.bed.gz |
+| hg38           | GRCh38.p12     | https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_28/GRCh38.p12.genome.fa.gz |
+|                | Gencode v28    | https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_28/gencode.v28.annotation.gtf.gz |
+|                | Blacklist v2   | http://mitra.stanford.edu/kundaje/akundaje/release/blacklists/hg38-human/hg38.blacklist.bed.gz |
+| mm10           | GRCm38.p6      | https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_mouse/release_M18/GRCm38.p6.genome.fa.gz |
+|                | Gencode vM18   | https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_mouse/release_M18/gencode.vM18.annotation.gtf.gz |
+|                | Blacklist v2   | http://mitra.stanford.edu/kundaje/akundaje/release/blacklists/mm10-mouse/mm10.blacklist.bed.gz |
+| rheMac10       | Ensembl 110    | Chr1 example: https://ftp.ensembl.org/pub/release-110/fasta/macaca_mulatta/dna/Macaca_mulatta.Mmul_10.dna.primary_assembly.1.fa.gz |
+|                | Ensembl 110    | https://ftp.ensembl.org/pub/release-110/gtf/macaca_mulatta/Macaca_mulatta.Mmul_10.110.chr.gtf.gz  |
+
+Note: All fastas and gtfs in built into this pipeline only include reference chromosomes, ie autosomes and sex chromosomes.  
+See: https://github.com/Boyle-Lab/Blacklist/tree/master/lists for all v1 and v2 blacklists available.
+
 
 
 ## Acknowledgements
