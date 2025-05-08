@@ -244,7 +244,10 @@ def peakcalls(file, delim="\t"):
             for grp in row[GROUP_COL]:
                 groups[grp].append(row[SAMPLE_COL])
             if blocks_exist:
-                block[row[SAMPLE_COL]] = row[BLOCK_COL]
+                if row[BLOCK_COL] == '':
+                    block[row[SAMPLE_COL]] = None
+                else :
+                    block[row[SAMPLE_COL]] = row[BLOCK_COL]
             else:
                 block[row[SAMPLE_COL]] = None
 
