@@ -3,6 +3,7 @@
 
 # Python standard library
 from __future__ import print_function
+import csv
 import os, sys, re, json
 import mimetypes
 
@@ -121,19 +122,28 @@ def index(
 
 
 def peakcalls(file, delim="\t"):
-    """Reads and parses a sample sheet, peakcall.tsv, into a dictionary.
+    """
+    Reads and parses a sample sheet, peakcall.tsv, into a dictionary.
     This file acts as a sample sheet to gather sample metadata and define
-    relationship betweeen groups of samples. This file is used to pair a
-    ChIP sample with its input sample. This tab delimited file contains
-    three columns. One column for the basename of the ChIP sample, one
-    column for the basename of the paired sample, and lastly, one column
-    for the name of the sample's group. It is worth noting that a sample
-    can belong to more than one group. A 1:M sample to group relationship
-    can be denoted by seperating muliptle groups with commas (i.e. ',').
-    This group information is used downstream in the pipeline for DBA.
+    relationship between groups of samples. This file is used to pair a
+    ATAC/CHIP/cfCHIP/cutnrun sample with its input sample. This tab 
+    delimited file contains two required columns and two optional, all 
+    columns are case __in__sensitive.
+
+        - Required: 
+            - Sample
+            - Group
+        - Optionial
+            - Blocks
+            - InputControl
+
+    It is worth noting that a sample can belong to more than one group. 
+    A 1:M sample to group relationship can be denoted by seperating muliptle 
+    groups with commas (i.e. ','). This group information is used downstream 
+    in the pipeline for DBA.
+
     Comparisons between groups can be made with a constrast.tsv file.
-    This function returns a tuple containing the ChIP-input dictionary
-    and a second dictionary containing group to sample lists.
+
     @Example: peakcall.tsv
         Sample    InputControl   Group   Block
         cfChIP_001	Input_001	G1,G4   B1
@@ -185,81 +195,68 @@ def peakcalls(file, delim="\t"):
 
     @param file <str>:
         Path to peakcall TSV file.
-    @return pairs <dict[str]>:
+
+    @return pairs <dict[str or None]>:
         Dictionary containing ChIP-input pairs, where each key is ChIP
         sample and its value is its matched input sample
     @return groups <dict[str]>:
         Dictionary containing group to samples, where each key is group
         and its value is a list of samples belonging to that group
-    @return block <dict[str]>:
+    @return block <dict[str or None]>:
         Dictionary containing samples to blocking information, where each
         key is a sample and each value is blocking information for building
         a linear model
     """
-    # Get index of each required and
-    # optional column and determine if
-    # the file has a header
-    indices, header = index(file)
-    i_index = indices["inputcontrol"]
-    c_index = indices["sample"]
-    g_index = indices["group"]
-    b_index = indices["block"]
+    SAMPLE_COL = 'Sample'.lower()
+    INPUT_COL = 'InputControl'.lower()
+    GROUP_COL = 'Group'.lower()
+    BLOCK_COL = 'Block'.lower()
+    tolowerlist = lambda _list: [str(elem).lower() for elem in _list]
 
-    # Parse the ChIP, input pairs and
-    # grab group information
-    pairs = {}
-    groups = {}
-    block = {}
-    with open(file, "r") as fh:
-        if header:
-            # Skip over header
-            tmp = next(fh)
-        for line in fh:
-            linelist = [l.strip() for l in line.split(delim)]
-            # Parse Input information
-            try:
-                input_sample = clean(linelist[i_index])
-            except IndexError:
-                # No matching input sample,
-                # perform ChIP-only peak calling
-                input_sample = ""
-            # Parse Chip information
-            try:
-                chip_sample = clean(linelist[c_index])
-                if not chip_sample:
-                    continue  # skipover empty string
-            except IndexError:
-                # No ChIP sample, skip over line
-                continue
-            # Parse Group Information
-            try:
-                group = linelist[g_index]
-                if not group:
-                    continue  # skip over empty string
-            except IndexError:
-                continue
-            # Check for multiple groups,
-            # split on comma or semicolon
-            multiple_groups = re.split(";|,", group)
-            multiple_groups = [clean(g.strip()) for g in multiple_groups]
-            for g in multiple_groups:
-                if g not in groups:
-                    groups[g] = []
-                if chip_sample not in groups[g]:
-                    groups[g].append(chip_sample)
-            # Parse blocking information
-            block_info = None
-            if b_index != None:
-                try:
-                    block_info = clean(linelist[b_index])
-                    if not block_info:
-                        block_info = None  # check empty string
-                except IndexError:
-                    pass
+    with open(file) as fo:
+        rdr = csv.DictReader(fo, delimiter=delim)
+        rdr.fieldnames = tolowerlist(rdr.fieldnames)
+        inputs_exist = INPUT_COL in rdr.fieldnames
+        blocks_exist = BLOCK_COL in rdr.fieldnames
+        
+        dont_exist = []
+        for col in (SAMPLE_COL, GROUP_COL):
+            if col not in rdr.fieldnames:
+                dont_exist.append(col)
 
-            # Add ChIP, input pairs to dictionary
-            pairs[chip_sample] = input_sample
-            block[chip_sample] = block_info
+        if dont_exist:
+            _c = ', '.join(dont_exist)
+            raise ValueError(f'peakcall file missing columns {_c}')
+
+        all_groups = []
+        for row in rdr:
+            if ',' in row[GROUP_COL]:
+                all_groups.extend(row[GROUP_COL].split(','))
+            else:
+                all_groups.append(row[GROUP_COL])
+        groups = {k: [] for k in all_groups}
+
+        fo.seek(0); next(rdr) # skip header
+        pairs = {}
+        block = {}
+        for row in rdr:
+            if not inputs_exist:
+                pairs[row[SAMPLE_COL]] = None
+            else:
+                pairs[row[SAMPLE_COL]] = row[INPUT_COL]
+            if ',' in row[GROUP_COL]:
+                row[GROUP_COL] = row[GROUP_COL].split(',')
+            else:
+                row[GROUP_COL] = [row[GROUP_COL]]
+            for grp in row[GROUP_COL]:
+                groups[grp].append(row[SAMPLE_COL])
+            if blocks_exist:
+                if row[BLOCK_COL] == '':
+                    block[row[SAMPLE_COL]] = None
+                else :
+                    block[row[SAMPLE_COL]] = row[BLOCK_COL]
+            else:
+                block[row[SAMPLE_COL]] = None
 
     return pairs, groups, block
 

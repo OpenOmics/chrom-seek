@@ -485,32 +485,39 @@ def parsed_arguments(name, description):
                                   Example: --output /data/$USER/output
           --peakcall PEAKCALL
                                 Peakcall file. This tab delimited file is used to pair
-                                each ChIP sample to its Input sample AND to assign any 
-                                groups that are associated with said sample. Please note 
-                                that multiple groups can be assigned to a given sample. 
+                                each CHiP/ATAC/cutnrun/cfCHiP sample to its InputControl
+                                sample AND to assign any groups that are associated with 
+                                said sample. 
+                                
+                                Please note that multiple groups can be assigned to a 
+                                given sample. 
+                                
                                 Group information is used to setup comparsions within 
-                                groups of samples. This file consists of three columns 
-                                containing the names of each ChIP sample, the names of 
-                                each Input sample, and the names of any of its groups.
-                                The header of this file needs to be ChIP for the chips
-                                column, Input for the inputs column, and Group for the 
-                                groups column. The base name of each sample should be
-                                listed in the ChIP and Input columns. The base name of
-                                a given sample can be determined by removing its file
-                                extension from the sample's R1 FastQ file, example:
-                                WT_S4.R1.fastq.gz becomes WT_S4 in the peakcall file.
-                                An optional column, called Block, can also be provided 
-                                to block duplicate correlations between repeated obser-
-                                vations. Typically, blocks are biological replicates or 
-                                multiple samples from same indivdual.
+                                groups of samples. 
+                                
+                                This file consists of two required columns and two optional 
+                                columns:
+                                    - Required: 
+                                        - Sample
+                                        - Group
+                                    - Optional
+                                        - Blocks
+                                        - InputControl
+
+                                The base name of each library should be listed in the `Sample` 
+                                and `InputControl` columns. The base name of a given sample 
+                                can be determined by removing its file extension from the 
+                                sample's R1 FastQ file, example:
+                                    - WT_S4.R1.fastq.gz becomes WT_S4 in the peakcall file.
+                               
                                   Contents of example peakcalls file:
-                                    ChIP	Input	Group   Block
-                                    WT_S1	IN_S1	G1,G3   S1
-                                    WT_S2	IN_S2	G1,G3   S1
-                                    WT_S3	IN_S3	G1  S2
-                                    WT_S4	IN_S4	G2,G4   S2
-                                    WT_S5	IN_S5	G2,G4   S3
-                                    WT_S6	IN_S6	G2  S3
+                                    Sample	InputControl	Group   Block
+                                    WT_S1	IN_S1	        G1,G3   S1
+                                    WT_S2	IN_S2	        G1,G3   S1
+                                    WT_S3	IN_S3	        G1      S2
+                                    WT_S4	IN_S4	        G2,G4   S2
+                                    WT_S5	IN_S5	        G2,G4   S3
+                                    WT_S6	IN_S6	        G2      S3
                                   Example: --peakcall /data/$USER/peakcall.tsv 
 
         {3}{4}Analysis options:{5}
