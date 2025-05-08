@@ -126,16 +126,23 @@ def peakcalls(file, delim="\t"):
     Reads and parses a sample sheet, peakcall.tsv, into a dictionary.
     This file acts as a sample sheet to gather sample metadata and define
     relationship between groups of samples. This file is used to pair a
-    ChIP sample with its input sample. This tab delimited file contains
-    three columns. One column for the basename of the ChIP sample, one
-    column for the basename of the paired sample, and lastly, one column
-    for the name of the sample's group. It is worth noting that a sample
-    can belong to more than one group. A 1:M sample to group relationship
-    can be denoted by seperating muliptle groups with commas (i.e. ',').
-    This group information is used downstream in the pipeline for DBA.
+    ATAC/CHIP/cfCHIP/cutnrun sample with its input sample. This tab 
+    delimited file contains two required columns and two optional, all 
+    columns are case __in__sensitive.
+
+        - Required: 
+            - Sample
+            - Group
+        - Optionial
+            - Blocks
+            - InputControl
+
+    It is worth noting that a sample can belong to more than one group. 
+    A 1:M sample to group relationship can be denoted by seperating muliptle 
+    groups with commas (i.e. ','). This group information is used downstream 
+    in the pipeline for DBA.
+
     Comparisons between groups can be made with a constrast.tsv file.
-    This function returns a tuple containing the ChIP-input dictionary
-    and a second dictionary containing group to sample lists.
 
     @Example: peakcall.tsv
         Sample    InputControl   Group   Block
@@ -189,13 +196,13 @@ def peakcalls(file, delim="\t"):
     @param file <str>:
         Path to peakcall TSV file.
 
-    @return pairs <dict[str]>:
+    @return pairs <dict[str or None]>:
         Dictionary containing ChIP-input pairs, where each key is ChIP
         sample and its value is its matched input sample
     @return groups <dict[str]>:
         Dictionary containing group to samples, where each key is group
         and its value is a list of samples belonging to that group
-    @return block <dict[str]>:
+    @return block <dict[str or None]>:
         Dictionary containing samples to blocking information, where each
         key is a sample and each value is blocking information for building
         a linear model
