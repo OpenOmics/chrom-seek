@@ -200,15 +200,18 @@ def peakcalls(file, delim="\t"):
         key is a sample and each value is blocking information for building
         a linear model
     """
-    SAMPLE_COL = 'Sample'
-    INPUT_COL = 'InputControl'
-    GROUP_COL = 'Group'
-    BLOCK_COL = 'Block'
+    SAMPLE_COL = 'Sample'.lower()
+    INPUT_COL = 'InputControl'.lower()
+    GROUP_COL = 'Group'.lower()
+    BLOCK_COL = 'Block'.lower()
+    tolowerlist = lambda _list: [str(elem).lower() for elem in _list]
 
     with open(file) as fo:
         rdr = csv.DictReader(fo, delimiter=delim)
+        rdr.fieldnames = tolowerlist(rdr.fieldnames)
         inputs_exist = INPUT_COL in rdr.fieldnames
         blocks_exist = BLOCK_COL in rdr.fieldnames
+        
         dont_exist = []
         for col in (SAMPLE_COL, GROUP_COL):
             if col not in rdr.fieldnames:
@@ -243,7 +246,7 @@ def peakcalls(file, delim="\t"):
             if blocks_exist:
                 block[row[SAMPLE_COL]] = row[BLOCK_COL]
             else:
-                block[row[SAMPLE_COL]] = ''
+                block[row[SAMPLE_COL]] = None
 
     return pairs, groups, block
 
