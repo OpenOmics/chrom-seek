@@ -32,11 +32,11 @@ class TestParsePeakCall(unittest.TestCase):
         # blocking
         for b in ('one', 'two', 'three'):
             self.assertIn(b, blocks.keys())
-        self.assertEqual(blocks['two'], '')
+        self.assertIsNone(blocks['two'])
         self.assertEqual(blocks['three'], 'two')
     
 
-    def test_optional(self):
+    def test_optional_one(self):
         str2file = \
             "Sample\tGroup\tBlock\n" + \
             "one\tg1\t\n" + \
@@ -47,8 +47,27 @@ class TestParsePeakCall(unittest.TestCase):
             f.write(str2file)
         chip2input, groups, blocks = peakcalls(path)
         input_vals = list(set([v for v in chip2input.values()]))
-        # only Nones for input
+        # only Nones for input values
         self.assertEqual(input_vals, [None])
+        self.assertEqual(blocks['three'], 'two')
+        self.assertIsNone(blocks['two'])
+
+
+    def test_optional_two(self):
+        str2file = \
+            "Sample\tGroup\n" + \
+            "one\tg1\n" + \
+            "two\tg2\n" + \
+            "three\tg3,g4"
+        path = os.path.join(self.test_dir, 'test.txt')
+        with open(path, 'w') as f:
+            f.write(str2file)
+        chip2input, groups, blocks = peakcalls(path)
+        input_vals = list(set([v for v in chip2input.values()]))
+        # only Nones for input values
+        self.assertEqual(input_vals, [None])
+        # only Nones for blocks values
+        self.assertEqual(set(blocks.values()), {None})
 
 
 if __name__ == '__main__':
