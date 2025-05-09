@@ -2,7 +2,9 @@
 import pandas as pd
 import argparse
 import os
+import warnings
 
+warnings.simplefilter('ignore')
 
 """
 Script for joining diffbind peak set to uropa gene annotations
@@ -123,9 +125,9 @@ def main(args):
     diffbind = pd.read_csv(args.diffbind, sep="\t")
     diffbind = diffbind.rename(columns={"seqnames": "chr"})  # start & end exist
     # count filter
-    fold_filter = diffbind[diffbind["Fold"].abs() < args.fold]
+    fold_filter = diffbind[diffbind["Fold"].abs() < args.fold].reset_index(drop=True, inplace=True)
     n_filter_fold = fold_filter.shape[0]
-    fdr_filter = diffbind[diffbind["FDR"] > args.fdr]
+    fdr_filter = diffbind[diffbind["FDR"] > args.fdr].reset_index(drop=True, inplace=True)
     n_filter_fdr = fdr_filter.shape[0]
     # filter
     diffbind = diffbind[
@@ -135,9 +137,9 @@ def main(args):
     n_after_filter = diffbind.shape[0]
     # describe filter
     print(f"-- {str(n_filter_fdr)} peaks filtered for being > {str(args.fdr)} FDR --\n")
-    print(str(fold_filter) + "\n\n")
-    print(f"-- {str(n_filter_fold)} peaks filtered for being < abs({str(args.fold)}) fold-change --\n")
     print(str(fdr_filter) + "\n\n")
+    print(f"-- {str(n_filter_fold)} peaks filtered for being < abs({str(args.fold)}) fold-change --\n")
+    print(str(fold_filter) + "\n\n")
     print(f"-- {str(n_after_filter)} total peaks removed by FDR and fold-change filters")
     # format
     diffbind = diffbind.drop(columns=["strand", "Conc"])
