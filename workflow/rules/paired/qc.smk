@@ -86,9 +86,9 @@ rule kraken:
         fq1                     = join(trim_dir, "{name}.R1.trim.fastq.gz"),
         fq2                     = join(trim_dir, "{name}.R2.trim.fastq.gz")
     output:
-        krakenout               = join(kraken_dir, "{name}.trim.kraken_bacteria.out.txt"),
         krakentaxa              = join(kraken_dir, "{name}.trim.kraken_bacteria.taxa.txt"),
         kronahtml               = join(kraken_dir, "{name}.trim.kraken_bacteria.krona.html"),
+        krakenout               = temp(join(kraken_dir, "{name}.trim.kraken_bacteria.out.txt")),
     params:
         rname                   = 'kraken',
         outdir                  = kraken_dir,
@@ -112,13 +112,12 @@ rule kraken:
         # location to reduce filesystem strain
         cp -rv {params.bacdb} ${{tmp}}/;
         kdb_base=$(basename {params.bacdb})
-
         kraken2 --db ${{tmp}}/${{kdb_base}} \\
             --threads {threads} --report {output.krakentaxa} \\
             --output {output.krakenout} \\
             --gzip-compressed \\
             --paired {input.fq1} {input.fq2}
-        
+
         # Generate Krona Report
         cut -f2,3 {output.krakenout} | \\
             ktImportTaxonomy - -o {output.kronahtml}

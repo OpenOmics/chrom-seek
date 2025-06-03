@@ -63,6 +63,7 @@ rule fastq_screen:
             {input}
         """
 
+
 rule kraken:
     """
     Quality-control step to assess for potential sources of microbial contamination.
@@ -77,9 +78,9 @@ rule kraken:
     input:
         fq1                     = join(trim_dir, "{name}.R1.trim.fastq.gz"),
     output:
-        krakenout               = join(kraken_dir, "{name}.trim.kraken_bacteria.out.txt"),
         krakentaxa              = join(kraken_dir, "{name}.trim.kraken_bacteria.taxa.txt"),
-        kronahtml               = join(kraken_dir, "{name}.trim.kraken_bacteria.krona.html"),
+        krakenout               = temp(join(kraken_dir, "{name}.trim.kraken_bacteria.out.txt")),
+        # kronahtml               = join(kraken_dir, "{name}.trim.kraken_bacteria.krona.html"),
     params:
         rname                   = 'kraken',
         outdir                  = kraken_dir,
@@ -109,7 +110,7 @@ rule kraken:
             --output {output.krakenout} \\
             --gzip-compressed \\
             {input.fq1}
-        
+
         # Generate Krona Report
         cut -f2,3 {output.krakenout} | \\
             ktImportTaxonomy - -o {output.kronahtml}
