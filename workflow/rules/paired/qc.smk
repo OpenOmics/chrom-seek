@@ -87,7 +87,6 @@ rule kraken:
         fq2                     = join(trim_dir, "{name}.R2.trim.fastq.gz")
     output:
         krakentaxa              = join(kraken_dir, "{name}.trim.kraken_bacteria.taxa.txt"),
-        kronahtml               = join(kraken_dir, "{name}.trim.kraken_bacteria.krona.html"),
         krakenout               = temp(join(kraken_dir, "{name}.trim.kraken_bacteria.out.txt")),
     params:
         rname                   = 'kraken',
@@ -117,10 +116,6 @@ rule kraken:
             --output {output.krakenout} \\
             --gzip-compressed \\
             --paired {input.fq1} {input.fq2}
-
-        # Generate Krona Report
-        cut -f2,3 {output.krakenout} | \\
-            ktImportTaxonomy - -o {output.kronahtml}
         """
 
 
