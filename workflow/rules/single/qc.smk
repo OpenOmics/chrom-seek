@@ -112,6 +112,6 @@ rule kraken:
             {input.fq1}
 
         # Generate Krona Report
-        cut -f2,3 {output.krakenout} | \\
-            ktImportTaxonomy - -o {output.kronahtml}
+        # cut -f2,3 {output.krakenout} | \\
+        #    ktImportTaxonomy - -o {output.kronahtml}
         """
