@@ -99,29 +99,30 @@ def fuzz_merge(db, uropa):
             check_uropa['distance'] = check_uropa['start'].apply(lambda x: abs(row['start'] - x))
             check_uropa = check_uropa.dropna(subset=['distance'])
             check_uropa = check_uropa[check_uropa['distance'] <= 2]
-            if check_uropa.shape[0] > 1:
-                raise ValueError
-            elif check_uropa.shape[0] < 1:
+            if check_uropa.shape[0] < 1:
                 continue
             else:
-                db_uropa_map[i] = check_uropa.index[0]
+                db_uropa_map[i] = check_uropa.index.tolist()
 
     merge_df = pd.DataFrame()
     for db_i, ur_i in db_uropa_map.items():
         this_db_row = db.loc[db_i].to_dict()
-        this_ur_row = uropa.loc[ur_i].fillna('NA').to_dict()
-        del this_ur_row['chr']
-        del this_ur_row['start']
-        del this_ur_row['end']
-        newrow = this_db_row
-        newrow.update(this_ur_row)
-        merge_df = pd.concat([merge_df, pd.DataFrame([newrow])], ignore_index=True)
+        this_ur_row = uropa.loc[ur_i].fillna('NA').to_dict(orient='records')
+        
+        for ur_row in this_ur_row:
+            del ur_row['chr']
+            del ur_row['start']
+            del ur_row['end']
+            newrow = this_db_row
+            newrow.update(ur_row)
+            merge_df = pd.concat([merge_df, pd.DataFrame([newrow])], ignore_index=True)
     return merge_df
 
 
 def main(args):
     diffbind = pd.read_csv(args.diffbind, sep="\t")
     diffbind = diffbind.rename(columns={"seqnames": "chr"})  # start & end exist
+    diffbind['chr'] = diffbind['chr'].astype(str)
     # count filter
     fold_filter = diffbind[diffbind["Fold"].abs() < args.fold]
     n_filter_fold = fold_filter.shape[0]
@@ -146,6 +147,7 @@ def main(args):
     uropa = uropa.rename(
         columns={"peak_chr": "chr", "peak_start": "start", "peak_end": "end"}
     )
+    uropa['chr'] = uropa['chr'].astype(str)
     uropa = uropa.drop(columns=["peak_score", "peak_strand"])
     uropa = uropa.reset_index(drop=True)
     # join tables
@@ -156,6 +158,7 @@ def main(args):
     n_merged = merged.shape[0]
     print(f"-- {n_uropa} peaks from uropa annotation, {n_diffbind} peaks from diffbind consensus -- \n\n")
     print(f"-- {n_merged} peaks merged from uropa + diffbind sources -- \n\n")
+    merged = merged.sort_values(by='FDR', ascending=True)
     merged.to_csv(args.output, sep="\t", index=False)
     return
 
