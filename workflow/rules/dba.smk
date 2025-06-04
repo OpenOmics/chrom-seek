@@ -598,12 +598,20 @@ rule diffbindQC_genrich:
         if [ -s "${{tmp}}/groups.json" ]; then
             grp="-g ${{tmp}}/groups.json"
         fi
-        {params.pythonscript} \\
-            -p {input.samples_peaks} \\
-            -t {params.peak_type} \\
-            -o {output.csvfile} ${{grp}}\\
-            -s {input.sample_bams} \\
-            -c {input.control_bams}
+        if [ "{input.control_bams}" != "" ]; then
+            {params.pythonscript} \\
+                -p {input.samples_peaks} \\
+                -t {params.peak_type} \\
+                -o {output.csvfile} ${{grp}}\\
+                -s {input.sample_bams} \\
+                -c {input.control_bams}
+        else
+            {params.pythonscript} \\
+                -p {input.samples_peaks} \\
+                -t {params.peak_type} \\
+                -o {output.csvfile} ${{grp}}\\
+                -s {input.sample_bams}
+        fi
         cp {params.rscript} {params.outdir}
         cd {params.outdir}
         Rscript -e 'rmarkdown::render("{params.rscript}", output_file="{output.html}",

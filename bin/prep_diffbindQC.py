@@ -19,7 +19,7 @@ def valid_json(path):
     with open(path, "r") as file:
         data = json.load(file)
         return data
-    
+
 
 def sids2group(sids, group):
     n = len(sids)
@@ -111,7 +111,7 @@ if __name__ == "__main__":
         "-c",
         "--controlbams",
         dest="control",
-        nargs="+",
+        nargs="?",
         default=None,
         help="List of the control BAM files",
     )
