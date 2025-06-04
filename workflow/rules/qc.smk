@@ -201,7 +201,7 @@ rule multiqc:
         expand(join(qc_dir, "{name}.ccurve"), name=samples),
         expand(join(qc_dir, "rawfastQC", "{name}.R1_fastqc.html"), name=samples),
         expand(join(qc_dir, "fastQC", "{name}.R1.trim_fastqc.html"), name=samples),
-        expand(join(kraken_dir, "{name}.trim.kraken_bacteria.out.txt"), name=samples),
+        expand(join(kraken_dir, "{name}.trim.kraken_bacteria.taxa.txt"), name=samples),
         expand(join(bam_dir, "{name}.Q5DD.bam.flagstat"), name=samples),
         expand(join(bam_dir, "{name}.Q5.bam.flagstat"), name=samples),
         join(deeptools_dir, "spearman_readcounts.Q5DD.tab"),
