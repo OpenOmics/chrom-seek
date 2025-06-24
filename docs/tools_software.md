@@ -86,7 +86,7 @@ The pipeline includes peak calling and differential peak calling tools to identi
 | MACS<sup>1</sup>        | 2.2.7.1     | **`macsNarrow`**: The macs2 caller optimized for narrow peaks, widely recognized as the most popular peak calling algorithm. Typically used in large databases, it identifies peaks within the range of 150bp to 10kb. Originally designed to handle peaks with a single maxima/summit, its false discovery rate (FDR) has been greatly improved with the addition of an "input" control. It is generally more accurate than most other peak callers, even without controls. **`macsBroad`**: The macs2 caller for slightly broader peaks, sharing a similar algorithm with macsNarrow. It is particularly useful when peaks exhibit more than one maxima/summit. |
 | Sicer<sup>2</sup>       | 2-1.0.3     | Sicer is a broad peak caller that can be highly effective for certain histone marks. However, it may not perform well for extra broad domains such as lamins or some repressive marks. It allows for a small amount of gaps between peaks, and users may need to adjust window and gap parameters for optimal results. |
 | Genrich<sup>3</sup>     | 0.6         | Designed with ATAC-seq data in mind, Genrich can yield excellent results. However, it may not be universally favored by all collaborators due to its lack of formal publication or review. |
-| SEACR<sup>4</sup>       | 1.3         | Peak caller for CUT & RUN or CUT & TAG only; can utilize IgG as if it was an input control |
+| SEACR<sup>4</sup>       | 1.3         | Peak caller for CUT & RUN or CUT & TAG only; can utilize IgG as if it was an input control, but assumes IgG is sparse. |
 | MANorm<sup>5</sup>      | 1.1.4       | Differential peak calling when no replicates. This tool has not been incorporated into the pipeline. |
 | DiffBind<sup>6,7</sup>  | 2.15.2      | Used for conducting differential peak calling analyses, this tool integrates with Deseq2 and EdgeR for analysis. Here is a [link](https://bioconductor.org/packages/release/bioc/vignettes/DiffBind/inst/doc/DiffBind.pdf) to DiffBind's documentation. |
 
@@ -163,7 +163,21 @@ Expanded encyclopaedias of DNA elements in the human and mouse genomes. Nature 5
 Note: All fastas and gtfs in built into this pipeline only include reference chromosomes, ie autosomes and sex chromosomes.  
 See: https://github.com/Boyle-Lab/Blacklist/tree/master/lists for all v1 and v2 blacklists available.
 
-
+## Main differences between assays
+- **ChIP**
+   - Only assay that can handle SE data  
+   - Peak callers are: macs Narrow and macs Broad  
+- **cfChIP**
+   - Peak caller is: macs Narrow  
+   - Only runs on hg19
+   - Filters chromosome X
+   - Changes to annotation conditions
+   - UMAP plot created in the DiffBindQC report  
+   - Some rules run in the other versions do not run here
+- **ATAC**
+   - Peak callers are: macs Narrow and Genrich  
+- **cutnrun**  
+   - Peak callers are: macs Narrow and SEACR  
 
 ## Acknowledgements
 
