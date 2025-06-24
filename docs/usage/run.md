@@ -36,7 +36,7 @@ Each of the following arguments are required. Failure to provide a required argu
 > **Assay type or data-processing pipeline.**  
 > *type: string*  
 > 
-> This option defines which pipeline will be run. chrom-seek supports the processing of bulk ChIP-seq (ChIP), cell-free DNA ChIP-seq (cfChIP), and ATAC-seq (ATAC) samples. Please select from one of the following data-processing pipelines: `cfChIP`, `ChIP`, `ATAC`.
+> This option defines which pipeline will be run. chrom-seek supports the processing of bulk ChIP-seq (ChIP), cell-free DNA ChIP-seq (cfChIP), ATAC-seq (ATAC) samples, and CUT & RUN or CUT & TAG (cutnrun). Please select from one of the following data-processing pipelines: `cfChIP`, `ChIP`, `ATAC`, `cutnrun`.
 > 
 > ***Example:*** `--assay ChIP`
 
