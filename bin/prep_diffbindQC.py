@@ -25,7 +25,7 @@ def valid_json(path):
 def sids2group(sids, group):
     n = len(sids)
     if group is None:
-        return repeat("", n)
+        return list(repeat("", n))
     out_groups = []
     for sid in sids:
         this_group = ""
