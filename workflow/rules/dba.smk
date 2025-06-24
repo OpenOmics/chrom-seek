@@ -504,12 +504,20 @@ rule diffbindQC_macsN:
         if [ -s "${{tmp}}/groups.json" ]; then
             grp="-g ${{tmp}}/groups.json"
         fi
-        {params.pythonscript} \\
-            -p {input.samples_peaks} \\
-            -t {params.peak_type} \\
-            -o {output.csvfile} ${{grp}}\\
-            -s {input.sample_bams} \\
-            -c {input.control_bams}
+        if [ "{input.control_bams}" != "" ]; then
+            {params.pythonscript} \\
+                -p {input.samples_peaks} \\
+                -t {params.peak_type} \\
+                -o {output.csvfile} ${{grp}}\\
+                -s {input.sample_bams} \\
+                -c {input.control_bams}
+        else
+            {params.pythonscript} \\
+                -p {input.samples_peaks} \\
+                -t {params.peak_type} \\
+                -o {output.csvfile} ${{grp}}\\
+                -s {input.sample_bams}
+        fi
         cp {params.rscript} {params.outdir}
         cd {params.outdir}
         Rscript -e 'rmarkdown::render("{params.rscript}", output_file="{output.html}",
@@ -541,54 +549,7 @@ rule diffbindQC_macsB:
     container:
        config['images']['diffbind']
     shell:
-        """
-        if [ ! -d \"{tmpdir}\" ]; then mkdir -p \"{tmpdir}\"; fi
-        tmp=$(mktemp -d -p \"{tmpdir}\")
-        trap 'rm -rf "${{tmp}}"' EXIT
-        echo "{params.groups}" | python -m json.tool >> ${{tmp}}/groups.json
-        cat ${{tmp}}/groups.json
-        grp=""
-        if [ -s "${{tmp}}/groups.json" ]; then
-            grp="-g ${{tmp}}/groups.json"
-        fi
-        {params.pythonscript} \\
-            -p {input.samples_peaks} \\
-            -t {params.peak_type} \\
-            -o {output.csvfile} ${{grp}}\\
-            -s {input.sample_bams} \\
-            -c {input.control_bams}
-        cp {params.rscript} {params.outdir}
-        cd {params.outdir}
-        Rscript -e 'rmarkdown::render("{params.rscript}", output_file="{output.html}",
-            params=list(csvfile="{output.csvfile}", umapfile="{output.umap}", 
-            counts_bed="{output.countsbed}", counts_csv="{output.countscsv}",
-            peakcaller="{params.peak_tool}"))'
-        """
-
-
-rule diffbindQC_genrich:
-    input:
-        sample_bams                 = expand(join(bam_dir, "{name}.Q5DD.bam"), name=chips),
-        control_bams                = [join(bam_dir, f"{chip2input[sample_name]}.Q5DD.bam") for sample_name in chips] if chips and has_inputs else [],
-        samples_peaks               = expand(join(genrich_dir, "{name}", "{name}.narrowPeak"), name=chips)
-    output:
-        html                        = join(diffbind_qc_dir, "AllSamples-Genrich", "AllSamples-Genrich_DiffBindQC.html"),
-        countsbed                   = join(diffbind_qc_dir, "AllSamples-Genrich", "AllSamples-Genrich_DiffBindQC_TMMcounts.bed"),
-        countscsv                   = join(diffbind_qc_dir, "AllSamples-Genrich", "AllSamples-Genrich_DiffBindQC_TMMcounts.csv"),
-        umap                        = join(diffbind_qc_dir, "AllSamples-Genrich", "AllSamples-Genrich_DiffBindQC_DiffBindQC_UMAP.csv"),
-        csvfile                     = join(diffbind_qc_dir, "AllSamples-Genrich", "AllSamples-Genrich_DiffBind_prep.csv"),
-    params:
-        rname                       = "diffbindQC_genrich",
-        peak_tool                   = "Genrich",
-        peak_type                   = "narrow",
-        rscript                     = join(bin_path, "DiffBind_v2_QC.Rmd"),
-        outdir                      = join(diffbind_qc_dir, "AllSamples-Genrich"),
-        pythonscript                = join(bin_path, "prep_diffbindQC.py"),
-        groups                      = json.dumps(config['project']['groups']).replace('"', '\\"')
-    container:
-       config['images']['diffbind']
-    shell:
-        """
+        dedent("""
         if [ ! -d \"{tmpdir}\" ]; then mkdir -p \"{tmpdir}\"; fi
         tmp=$(mktemp -d -p \"{tmpdir}\")
         trap 'rm -rf "${{tmp}}"' EXIT
@@ -618,7 +579,62 @@ rule diffbindQC_genrich:
             params=list(csvfile="{output.csvfile}", umapfile="{output.umap}", 
             counts_bed="{output.countsbed}", counts_csv="{output.countscsv}",
             peakcaller="{params.peak_tool}"))'
-        """
+        """)
+
+
+rule diffbindQC_genrich:
+    input:
+        sample_bams                 = expand(join(bam_dir, "{name}.Q5DD.bam"), name=chips),
+        control_bams                = [join(bam_dir, f"{chip2input[sample_name]}.Q5DD.bam") for sample_name in chips] if chips and has_inputs else [],
+        samples_peaks               = expand(join(genrich_dir, "{name}", "{name}.narrowPeak"), name=chips)
+    output:
+        html                        = join(diffbind_qc_dir, "AllSamples-Genrich", "AllSamples-Genrich_DiffBindQC.html"),
+        countsbed                   = join(diffbind_qc_dir, "AllSamples-Genrich", "AllSamples-Genrich_DiffBindQC_TMMcounts.bed"),
+        countscsv                   = join(diffbind_qc_dir, "AllSamples-Genrich", "AllSamples-Genrich_DiffBindQC_TMMcounts.csv"),
+        umap                        = join(diffbind_qc_dir, "AllSamples-Genrich", "AllSamples-Genrich_DiffBindQC_DiffBindQC_UMAP.csv"),
+        csvfile                     = join(diffbind_qc_dir, "AllSamples-Genrich", "AllSamples-Genrich_DiffBind_prep.csv"),
+    params:
+        rname                       = "diffbindQC_genrich",
+        peak_tool                   = "Genrich",
+        peak_type                   = "narrow",
+        rscript                     = join(bin_path, "DiffBind_v2_QC.Rmd"),
+        outdir                      = join(diffbind_qc_dir, "AllSamples-Genrich"),
+        pythonscript                = join(bin_path, "prep_diffbindQC.py"),
+        groups                      = json.dumps(config['project']['groups']).replace('"', '\\"')
+    container:
+       config['images']['diffbind']
+    shell:
+        dedent("""
+        if [ ! -d \"{tmpdir}\" ]; then mkdir -p \"{tmpdir}\"; fi
+        tmp=$(mktemp -d -p \"{tmpdir}\")
+        trap 'rm -rf "${{tmp}}"' EXIT
+        echo "{params.groups}" | python -m json.tool >> ${{tmp}}/groups.json
+        cat ${{tmp}}/groups.json
+        grp=""
+        if [ -s "${{tmp}}/groups.json" ]; then
+            grp="-g ${{tmp}}/groups.json"
+        fi
+        if [ "{input.control_bams}" != "" ]; then
+            {params.pythonscript} \\
+                -p {input.samples_peaks} \\
+                -t {params.peak_type} \\
+                -o {output.csvfile} ${{grp}}\\
+                -s {input.sample_bams} \\
+                -c {input.control_bams}
+        else
+            {params.pythonscript} \\
+                -p {input.samples_peaks} \\
+                -t {params.peak_type} \\
+                -o {output.csvfile} ${{grp}}\\
+                -s {input.sample_bams}
+        fi
+        cp {params.rscript} {params.outdir}
+        cd {params.outdir}
+        Rscript -e 'rmarkdown::render("{params.rscript}", output_file="{output.html}",
+            params=list(csvfile="{output.csvfile}", umapfile="{output.umap}", 
+            counts_bed="{output.countsbed}", counts_csv="{output.countscsv}",
+            peakcaller="{params.peak_tool}"))'
+        """)
 
 
 rule diffbindQC_SEACR:
@@ -643,7 +659,7 @@ rule diffbindQC_SEACR:
     container:
        config['images']['diffbind']
     shell:
-        """
+        dedent("""
         if [ ! -d \"{tmpdir}\" ]; then mkdir -p \"{tmpdir}\"; fi
         tmp=$(mktemp -d -p \"{tmpdir}\")
         trap 'rm -rf "${{tmp}}"' EXIT
@@ -651,19 +667,27 @@ rule diffbindQC_SEACR:
         grp="";
         if [ -s ${{tmp}}/groups.json ]; then grp="-g ${{tmp}}/groups.json "; fi
         echo $grp
-        {params.pythonscript} \\
-            -p {input.samples_peaks} \\
-            -t {params.peak_type} \\
-            -o {output.csvfile} ${{grp}}\\
-            -s {input.sample_bams} \\
-            -c {input.control_bams}
+        if [ "{input.control_bams}" != "" ]; then
+            {params.pythonscript} \\
+                -p {input.samples_peaks} \\
+                -t {params.peak_type} \\
+                -o {output.csvfile} ${{grp}}\\
+                -s {input.sample_bams} \\
+                -c {input.control_bams}
+        else
+            {params.pythonscript} \\
+                -p {input.samples_peaks} \\
+                -t {params.peak_type} \\
+                -o {output.csvfile} ${{grp}}\\
+                -s {input.sample_bams}
+        fi
         cp {params.rscript} {params.outdir}
         cd {params.outdir}
         Rscript -e 'rmarkdown::render("{params.rscript}", output_file="{output.html}",
             params=list(csvfile="{output.csvfile}", umapfile="{output.umap}", 
             counts_bed="{output.countsbed}", counts_csv="{output.countscsv}",
             peakcaller="{params.peak_tool}"))'
-        """
+        """)
 
 
 ######### UROPA + Diffbind #########
