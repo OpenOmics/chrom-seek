@@ -162,6 +162,22 @@ def peakcalls(file, delim="\t"):
             else:
                 block[row[SAMPLE_COL]] = None
 
+    # group name requirements validation
+    bad_labels = []
+    ## character black list
+    bad_chars = ('*', '_', '-')
+    for grp_label in groups.keys():
+        for _char in bad_chars:
+            if _char in grp_label:
+                bad_labels.append(grp_label)
+
+    if bad_labels:
+        if len(bad_labels) > 1:
+            bad_labels = ', '.join(bad_labels)
+        else:
+            bad_labels = bad_labels[0]
+        raise ValueError('Group(s): ' + bad_labels + '; contain the invalid characters *, -, and/or _ replace and resubmit pipeline')
+
     return pairs, groups, block
 
 

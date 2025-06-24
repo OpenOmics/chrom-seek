@@ -70,5 +70,20 @@ class TestParsePeakCall(unittest.TestCase):
         self.assertEqual(set(blocks.values()), {None})
 
 
+    def test_bad_group_labels(self):
+        str2file = \
+            "Sample\tGroup\n" + \
+            "one\tg_1\n" + \
+            "two\tg-2\n" + \
+            "three\tg*3,g4" + \
+            "four\tg4"
+        path = os.path.join(self.test_dir, 'test.txt')
+        with open(path, 'w') as f:
+            f.write(str2file)
+        with self.assertRaisesRegex(ValueError, r"Group\(s\)\: g_1, g-2, g\*3"):
+            chip2input, groups, blocks = peakcalls(path)
+
+
+
 if __name__ == '__main__':
     unittest.main()
