@@ -14,7 +14,9 @@ _What do each of these file extension(s) mean?_
   
 ### Annotation options:
 
-The specific parameters chosen are listed in the associated json and pdf files.
+The specific parameters chosen are listed in the associated json and pdf files. All Uropa options listed here follow an iterative query approach.  
+
+Currently only protTSS is active. Run parameters for other choices available upon request.  
 
 _Here are a list of different annotation options:_
 
@@ -22,6 +24,17 @@ _Here are a list of different annotation options:_
   - **`prot`**: Analyze only protein-coding genes in the GTF file using the most lenient parameters from Uropa.
   - **`protSEC`**: Focuses on protein-coding genes, utilizing Uropa's multi-step annotation approach, and annotates sequentially based on gene start, end, center, and anywhere within the gene.
   - **`protTSS`**: This is the most popular option and is ideal for most projects. It focuses exclusively on protein-coding genes and centers around transcription start sites (TSS).
+
+_protTSS run conditions:_  
+  - **`For most assays`**:  
+      - Query1: Peak center must be within 3kb upstream or 1kb downstream of the TSS (based upon gene orientation)   
+      - Query2: Peak center must be within 10kb of the TSS in either direction  
+      - Query3: Peak center must be within 100kb of the TSS in either direction  
+  - **`cfChIP`**:  
+      - Query1: Peak center must be within 3kb of the TSS in either direction  
+      - Query2: Peak center must be within 10kb of the TSS in either direction  
+      - Query3: Peak center must be within 100kb of the TSS in either direction  
+
 
 ### File format types
 
