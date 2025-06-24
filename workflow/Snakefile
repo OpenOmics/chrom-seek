@@ -115,13 +115,13 @@ else:
             application=["macsBroad"],
             _type=peak_types,
         ))
-    if assay in ("chip", "cutnrun"):
+    if assay in ("cutnrun",):
         # SEACR
         rule_all_ins.append(join(peakqc_dir, "jaccard", 'SEACR_jaccard.txt'))
         rule_all_ins.extend(expand(
             join(seacr_dir, "{name}", "{name}.stringent.bed"), name=chips
         ))
-    if assay in ("atac", "chip"):
+    if assay in ("atac",):
         # Genrich
         rule_all_ins.append(join(peakqc_dir, "jaccard", "Genrich_jaccard.txt"))
         rule_all_ins.extend(expand(

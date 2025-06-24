@@ -2,7 +2,7 @@
 import argparse
 import json
 from csv import DictWriter
-from os.path import basename, dirname, exists, isfile
+from os.path import basename, dirname, exists, isfile, abspath
 from os import makedirs
 from itertools import repeat
 
@@ -14,6 +14,7 @@ from itertools import repeat
 
 
 def valid_json(path):
+    path = abspath(path)
     if not isfile(path):
         raise argparse.ArgumentTypeError(f"'{path}' is not a valid file path")
     with open(path, "r") as file:
@@ -111,7 +112,7 @@ if __name__ == "__main__":
         "-c",
         "--controlbams",
         dest="control",
-        nargs="?",
+        nargs="+",
         default=None,
         help="List of the control BAM files",
     )
