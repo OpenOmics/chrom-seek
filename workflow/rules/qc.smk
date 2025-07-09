@@ -509,6 +509,10 @@ rule jaccard_genrich:
         config['images']['python']
     shell: 
         dedent("""
+        if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
+        tmp=$(mktemp -d -p "{params.tmpdir}")
+        export TMPDIR=${tmp}
+        trap 'rm -rf "${{tmp}}"' EXIT
         python {params.script} \\
             -i "{input}" \\
             --outtable {output.table} \\
