@@ -361,7 +361,6 @@ rule deeptools_gene_all:
             --yAxisLabel 'average RPGC' \\
             --plotType 'se' \\
             --numPlotsPerRow 5 \\
-            --outFileNameData {output.mqc} \\
             --legendLocation 'none'
         """)
 
