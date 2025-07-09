@@ -22,6 +22,7 @@ class TestParsePeakCall(unittest.TestCase):
         path = os.path.join(self.test_dir, 'test.txt')
         with open(path, 'w') as f:
             f.write(str2file)
+            f.close()
         chip2input, groups, blocks = peakcalls(path)
         # chips and input mapping
         self.assertEqual([v for v in chip2input.values()], ['', 'one', 'one'])    
@@ -45,6 +46,7 @@ class TestParsePeakCall(unittest.TestCase):
         path = os.path.join(self.test_dir, 'test.txt')
         with open(path, 'w') as f:
             f.write(str2file)
+            f.close()
         chip2input, groups, blocks = peakcalls(path)
         input_vals = list(set([v for v in chip2input.values()]))
         # only Nones for input values
@@ -62,6 +64,7 @@ class TestParsePeakCall(unittest.TestCase):
         path = os.path.join(self.test_dir, 'test.txt')
         with open(path, 'w') as f:
             f.write(str2file)
+            f.close()
         chip2input, groups, blocks = peakcalls(path)
         input_vals = list(set([v for v in chip2input.values()]))
         # only Nones for input values
@@ -80,7 +83,38 @@ class TestParsePeakCall(unittest.TestCase):
         path = os.path.join(self.test_dir, 'test.txt')
         with open(path, 'w') as f:
             f.write(str2file)
+            f.close()
         with self.assertRaisesRegex(ValueError, r"Group\(s\)\: g_1, g-2, g\*3"):
+            chip2input, groups, blocks = peakcalls(path)
+
+
+    def test_bad_headers(self):
+        str2file = \
+            "Sample\tGroup\tETC\n" + \
+            "one\tg_1\tone\n" + \
+            "two\tg-2\tone\n" + \
+            "three\tg*3,g4\tone\n" + \
+            "four\tg4\tone\n"
+        path = os.path.join(self.test_dir, 'test.txt')
+        with open(path, 'w') as f:
+            f.write(str2file)
+            f.close()
+        with self.assertRaisesRegex(ValueError, r"Peakcall file has unsupported headers!"):
+            chip2input, groups, blocks = peakcalls(path)
+
+
+    def test_with_space(self):
+        str2file = \
+            "Sample\tGroup\tETC\n" + \
+            "one\tg_1  one\n" + \
+            "two\tg-2\tone\n" + \
+            "three\tg*3,g4\tone\n" + \
+            "four\tg4\tone\n"
+        path = os.path.join(self.test_dir, 'test.txt')
+        with open(path, 'w') as f:
+            f.write(str2file)
+            f.close()
+        with self.assertRaisesRegex(ValueError, r"Spaces exist in peakcall file"):
             chip2input, groups, blocks = peakcalls(path)
 
 
