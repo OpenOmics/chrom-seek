@@ -504,11 +504,16 @@ rule jaccard_genrich:
         rname                   = "jaccard_genrich",
         outroot                 = join(peakqc_dir, "jaccard"),
         script                  = join(bin_path, "jaccard_score.py"),
-        genome                  = config['references'][genome]['REFLEN']
+        genome                  = config['references'][genome]['REFLEN'],
+        tmpdir                  = tmpdir
     container: 
         config['images']['python']
     shell: 
         dedent("""
+        if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
+        tmp=$(mktemp -d -p "{params.tmpdir}")
+        export TMPDIR="${{tmp}}"
+        trap 'rm -rf "${{tmp}}"' EXIT
         python {params.script} \\
             -i "{input}" \\
             --outtable {output.table} \\
@@ -529,11 +534,16 @@ rule jaccard_macsbroad:
         rname                   = "jaccard_macsbroad",
         outroot                 = join(peakqc_dir, "jaccard"),
         script                  = join(bin_path, "jaccard_score.py"),
-        genome                  = config['references'][genome]['REFLEN']
+        genome                  = config['references'][genome]['REFLEN'],
+        tmpdir                  = tmpdir
     container: 
         config['images']['python']
     shell: 
         dedent("""
+        if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
+        tmp=$(mktemp -d -p "{params.tmpdir}")
+        export TMPDIR="${{tmp}}"
+        trap 'rm -rf "${{tmp}}"' EXIT
         python {params.script} \\
             -i "{input}" \\
             --outtable {output.table} \\
@@ -554,11 +564,16 @@ rule jaccard_macsnarrow:
         rname                   = "jaccard_macsnarrow",
         outroot                 = join(peakqc_dir, "jaccard"),
         script                  = join(bin_path, "jaccard_score.py"),
-        genome                  = config['references'][genome]['REFLEN']
+        genome                  = config['references'][genome]['REFLEN'],
+        tmpdir                  = tmpdir
     container: 
         config['images']['python']
     shell: 
         dedent("""
+        if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
+        tmp=$(mktemp -d -p "{params.tmpdir}")
+        export TMPDIR="${{tmp}}"
+        trap 'rm -rf "${{tmp}}"' EXIT
         python {params.script} \\
             -i "{input}" \\
             --outtable {output.table} \\
@@ -579,11 +594,16 @@ rule jaccard_seacr:
         rname                   = "jaccard_seacr",
         outroot                 = join(peakqc_dir, "jaccard"),
         script                  = join(bin_path, "jaccard_score.py"),
-        genome                  = config['references'][genome]['REFLEN']
+        genome                  = config['references'][genome]['REFLEN'],
+        tmpdir                  = tmpdir
     container: 
         config['images']['python']
     shell: 
         dedent("""
+        if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
+        tmp=$(mktemp -d -p "{params.tmpdir}")
+        export TMPDIR="${{tmp}}"
+        trap 'rm -rf "${{tmp}}"' EXIT
         python {params.script} \\
             -i "{input}" \\
             --outtable {output.table} \\
