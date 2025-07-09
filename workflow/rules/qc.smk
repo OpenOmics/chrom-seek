@@ -290,10 +290,14 @@ rule deeptools_gene_all:
     input:
         [ join(bw_dir, name + ".Q5DD.RPGC.bw") for name in samples ] 
     output:
+        bed                     = temp(join(deeptools_dir, "geneinfo.Q5DD.bed")),
         TSSline                 = join(deeptools_dir, "TSS_profile.Q5DD.pdf"),
         TSSmat                  = temp(join(deeptools_dir, "TSS.Q5DD.mat.gz")),
-        bed                     = temp(join(deeptools_dir, "geneinfo.Q5DD.bed")),
-	    mqc                     = join(deeptools_dir, "TSS_profile.Q5DD.tab")
+        TSSheat                 = join(deeptools_dir, "TSS_heatmap.Q5DD.pdf"),
+	    mqc                     = join(deeptools_dir, "TSS_profile.Q5DD.tab"),
+        metamat                 = temp(join(deeptools_dir, "metagene.Q5DD.mat.gz")),
+        metaline                = join(deeptools_dir, "meta_profile.Q5DD.pdf"),
+        metaheat                = join(deeptools_dir, "metagene_heatmap.Q5DD.pdf"),
     params:
         rname                   = "deeptools_gene_all",
         parent_dir              = deeptools_dir,
@@ -304,17 +308,61 @@ rule deeptools_gene_all:
     threads: 4
     # eventually threads should be 16
     shell: 
-        """    
+        dedent("""    
         module load {params.deeptoolsver}
         if [ ! -d "{params.parent_dir}" ]; then mkdir "{params.parent_dir}"; fi
         grep --line-buffered 'protein_coding' {params.prebed} | awk -v OFS='\t' -F'\t' '{{print $1, $2, $3, $5, ".", $4}}' > {output.bed}
-        computeMatrix reference-point -S {input} -R {output.bed} -p {threads} \\
-                        --referencePoint TSS --upstream 3000 --downstream 3000 --skipZeros \\
-                        -o {output.TSSmat} --samplesLabel {params.labels}
-        plotProfile -m {output.TSSmat} -out {output.TSSline} \\
-                    --yAxisLabel 'average RPGC' --plotType 'se' --legendLocation upper-left \\
-                    --numPlotsPerRow 5 --outFileNameData {output.mqc}
-        """
+        # TSS
+        computeMatrix reference-point \\
+            -S {input} \\
+            -R {output.bed} \\
+            -p {threads} \\
+            --referencePoint TSS \\
+            --upstream 3000 \\
+            --downstream 3000 \\
+            --skipZeros \\
+            -o {output.TSSmat} \\
+            --samplesLabel {params.labels}
+        plotProfile \\
+            -m {output.TSSmat} \\
+            -out {output.TSSline} \\
+            --yAxisLabel 'average RPGC' \\
+            --plotType 'se' \\
+            --legendLocation 'none' \\
+            --numPlotsPerRow 5 \\
+            --outFileNameData {output.mqc}
+        plotHeatmap -m {output.TSSmat} \\
+            -out {output.TSSheat} \\
+            --colorMap 'BuPu' \\
+            --yAxisLabel 'average RPGC' \\
+            --regionsLabel 'genes' \\
+            --legendLocation 'none'
+        # metagene
+        computeMatrix scale-regions \\
+            -S {input} \\
+            -R {output.bed} \\
+            -p {threads} \\
+            --upstream 1000 \\
+            --regionBodyLength 2000 \\
+            --downstream 1000 \\
+            --skipZeros \\
+            -o {output.metamat} \\
+            --samplesLabel {params.labels}
+        plotHeatmap \\
+            -m {output.metamat} \\
+            -out {output.metaheat} \\
+            --colorMap 'BuGn' \\
+            --yAxisLabel 'average RPGC' \\
+            --regionsLabel 'genes' \\
+            --legendLocation 'none'
+        plotProfile \\
+            -m {output.metamat} \\
+            -out {output.metaline} \\
+            --yAxisLabel 'average RPGC' \\
+            --plotType 'se' \\
+            --numPlotsPerRow 5 \\
+            --legendLocation 'none'
+        """)
 
 
 rule FRiP_macsN:
