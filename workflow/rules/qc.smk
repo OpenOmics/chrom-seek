@@ -295,7 +295,7 @@ rule deeptools_gene_all:
         TSSmat                  = temp(join(deeptools_dir, "TSS.Q5DD.mat.gz")),
         TSSheat                 = join(deeptools_dir, "TSS_heatmap.Q5DD.pdf"),
 	    mqc                     = join(deeptools_dir, "TSS_profile.Q5DD.tab"),
-        metamat                 = join(deeptools_dir, "metagene.Q5DD.mat.gz"),
+        metamat                 = temp(join(deeptools_dir, "metagene.Q5DD.mat.gz")),
         metaline                = join(deeptools_dir, "meta_profile.Q5DD.pdf"),
         metaheat                = join(deeptools_dir, "metagene_heatmap.Q5DD.pdf"),
     params:
@@ -323,12 +323,12 @@ rule deeptools_gene_all:
             --skipZeros \\
             -o {output.TSSmat} \\
             --samplesLabel {params.labels}
-        plotProfile \
+        plotProfile \\
             -m {output.TSSmat} \\
             -out {output.TSSline} \\
             --yAxisLabel 'average RPGC' \\
             --plotType 'se' \\
-            --legendLocation upper-left \\
+            --legendLocation 'none' \\
             --numPlotsPerRow 5 \\
             --outFileNameData {output.mqc}
         plotHeatmap -m {output.TSSmat} \\
@@ -358,12 +358,11 @@ rule deeptools_gene_all:
         plotProfile \\
             -m {output.metamat} \\
             -out {output.metaline} \\
-            --plotHeight 15 \\
-            --plotWidth 15 \\
-            --perGroup \\
             --yAxisLabel 'average RPGC' \\
             --plotType 'se' \\
-            --legendLocation upper-right
+            --numPlotsPerRow 5 \\
+            --outFileNameData {output.mqc} \\
+            --legendLocation 'none'
         """)
 
 
