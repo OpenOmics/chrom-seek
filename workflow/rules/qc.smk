@@ -512,7 +512,7 @@ rule jaccard_genrich:
         dedent("""
         if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
         tmp=$(mktemp -d -p "{params.tmpdir}")
-        export TMPDIR=${tmp}
+        export TMPDIR="${{tmp}}"
         trap 'rm -rf "${{tmp}}"' EXIT
         python {params.script} \\
             -i "{input}" \\
@@ -542,7 +542,7 @@ rule jaccard_macsbroad:
         dedent("""
         if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
         tmp=$(mktemp -d -p "{params.tmpdir}")
-        export TMPDIR=${tmp}
+        export TMPDIR="${{tmp}}"
         trap 'rm -rf "${{tmp}}"' EXIT
         python {params.script} \\
             -i "{input}" \\
@@ -572,7 +572,7 @@ rule jaccard_macsnarrow:
         dedent("""
         if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
         tmp=$(mktemp -d -p "{params.tmpdir}")
-        export TMPDIR=${tmp}
+        export TMPDIR="${{tmp}}"
         trap 'rm -rf "${{tmp}}"' EXIT
         python {params.script} \\
             -i "{input}" \\
@@ -602,7 +602,7 @@ rule jaccard_seacr:
         dedent("""
         if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
         tmp=$(mktemp -d -p "{params.tmpdir}")
-        export TMPDIR=${tmp}
+        export TMPDIR="${{tmp}}"
         trap 'rm -rf "${{tmp}}"' EXIT
         python {params.script} \\
             -i "{input}" \\
