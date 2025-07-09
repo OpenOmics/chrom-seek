@@ -11,6 +11,44 @@ import mimetypes
 from utils import Colors, err, fatal
 
 
+def print_tsv_highlighted(tsv_path):
+    """
+    Prints TSV data with spaces and tabs highlighted.
+    """
+    tsv_data = open(tsv_path).read()
+    for line in tsv_data.splitlines():
+        highlighted_line = ""
+        for char in line:
+            if char == ' ':
+                highlighted_line += Colors.cyan + '•' + Colors.end # Highlight spaces with a middle dot
+            elif char == '\t':
+                highlighted_line += Colors.green + '→' + Colors.end # Highlight tabs with an arrow
+            else:
+                highlighted_line += char
+        print(highlighted_line)
+
+def check_for_spaces_in_tsv(filepath):
+    """
+    Checks if any field in a TSV file contains a space character.
+
+    Args:
+        filepath (str): The path to the TSV file.
+
+    Returns:
+        bool: True if any space is found within a field, False otherwise.
+    """
+    spaces = []
+    spaces_exist = False
+    with open(filepath, 'r', newline='', encoding='utf-8') as tsvfile:
+        tsv_reader = csv.reader(tsvfile, delimiter='\t')
+        for row_num, row in enumerate(tsv_reader, 1):
+            for col_num, field in enumerate(row, 1):
+                if ' ' in field:
+                    spaces.append((row_num, col_num, field))
+                    spaces_exist = True
+    return spaces_exist, spaces
+
+
 def clean(s, remove=['"', "'"]):
     """Cleans a string to remove any defined leading or trailing characters.
     @param s <str>:
@@ -116,13 +154,33 @@ def peakcalls(file, delim="\t"):
     GROUP_COL = 'Group'.lower()
     BLOCK_COL = 'Block'.lower()
     tolowerlist = lambda _list: [str(elem).lower() for elem in _list]
+    
+    spaces_check = check_for_spaces_in_tsv(file)
+    if spaces_check[0]:
+        print("Spaces detected within peakcall TSV file:\n")
+        for row, col, field in spaces_check[1]:
+            print(f'\tSpace at row: {row}, column: {col}, field: {field}')
+        print('')
+        print_tsv_highlighted(file)
+        print('')
+        raise ValueError('Spaces exist in peakcall file')
 
     with open(file) as fo:
         rdr = csv.DictReader(fo, delimiter=delim)
+
+        supported_column_names = {"Sample", "InputControl", "Group", "Block"}
+        unrecognized_column_names =  set(rdr.fieldnames) - supported_column_names
+        if unrecognized_column_names:
+            print('')
+            print_tsv_highlighted(file)
+            print('')
+            print("Error: The provided peakcall file contains contains the following unsupported column names: {0}".format(unrecognized_column_names))
+            print("Please update the header of your peakcall file. Here is a list of valid column name: {0}".format(supported_column_names))
+            raise ValueError('Peakcall file has unsupported headers!')
+
         rdr.fieldnames = tolowerlist(rdr.fieldnames)
         inputs_exist = INPUT_COL in rdr.fieldnames
         blocks_exist = BLOCK_COL in rdr.fieldnames
-        
         dont_exist = []
         for col in (SAMPLE_COL, GROUP_COL):
             if col not in rdr.fieldnames:
@@ -130,8 +188,11 @@ def peakcalls(file, delim="\t"):
 
         if dont_exist:
             _c = ', '.join(dont_exist)
-            raise ValueError(f'peakcall file missing columns {_c}')
-
+            print('')
+            print_tsv_highlighted(file)
+            print('')
+            raise ValueError(f'Peakcall file missing columns {_c}!')
+        
         all_groups = []
         for row in rdr:
             if ',' in row[GROUP_COL]:
