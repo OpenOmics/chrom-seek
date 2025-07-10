@@ -13,7 +13,7 @@ single tab-delimited file.
 
 ##########################################
 # Modules
-import optparse
+import argparse
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -30,7 +30,8 @@ mpl.use('Agg')
 ##########################################
 # Functions
 def split_infiles(infiles):
-    """ breaks the infile string with space-delimited file names and creates a list.
+    """
+    breaks the infile string with space-delimited file names and creates a list.
     also works for infile types
     """
     infileList = infiles.strip("\'").strip('\"').split(" ")
@@ -40,7 +41,8 @@ def split_infiles(infiles):
 
 
 def loop_jaccard(infileList, genomefile, filetypeList):
-    """ Uses two loops to do all possible pairwise comparisons of files 
+    """
+    Uses two loops to do all possible pairwise comparisons of files 
     in a list. Returns a writeable output and a pandas object
     """
     nfiles = len(infileList)
@@ -68,7 +70,8 @@ def loop_jaccard(infileList, genomefile, filetypeList):
 
 
 def run_jaccard(fileA, fileB, genomefile):
-    """ Running bedtools. Reads in two bedtools approved file types, sorts the files, 
+    """
+    Running bedtools. Reads in two bedtools approved file types, sorts the files, 
     and calculates a jaccard score.
     """
     a = BedTool(fileA)
@@ -93,22 +96,25 @@ def get_colnames(infileList, filetypeList):
     return (colnames, snames)
 
 
-def pca_plot(out, filetypeList, snames, outPCAFile):
+def pca_plot(out, filetypeList, snames, peakcaller, pcatabout, outPCAFile):
     """
     creates a 2D PCA plot comparing the files based upon jaccard scores
     """
     sklearn_pca = sklearnPCA(n_components=2)
     Y_sklearn = sklearn_pca.fit_transform(out)
-    PCAdata = pd.DataFrame(Y_sklearn,columns=["PC1","PC2"])
-    PCAdata.insert(0,"sample name",snames)
-    fig, ax =plt.subplots()
+    PCAdata = pd.DataFrame(Y_sklearn, columns=["PC1", "PC2"])
+    PCAdata["sample name"] = snames
+    PCAdata["peak caller"] = peakcaller
+    PCAdata.to_csv(pcatabout, sep='\t', index=False)
+
+    fig, ax = plt.subplots()
     snames_pal = sns.hls_palette(len(set(snames)),s=.8)
     sns.set_palette(snames_pal)
     if filetypeList != [""]:
         PCAdata.insert(1,"tool",filetypeList)
-        ax = sns.scatterplot(x="PC1",y="PC2",hue="sample name",style="tool",data=PCAdata,s=100)
+        ax = sns.scatterplot(x="PC1", y="PC2",hue="sample name",style="tool",data=PCAdata,s=100)
     else:
-        ax = sns.scatterplot(x="PC1",y="PC2",hue="sample name",data=PCAdata,s=100)
+        ax = sns.scatterplot(x="PC1", y="PC2",hue="sample name",data=PCAdata,s=100)
     ax.axhline(y=0, color='grey', linewidth=1,linestyle="--")
     ax.axvline(x=0, color='grey', linewidth=1,linestyle="--")
     ax.set(xlabel= "PC1 (" + str(round(100*sklearn_pca.explained_variance_[0],2)) + "%)",
@@ -152,16 +158,14 @@ def plot_heatmap(out, outHeatmapFile, snames, filetypeList):
 
 
 def write_out(out, outFile):
-    f = open(outFile, 'w')
-    f.write( "\n".join(out) )
-    f.close()
-    return 
+    with open(outFile, 'w') as f:
+        f.write( "\n".join(out) )
+        f.close()
+    return
 
 
-##########################################
-# Main
 def main():
-    desc=\
+    desc = \
     dedent("""
     This function takes a space-delimited list of files (bed, bedgraph, gff, gtf, etc.)
     and calculates all possible pairwise jaccard scores. From bedtools: 'Jaccard is the 
@@ -170,30 +174,86 @@ def main():
     intersection, jaccard, n_intersections, and union-intersection.
     """)
 
-    parser = optparse.OptionParser(description=desc)
-    parser.add_option('-i', dest='infiles', default='', help="A space- or semicolon-delimited list of" +
-    "input files for analysis.")
-    parser.add_option('-t', dest='filetypes', default='', help="A space- or semicolon-delimited list" +
-    "of input file sources/types.")
-    parser.add_option('--ot', '--outtable', dest='table', default='', help='')
-    parser.add_option('--op', '--outpca', dest='pca', default='', help='')
-    parser.add_option('--oh', '--outheatmap', dest='heatmap', default='', help='')
-    parser.add_option('-g', dest='genomefile', default='', help='The name of the .genome file.')
+    parser = argparse.ArgumentParser(description=desc)
+    parser.add_argument(
+        '-i', 
+        dest='infiles', 
+        required=True,
+        help="A space or semi-colon delimited list of peak call input files for jaccard analysis"
+    )
+    parser.add_argument(
+        '--caller', 
+        dest='peakcaller', 
+        required=True,
+        help="Name of the peak caller used"
+    )
+    parser.add_argument(
+        '--outtable', 
+        dest='table', 
+        required=True, 
+        help='jaccard tabular output file name'
+    )
+    parser.add_argument(
+        '--pcaplot', 
+        dest='pcaplot', 
+        required=True, 
+        help='jaccard pca plot output file name'
+    )
+    parser.add_argument(
+        '--pcatab', 
+        dest='pcatab', 
+        required=True, 
+        help='jaccard pca tabular output file name'
+    )
+    parser.add_argument(
+        '--outheatmap',
+        required=True, 
+        dest='heatmap', 
+        help='jaccard heatmap output plot file name'
+    )
+    parser.add_argument(
+        '-g', 
+        dest='genomefile', 
+        required=True,
+        help='The genome contig sizes reference file'
+    )
 
-    (options,args) = parser.parse_args()
-    infiles = options.infiles
-    filetypes = options.filetypes
-    genomefile = options.genomefile
+    args = parser.parse_args()
 
+    # incoming arguments
+    infiles = args.infiles
+    filetypes = args.filetypes
+    genomefile = args.genomefile
+    outTableFile = args.table
+    outPCAplot = args.pcaplot
+    outPCAtab = args.pcatab
+    outHeatmapFile = args.heatmap
+    pkcaller = args.caller
+
+    # downstream processing
     infileList = split_infiles(infiles)
     filetypeList = split_infiles(filetypes)
-    (outTable, out, snames) = loop_jaccard(infileList, genomefile, filetypeList)
-    outTableFile = options.table
-    outPCAFile = options.pca
-    outHeatmapFile = options.heatmap
-    write_out(outTable, outTableFile)
-    pca_plot(out, filetypeList, snames, outPCAFile)
-    plot_heatmap(out, outHeatmapFile, snames, filetypeList)
+    outTable, out, snames = loop_jaccard(infileList, 
+                                         genomefile, 
+                                         filetypeList)
+    write_out(
+        outTable, 
+        outTableFile
+    )
+    pca_plot(
+        out, 
+        filetypeList, 
+        snames,
+        pkcaller,
+        outPCAtab, 
+        outPCAplot
+    )
+    plot_heatmap(
+        out, 
+        outHeatmapFile, 
+        snames, 
+        filetypeList
+    )
 
 if __name__ == '__main__':
     main()
