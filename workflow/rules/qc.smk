@@ -329,15 +329,13 @@ rule deeptools_gene_all:
             -out {output.TSSline} \\
             --yAxisLabel 'average RPGC' \\
             --plotType 'se' \\
-            --legendLocation 'none' \\
             --numPlotsPerRow 5 \\
             --outFileNameData {output.mqc}
         plotHeatmap -m {output.TSSmat} \\
             -out {output.TSSheat} \\
             --colorMap 'BuPu' \\
             --yAxisLabel 'average RPGC' \\
-            --regionsLabel 'genes' \\
-            --legendLocation 'none'
+            --regionsLabel 'genes'
         # metagene
         computeMatrix scale-regions \\
             -S {input} \\
@@ -354,15 +352,13 @@ rule deeptools_gene_all:
             -out {output.metaheat} \\
             --colorMap 'BuGn' \\
             --yAxisLabel 'average RPGC' \\
-            --regionsLabel 'genes' \\
-            --legendLocation 'none'
+            --regionsLabel 'genes'
         plotProfile \\
             -m {output.metamat} \\
             -out {output.metaline} \\
             --yAxisLabel 'average RPGC' \\
             --plotType 'se' \\
-            --numPlotsPerRow 5 \\
-            --legendLocation 'none'
+            --numPlotsPerRow 5
         """)
 
 
@@ -634,6 +630,7 @@ rule jaccard_summary:
     params:
         rname                   = "jaccard_summary",
         genome                  = config['references'][genome]['REFLEN'],
+        script                  = join(bin_path, "jaccard_summary.py"),
         tmpdir                  = tmpdir
     container: 
         config['images']['python']
@@ -643,4 +640,6 @@ rule jaccard_summary:
         tmp=$(mktemp -d -p "{params.tmpdir}")
         export TMPDIR="${{tmp}}"
         trap 'rm -rf "${{tmp}}"' EXIT
+        python {params.script} \
+            {input}
         """)
