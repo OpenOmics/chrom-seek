@@ -17,9 +17,14 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime \
         && echo $TZ > /etc/timezone
 
 ############### SETUP ################
+RUN apt-get update
 RUN apt-get update \
-    && apt-get -y upgrade \
-    && apt-get install -y \
+    && apt-get -y upgrade
+RUN apt-get install -y curl gpg
+RUN curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg
+RUN echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" | tee /etc/apt/sources.list.d/google-chrome.list
+RUN apt-get update
+RUN apt-get install -y \
         build-essential \
         autotools-dev \
         automake \
@@ -40,6 +45,7 @@ RUN apt-get update \
         samtools \
         python3 \
         python3-pip \
+        google-chrome-stable \
     && apt-get clean && apt-get purge \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 RUN localedef -i en_US -f UTF-8 en_US.UTF-8
@@ -54,7 +60,11 @@ RUN pip3 install pybedtools \
     scikit-learn \
     matplotlib \
     plotly \
-    seaborn
+    seaborn \
+    kaleido \
+    pip-system-certs \
+    certifi
+# RUN SSL_CERT_FILE=$(python3 -m certifi) plotly_get_chrome -y
 
 ################ POST #################
 COPY Dockerfile /opt2
