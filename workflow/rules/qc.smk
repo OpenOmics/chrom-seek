@@ -496,7 +496,7 @@ rule jaccard_genrich:
     output:
         table                   = join(peakqc_dir, "jaccard", 'Genrich_jaccard.txt'),
         pcaplot                 = join(peakqc_dir, "jaccard", 'Genrich_jaccard_pca.pdf'),
-        pcatag                  = join(peakqc_dir, "jaccard", 'Genrich_jaccard_pca.tsv'),
+        pcatab                  = join(peakqc_dir, "jaccard", 'Genrich_jaccard_pca.tsv'),
         heatmap                 = join(peakqc_dir, "jaccard", 'Genrich_jaccard_heatmap.pdf'),
     params:
         rname                   = "jaccard_genrich",
