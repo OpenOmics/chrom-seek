@@ -182,6 +182,8 @@ rule_all_ins.extend(expand(
     PeakTool=PeakTools
 ))
 
+rule_all_ins.append(join(peakqc_dir, "jaccard", 'jaccard_summary_pca.pdf'))
+
 if paired_end:
     rule_all_ins.extend(expand(
         join(qc_dir, "{name}.nrf"), 
