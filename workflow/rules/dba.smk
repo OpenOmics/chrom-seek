@@ -572,7 +572,6 @@ rule diffbindQC_macsB:
                 -o {output.csvfile} ${{grp}}\\
                 -s {input.sample_bams}
         fi
-        cp {params.rscript} {params.outdir}
         cd {params.outdir}
         Rscript -e 'rmarkdown::render("{params.rscript}", output_file="{output.html}",
             params=list(csvfile="{output.csvfile}", umapfile="{output.umap}", 
@@ -627,7 +626,6 @@ rule diffbindQC_genrich:
                 -o {output.csvfile} ${{grp}}\\
                 -s {input.sample_bams}
         fi
-        cp {params.rscript} {params.outdir}
         cd {params.outdir}
         Rscript -e 'rmarkdown::render("{params.rscript}", output_file="{output.html}",
             params=list(csvfile="{output.csvfile}", umapfile="{output.umap}", 
@@ -680,7 +678,6 @@ rule diffbindQC_SEACR:
                 -o {output.csvfile} ${{grp}}\\
                 -s {input.sample_bams}
         fi
-        cp {params.rscript} {params.outdir}
         cd {params.outdir}
         Rscript -e 'rmarkdown::render("{params.rscript}", output_file="{output.html}",
             params=list(csvfile="{output.csvfile}", umapfile="{output.umap}", 
