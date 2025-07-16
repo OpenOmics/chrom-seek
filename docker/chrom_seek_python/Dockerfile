@@ -2,7 +2,7 @@ FROM ubuntu:22.04
 ENV DEBIAN_FRONTEND=noninteractive
 LABEL maintainer="Skyler Kuhn <skyler.kuhn@nih.gov>, Ryan Routsong <routsongrm@nih.gov>" \
     base_image="ubuntu:22.04" \
-    version="v0.1.1"   \
+    version="0.1.2"   \
     software="chrom-seek" \
     about.summary="An awesome set of epigenetic pipelines" \
     about.home="https://github.com/OpenOmics/chrom-seek" \
