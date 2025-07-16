@@ -115,12 +115,11 @@ def pca_plot(out, snames, peakcaller, pcatabout, outPCAFile):
     return
 
 
-def plot_heatmap(out, outHeatmapFile, snames):
+def plot_heatmap(out, outHeatmapFile, peakcaller, heatmap_tab, snames):
     snames_pal = sns.hls_palette(len(set(snames)),s=.8)
     snames_lut = dict(zip(set(snames), snames_pal))
-    snames_cols = pd.Series(snames,index=out.index).map(snames_lut)
-    g = sns.clustermap(out,cmap="YlGnBu",col_cluster=False,
-                row_colors=snames_cols)
+    snames_cols = pd.Series(snames, index=out.index).map(snames_lut)
+    g = sns.clustermap(out, cmap="YlGnBu", col_cluster=False, row_colors=snames_cols)
     for label in set(snames):
         g.ax_col_dendrogram.bar(0, 0, color=snames_lut[label],
                         label=label, linewidth=0)
@@ -128,6 +127,11 @@ def plot_heatmap(out, outHeatmapFile, snames):
                             bbox_to_anchor=(0.5, 0.8))
     plt.savefig(outHeatmapFile, bbox_inches='tight')
     plt.close("all")
+    
+    hm_tsv = out
+    hm_tsv['peakcaller'] = peakcaller
+    hm_tsv.to_csv(heatmap_tab, sep='\t', index=False)
+
     return
 
 
@@ -186,6 +190,12 @@ def main():
         help='jaccard heatmap output plot file name'
     )
     parser.add_argument(
+        '--tabheatmap',
+        required=True, 
+        dest='heatmap_tab', 
+        help='jaccard heatmap output plot file name'
+    )
+    parser.add_argument(
         '-g', 
         dest='genomefile', 
         required=True,
@@ -202,6 +212,7 @@ def main():
     outPCAtab = args.pcatab
     outHeatmapFile = args.heatmap
     pkcaller = args.peakcaller
+    hm_tsv = args.heatmap_tab
 
     # downstream processing
     infileList = split_infiles(infiles)
@@ -220,7 +231,9 @@ def main():
     )
     plot_heatmap(
         out, 
-        outHeatmapFile, 
+        outHeatmapFile,
+        pkcaller,
+        hm_tsv,
         snames
     )
 

@@ -498,6 +498,7 @@ rule jaccard_genrich:
         pcaplot                 = join(peakqc_dir, "jaccard", 'Genrich_jaccard_pca.pdf'),
         pcatab                  = join(peakqc_dir, "jaccard", 'Genrich_jaccard_pca.tsv'),
         heatmap                 = join(peakqc_dir, "jaccard", 'Genrich_jaccard_heatmap.pdf'),
+        heatmaptab              = join(peakqc_dir, "jaccard", 'Genrich_jaccard_heatmap.tsv'),
     params:
         rname                   = "jaccard_genrich",
         outroot                 = join(peakqc_dir, "jaccard"),
@@ -519,6 +520,7 @@ rule jaccard_genrich:
             --outtable {output.table} \\
             --pcaplot {output.pcaplot} \\
             --outheatmap {output.heatmap} \\
+            --tabheatmap {output.heatmaptab} \\
             -g {params.genome}
         """)
 
@@ -531,6 +533,7 @@ rule jaccard_macsbroad:
         pcaplot                 = join(peakqc_dir, "jaccard", 'macsBroad_jaccard_pca.pdf'),
         pcatab                  = join(peakqc_dir, "jaccard", 'macsBroad_jaccard_pca.tsv'),
         heatmap                 = join(peakqc_dir, "jaccard", 'macsBroad_jaccard_heatmap.pdf'),
+        heatmaptab              = join(peakqc_dir, "jaccard", 'macsBroad_jaccard_heatmap.tsv'),
     params:
         rname                   = "jaccard_macsbroad",
         outroot                 = join(peakqc_dir, "jaccard"),
@@ -552,6 +555,7 @@ rule jaccard_macsbroad:
             --outtable {output.table} \\
             --pcaplot {output.pcaplot} \\
             --outheatmap {output.heatmap} \\
+            --tabheatmap {output.heatmaptab} \\
             -g {params.genome}
         """)
 
@@ -564,6 +568,7 @@ rule jaccard_macsnarrow:
         pcaplot                 = join(peakqc_dir, "jaccard", 'macsNarrow_jaccard_pca.pdf'),
         pcatab                  = join(peakqc_dir, "jaccard", 'macsNarrow_jaccard_pca.tsv'),
         heatmap                 = join(peakqc_dir, "jaccard", 'macsNarrow_jaccard_heatmap.pdf'),
+        heatmaptab              = join(peakqc_dir, "jaccard", 'macsNarrow_jaccard_heatmap.tsv'),
     params:
         rname                   = "jaccard_macsnarrow",
         outroot                 = join(peakqc_dir, "jaccard"),
@@ -585,6 +590,7 @@ rule jaccard_macsnarrow:
             --outtable {output.table} \\
             --pcaplot {output.pcaplot} \\
             --outheatmap {output.heatmap} \\
+            --tabheatmap {output.heatmaptab} \\
             -g {params.genome}
         """)
 
@@ -597,6 +603,7 @@ rule jaccard_seacr:
         pcaplot                 = join(peakqc_dir, "jaccard", 'SEACR_jaccard_pca.pdf'),
         pcatab                  = join(peakqc_dir, "jaccard", 'SEACR_jaccard_pca.tsv'),
         heatmap                 = join(peakqc_dir, "jaccard", 'SEACR_jaccard_heatmap.pdf'),
+        heatmaptab              = join(peakqc_dir, "jaccard", 'SEACR_jaccard_heatmap.tsv')
     params:
         rname                   = "jaccard_seacr",
         outroot                 = join(peakqc_dir, "jaccard"),
@@ -618,15 +625,18 @@ rule jaccard_seacr:
             --outtable {output.table} \\
             --pcaplot {output.pcaplot} \\
             --outheatmap {output.heatmap} \\
+            --tabheatmap {output.heatmaptab} \\
             -g {params.genome}
         """)
 
 
 rule jaccard_summary:
     input:
-        expand(join(peakqc_dir, "jaccard", '{pkcaller}_jaccard_pca.tsv'), pkcaller=PeakTools),
+        pca_cords               = expand(join(peakqc_dir, "jaccard", '{pkcaller}_jaccard_pca.tsv'), pkcaller=PeakTools),
+        hm_cords                = expand(join(peakqc_dir, "jaccard", '{pkcaller}_jaccard_heatmap.tsv'), pkcaller=PeakTools),
     output:
         pcaplot                 = join(peakqc_dir, "jaccard", 'jaccard_summary_pca.pdf'),
+        hmplot                 = join(peakqc_dir, "jaccard", 'jaccard_summary_heatmap.pdf'),
     params:
         rname                   = "jaccard_summary",
         genome                  = config['references'][genome]['REFLEN'],
@@ -641,5 +651,6 @@ rule jaccard_summary:
         export TMPDIR="${{tmp}}"
         trap 'rm -rf "${{tmp}}"' EXIT
         python {params.script} \
-            {input}
+            --pca {input.pca_cords} \
+            --hm {input.hm_cords}
         """)
