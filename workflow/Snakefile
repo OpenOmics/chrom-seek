@@ -21,10 +21,12 @@ bin_path                        = config['project']['binpath']
 workpath                        = config['project']['workpath']
 assay                           = config['options']['assay']
 blocks                          = config['project']['blocks']
+genome                          = config['options']['genome']
 blocking                        = False if set(blocks.values()) in ({None}, {''}) else True
 paired_end                      = False if config['project']['nends'] == 1 else True
 chips                           = config['project']['peaks']['chips']
 contrast                        = config['project']['contrast']
+enhancer_ref                    = config['references'][genome].get('ENHANCER', False)
 
 # list of contrasts in {group1}_vs_{group2}
 contrasts                       = []
@@ -183,6 +185,9 @@ rule_all_ins.extend(expand(
 ))
 
 rule_all_ins.append(join(peakqc_dir, "jaccard", 'jaccard_summary_pca.pdf'))
+
+if enhancer_ref:
+    rule_all_ins.append(join(deeptools_dir, "enhancer_heatmap.Q5DD.pdf"))
 
 if paired_end:
     rule_all_ins.extend(expand(
