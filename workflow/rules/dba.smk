@@ -481,7 +481,6 @@ rule diffbindQC_macsN:
         html                        = join(diffbind_qc_dir, "AllSamples-macsNarrow", "AllSamples-macsNarrow_DiffBindQC.html"),
         countsbed                   = join(diffbind_qc_dir, "AllSamples-macsNarrow", "AllSamples-macsNarrow_DiffBindQC_TMMcounts.bed"),
         countscsv                   = join(diffbind_qc_dir, "AllSamples-macsNarrow", "AllSamples-macsNarrow_DiffBindQC_TMMcounts.csv"),
-        umap                        = join(diffbind_qc_dir, "AllSamples-macsNarrow", "AllSamples-macsNarrow_DiffBindQC_DiffBindQC_UMAP.csv"),
         csvfile                     = join(diffbind_qc_dir, "AllSamples-macsNarrow", "AllSamples-macsNarrow_DiffBind_prep.csv"),
     params:
         rname                       = "diffbindQC_macsN",
@@ -520,9 +519,8 @@ rule diffbindQC_macsN:
         fi
         cd {params.outdir}
         Rscript -e 'rmarkdown::render("{params.rscript}", output_file="{output.html}",
-            params=list(csvfile="{output.csvfile}", umapfile="{output.umap}", 
-            counts_bed="{output.countsbed}", counts_csv="{output.countscsv}",
-            peakcaller="{params.peak_tool}"))'
+            params=list(csvfile="{output.csvfile}", counts_bed="{output.countsbed}", 
+            counts_csv="{output.countscsv}", peakcaller="{params.peak_tool}"))'
         """)
 
 
@@ -535,7 +533,6 @@ rule diffbindQC_macsB:
         html                        = join(diffbind_qc_dir, "AllSamples-macsBroad", "AllSamples-macsBroad_DiffBindQC.html"),
         countsbed                   = join(diffbind_qc_dir, "AllSamples-macsBroad", "AllSamples-macsBroad_DiffBindQC_TMMcounts.bed"),
         countscsv                   = join(diffbind_qc_dir, "AllSamples-macsBroad", "AllSamples-macsBroad_DiffBindQC_TMMcounts.csv"),
-        umap                        = join(diffbind_qc_dir, "AllSamples-macsBroad", "AllSamples-macsBroad_DiffBindQC_DiffBindQC_UMAP.csv"),
         csvfile                     = join(diffbind_qc_dir, "AllSamples-macsBroad", "AllSamples-macsBroad_DiffBind_prep.csv"),
     params:
         rname                       = "diffbindQC_macsB",
@@ -574,9 +571,8 @@ rule diffbindQC_macsB:
         fi
         cd {params.outdir}
         Rscript -e 'rmarkdown::render("{params.rscript}", output_file="{output.html}",
-            params=list(csvfile="{output.csvfile}", umapfile="{output.umap}", 
-            counts_bed="{output.countsbed}", counts_csv="{output.countscsv}",
-            peakcaller="{params.peak_tool}"))'
+            params=list(csvfile="{output.csvfile}", counts_bed="{output.countsbed}", 
+            counts_csv="{output.countscsv}", peakcaller="{params.peak_tool}"))'
         """)
 
 
@@ -589,7 +585,6 @@ rule diffbindQC_genrich:
         html                        = join(diffbind_qc_dir, "AllSamples-Genrich", "AllSamples-Genrich_DiffBindQC.html"),
         countsbed                   = join(diffbind_qc_dir, "AllSamples-Genrich", "AllSamples-Genrich_DiffBindQC_TMMcounts.bed"),
         countscsv                   = join(diffbind_qc_dir, "AllSamples-Genrich", "AllSamples-Genrich_DiffBindQC_TMMcounts.csv"),
-        umap                        = join(diffbind_qc_dir, "AllSamples-Genrich", "AllSamples-Genrich_DiffBindQC_DiffBindQC_UMAP.csv"),
         csvfile                     = join(diffbind_qc_dir, "AllSamples-Genrich", "AllSamples-Genrich_DiffBind_prep.csv"),
     params:
         rname                       = "diffbindQC_genrich",
@@ -628,9 +623,8 @@ rule diffbindQC_genrich:
         fi
         cd {params.outdir}
         Rscript -e 'rmarkdown::render("{params.rscript}", output_file="{output.html}",
-            params=list(csvfile="{output.csvfile}", umapfile="{output.umap}", 
-            counts_bed="{output.countsbed}", counts_csv="{output.countscsv}",
-            peakcaller="{params.peak_tool}"))'
+            params=list(csvfile="{output.csvfile}", counts_bed="{output.countsbed}", 
+            counts_csv="{output.countscsv}", peakcaller="{params.peak_tool}"))'
         """)
 
 
@@ -643,7 +637,6 @@ rule diffbindQC_SEACR:
         html                        = join(diffbind_qc_dir, "AllSamples-SEACR", "AllSamples-SEACR_DiffBindQC.html"),
         countsbed                   = join(diffbind_qc_dir, "AllSamples-SEACR", "AllSamples-SEACR_DiffBindQC_TMMcounts.bed"),
         countscsv                   = join(diffbind_qc_dir, "AllSamples-SEACR", "AllSamples-SEACR_DiffBindQC_TMMcounts.csv"),
-        umap                        = join(diffbind_qc_dir, "AllSamples-SEACR", "AllSamples-SEACR_DiffBindQC_DiffBindQC_UMAP.csv"),
         csvfile                     = join(diffbind_qc_dir, "AllSamples-SEACR", "AllSamples-SEACR_DiffBind_prep.csv"),
     params:
         rname                       = "diffbindQC_SEACR",
@@ -680,9 +673,8 @@ rule diffbindQC_SEACR:
         fi
         cd {params.outdir}
         Rscript -e 'rmarkdown::render("{params.rscript}", output_file="{output.html}",
-            params=list(csvfile="{output.csvfile}", umapfile="{output.umap}", 
-            counts_bed="{output.countsbed}", counts_csv="{output.countscsv}",
-            peakcaller="{params.peak_tool}"))'
+            params=list(csvfile="{output.csvfile}", counts_bed="{output.countsbed}", 
+            counts_csv="{output.countscsv}", peakcaller="{params.peak_tool}"))'
         """)
 
 
