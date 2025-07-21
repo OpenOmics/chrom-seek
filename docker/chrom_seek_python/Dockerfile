@@ -2,7 +2,7 @@ FROM ubuntu:22.04
 ENV DEBIAN_FRONTEND=noninteractive
 LABEL maintainer="Skyler Kuhn <skyler.kuhn@nih.gov>, Ryan Routsong <routsongrm@nih.gov>" \
     base_image="ubuntu:22.04" \
-    version="v0.1.1"   \
+    version="0.1.3"   \
     software="chrom-seek" \
     about.summary="An awesome set of epigenetic pipelines" \
     about.home="https://github.com/OpenOmics/chrom-seek" \
@@ -25,6 +25,7 @@ RUN curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor
 RUN echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" | tee /etc/apt/sources.list.d/google-chrome.list
 RUN apt-get update
 RUN apt-get install -y \
+        r-base \
         build-essential \
         autotools-dev \
         automake \
@@ -49,6 +50,7 @@ RUN apt-get install -y \
     && apt-get clean && apt-get purge \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 RUN localedef -i en_US -f UTF-8 en_US.UTF-8
+RUN Rscript -e 'install.packages(c("ComplexHeatmap", "tidyr", "reshape2", "circularize", "rjson", "ggplot2", "argparse"), , repos="http://cran.us.r-project.org")'
 
 ############### INSTALL ################
 RUN ln -sf /usr/bin/python3 /usr/bin/python
