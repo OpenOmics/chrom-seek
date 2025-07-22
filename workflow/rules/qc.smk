@@ -403,7 +403,7 @@ rule enhancer_plot:
             -out {output.heatmap} \\
             --yAxisLabel 'average RPGC' \\
             --regionsLabel 'enhancers' \\
-            --colorMap 'YlGn_r'
+            --colorMap 'Wistia'
         """)
 
 
