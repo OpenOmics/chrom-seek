@@ -71,6 +71,7 @@ MEME_dir                        = join(workpath, "MEME")
 manorm_dir                      = join(workpath, "MANorm")
 seacr_dir                       = join(workpath, "SEACR")
 homer_dir                       = join(workpath, "HOMER")
+deeptools_dir                   = join(workpath, 'deeptools')
 
 
 # Read in resource information

@@ -370,7 +370,11 @@ rule enhancer_plot:
         line                    = join(deeptools_dir, "enhancer_profile.Q5DD.pdf")
     params:
         rname                   = "enhancer_plot",
-        enhancer_ref            = enhancer_ref
+        enhancer_ref            = enhancer_ref,
+        parent_dir              = deeptools_dir,
+        tmpdir                  = tmpdir,
+        labels                  = samples,
+        deeptoolsver            = config['tools']['DEEPTOOLSVER']
     shell: 
         dedent("""
         module load {params.deeptoolsver}
