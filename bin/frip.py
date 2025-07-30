@@ -166,7 +166,10 @@ def main():
               (or bed-like files).",
     )
     parser.add_argument(
-        "-b", required=True, type=str, help="The name of a bamfile to analyze."
+        "-b", 
+        required=True, 
+        type=str, 
+        help="The name of a bamfile to analyze."
     )
     parser.add_argument(
         "-g",
