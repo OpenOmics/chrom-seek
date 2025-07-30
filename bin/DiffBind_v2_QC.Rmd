@@ -1,5 +1,5 @@
 ---
-title: "DiffBind: cfChIP-seq QC"
+title: "DiffBind QC Report"
 output: 
     html_document:
         toc: true
@@ -11,7 +11,6 @@ output:
         fig_height: 6
 params:
     csvfile: ""
-    umapfile: ""
     counts_bed: ""
     counts_csv: ""
     peakcaller: ""
@@ -28,7 +27,6 @@ params:
 dateandtime<-format(Sys.time(), "%a %b %d %Y - %X")
 peakcaller <- params$peakcaller
 csvfile <- params$csvfile
-umapfile <- params$umapfile
 counts_bed <- params$counts_bed
 counts_csv <- params$counts_csv
 ```
@@ -49,15 +47,49 @@ suppressMessages(library(ggplot2))
 suppressMessages(library(ggrepel))
 ```
 
+```{r functions, echo=FALSE, warning=FALSE,message=FALSE}
+remove_negative_coordinates <- function(dbaOBJ) {
+  negCoordIdx <- which(dbaOBJ$merged[,2] < 0)
+  dbaOBJ$merged[negCoordIdx,2] <- 1
+  dbaOBJ$binding[negCoordIdx,2] <- 1
+  for ( i in 1:length(dbaOBJ$peaks) ) {
+      dbaOBJ$peaks[[i]]$Start[negCoordIdx] <- 1
+  }
+  return(dbaOBJ)
+}
+
+PCAbasic <- function(pv) {
+  # Note: PCA is on a log2 scale when counts are available.
+  pv <- DiffBind:::pv.pcmask(pv)
+  pc <- pv$pc
+
+  vr <- rep(0,length(pc$sdev))
+  for (i in 1:length(vr)) {
+      vr[i] <- pc$sdev[i] ^ 2
+  }
+
+  comps=1:3
+  c1 <- comps[1]
+  c2 <- comps[2]
+  c3 <- comps[3]
+
+  c1p <- vr[c1] / sum(vr) * 100
+  c2p <- vr[c2] / sum(vr) * 100
+  c3p <- vr[c3] / sum(vr) * 100
+
+  plotData <- as.data.frame(pc$x[,c(c1,c2,c3)])
+  colnames(plotData) <- c("PC1","PC2","PC3")
+  print(paste0("PC1 %: ", c1p))
+  print(paste0("PC2 %: ", c2p))
+  print(paste0("PC3 %: ", c3p))  
+  return(plotData)
+}
+```
+
 # Peak Data
 Read in sample sheet information and peak information
 ```{r samples} 
 samples <- dba(sampleSheet=csvfile)
-
-# if samples have Condition values
-if ( sum(samples$class["Condition", ] != "") == ncol(samples$class) ) {
-  try(consensus <- dba.peakset(samples, consensus=DBA_CONDITION, minOverlap=min(table(samples$samples$Condition))), silent=TRUE) 
-}
 print(samples)
 ```
 
@@ -71,61 +103,64 @@ try(dba.plotHeatmap(samples, main="", cexRow=1, cexCol=1),silent=TRUE)
 Variance of peak positions  
 ```{r PCA1, fig.height=5,fig.width=5}
 try(dba.plotPCA(samples),silent=TRUE)
+
+pca1 <- PCAbasic(samples)
+
+DT::datatable(pca1,
+  extensions = 'Buttons', options = list(dom = 'Bfrtip', buttons = c('csv')))
+
 ```
 
 ## Overlapping peak counts
-Number of overlapping peaks.  
-If the number of samples is greater than 4, a "consensus" peak Venn diagram is created, where
-the consensus peak set are the peaks identified in at least 2 samples for that condition. This is different
-from the consensus peak set used for differential analyses.
+Number of overlapping peaks, occupancy analysis. Only if number of samples is less than 5. 
 ```{r Venn, fig_height=4}
 if (nrow(samples$samples) < 5) {
    dba.plotVenn(samples, 1:nrow(samples$samples)) 
-} else {
-   if (exists("consensus")) {
-      dba.plotVenn(consensus, consensus$masks$Consensus,main="Binding Site Overlaps: 'consensus', comparing between groups")
-   } else {
-      print("Consensus peaks were not called")
-   }
-}
+} 
 ```
 
 # Consensus peaks and counts
-Consensus peaks are peaks found in at least two samples, independent of condition.
+Consensus peaks are unions of peaks across samples. To be defined as a consensus peak that
+union must overlap a minumum number of peaks across all samples. The minimum
+is either the size of the smallest group, or where group information is unavailable, 1/3 
+of all samples.  
 FRiP is of consensus peaks and will not match FRiP values calculated outside of this tool.
 ```{r peaksORsummits}
-if ( grepl("narrow",samples$samples$Peaks[1]) ) {
-   summits <- TRUE
-   print ("Narrow peak calling tool.")
-   print ("Differential peaks are 250bp upstream and downstream of the summits.")
-} else if ( grepl("broad",samples$samples$Peaks[1]) ) {
-  summits <- FALSE
-  print ("Broad peak calling tool.")
-  print ("Differential peaks are consensus peaks.")
+if ( peakcaller == "macsNarrow" ) {
+    summits_arg <- 250
+    print ("Ran macsNarrow.")
+    print ("Output peaks are 250bp upstream and downstream of the summits.")
 } else {
-  summits <- FALSE
-  print ("Indeterminate peak calling tool.")
-  print ("Differential peaks are consensus peaks.")
+    summits_arg <- FALSE
+    print ("Assuming broad peak calling tool.")
+    print ("Output peaks are consensus peaks.")
 }
 ```
 
 ```{r DBcount}
-
 if ( sum(samples$class["Condition",] != "") == ncol(samples$class) ) {
   minOv <- min(table(samples$samples$Condition))
 } else {
   minOv <- floor(ncol(samples$class)/3)
 }
 
+if (minOv < 2) { minOv <- 2}
+
 print(paste0("The minimum number of overlaps is: ", minOv))
 
-if (summits == TRUE) {
-  DBdataCounts <- dba.count(samples, summits=250, minOverlap = minOv)
-} else {
-  DBdataCounts <- dba.count(samples, minOverlap = minOv)
+DBdataCounts <- dba.count(samples, summits=summits_arg, bParallel=T)
+
+# remove negative coordinates when summits_arg is not FALSE
+if ( summits_arg != FALSE ) {
+    DBdataCounts <- remove_negative_coordinates(DBdataCounts)
 }
+
 print(DBdataCounts)
 
+DBreadNum <- data.frame( ID=DBdataCounts$class["ID",],
+                         Reads=DBdataCounts$class["Reads",])
+rownames(DBreadNum) <- 1:nrow(DBreadNum)
+print(DBreadNum)
 ```
 
 ## Correlation heatmap: Peaks and reads
@@ -135,15 +170,22 @@ try(dba.plotHeatmap(DBdataCounts,main="",cexRow=1,cexCol=1),silent=TRUE)
 ```
 
 ## Heatmap: Average signal across each peak
-1000 most variable consensus peaks (library-size normalized counts)
+1000 most variable consensus peaks (library-size normalized counts)  
+Peaks here can often be driven by a single sample. This may be different from the 
+differential peak calls which will involve patterns across groups of samples.
 ```{r heatmap3}
-try(dba.plotHeatmap(DBdataCounts,correlations=FALSE,cexRow=1,cexCol=1),silent=TRUE)
+try(dba.plotHeatmap(DBdataCounts,correlations=FALSE,cexRow=1,cexCol=1, colScheme="YlGnBu"),silent=TRUE)
 ```
 
 ## PCA: Peaks and reads
 Variation of library-size normalized counts of consensus peaks
 ```{r PCA2, fig.height=5,fig.width=5}
 try(dba.plotPCA(DBdataCounts),silent=TRUE)
+
+PCA2 <- PCAbasic(DBdataCounts)
+
+DT::datatable(PCA2,
+  extensions = 'Buttons', options = list(dom = 'Bfrtip', buttons = c('csv')))
 ```
 
 ```{r TMM}
@@ -182,7 +224,8 @@ if (nrow(samples$samples) < 16) {
 umap_coord <- as.data.frame(umap_coord$layout) %>% 
               setNames(c("UMAP1", "UMAP2"))
 
-write.csv(umap_coord, umapfile, row.names = F)
+# write.csv(umap_coord, umapfile, row.names = F)
+
 ```
 
 ## UMAP: peaks and reads 
@@ -199,11 +242,14 @@ q <- ggplot(umap_coord,aes(x = UMAP1, y = UMAP2)) + ##No labels
   theme(plot.title = element_text(hjust = 0.5)) +
   labs(color ="Phenotypes") +  theme(text=element_text(size=15))
   ##geom_text_repel(point.size = NA, size = 2.5)
-p
+#p
 
-if ( sum(samples$class["Condition",] != "") == ncol(samples$class) ) {
+#if ( sum(samples$class["Condition",] != "") == ncol(samples$class) ) {
 q
-}
+#}
+
+DT::datatable(umap_coord,
+  extensions = 'Buttons', options = list(dom = 'Bfrtip', buttons = c('csv')))
 ```
 
 ## R tool version information
