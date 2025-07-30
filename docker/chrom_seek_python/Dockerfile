@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 FROM ubuntu:22.04
 ENV DEBIAN_FRONTEND=noninteractive
 LABEL maintainer="Skyler Kuhn <skyler.kuhn@nih.gov>, Ryan Routsong <routsongrm@nih.gov>" \
@@ -50,7 +51,13 @@ RUN apt-get install -y \
     && apt-get clean && apt-get purge \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 RUN localedef -i en_US -f UTF-8 en_US.UTF-8
-RUN Rscript -e 'install.packages(c("ComplexHeatmap", "tidyr", "reshape2", "circularize", "rjson", "ggplot2", "argparse"), , repos="http://cran.us.r-project.org")'
+
+RUN R --no-save <<EOF
+options(repos = c(CRAN = "https://mirrors.nics.utk.edu/cran/"))
+install.packages("BiocManager")
+BiocManager::install("ComplexHeatmap")
+install.packages(c("tidyr", "reshape2", "circularize", "rjson", "ggplot2", "argparse"), repos="http://cran.us.r-project.org")
+EOF
 
 ############### INSTALL ################
 RUN ln -sf /usr/bin/python3 /usr/bin/python
