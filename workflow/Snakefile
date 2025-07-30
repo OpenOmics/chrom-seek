@@ -155,6 +155,7 @@ rule_all_ins.extend(
     PeakTool=PeakTools, 
     name=chips)
 )
+rule_all_ins.append(join(peakqc_dir, "FRiP", "summary.Q5DD.FRiP_heatmap.pdf"))
 rule_all_ins.extend(expand(
     join(bam_dir, "{name}.sorted.bam"), 
     name=samples

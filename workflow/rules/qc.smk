@@ -15,7 +15,7 @@ samples                         = config['samples']
 ends                            = [1] if not paired_end else [1, 2]
 assay                           = config['options']['assay']
 PeakTools                       = get_peaktools(assay)
-
+chips                           = config['project']['peaks']['chips']
 
 # ~~ directories
 qc_dir                          = join(workpath, "QC")
@@ -375,6 +375,7 @@ rule enhancer_plot:
         tmpdir                  = tmpdir,
         labels                  = samples,
         deeptoolsver            = config['tools']['DEEPTOOLSVER']
+    threads: int(allocated("threads", "enhancer_plot", cluster))
     shell: 
         dedent("""
         module load {params.deeptoolsver}
@@ -409,17 +410,13 @@ rule enhancer_plot:
 
 rule FRiP_macsN:
     input:
-        peaks                   = join(macsN_dir, "{name}", "{name}_peaks.narrowPeak"),
+        peaks                   = expand(join(macsN_dir, "{name}", "{name}_peaks.narrowPeak"), name=chips),
         bam                     = join(bam_dir, "{name}.Q5DD.bam"),
     output:
         tbl                     = join(peakqc_dir, "FRiP", "macsNarrow", "macsNarrow.{name}.Q5DD.FRiP_table.txt"),
-        heatmap                 = join(peakqc_dir, "FRiP", "macsNarrow", "macsNarrow.{name}.Q5DD.FRiP_heatmap.pdf"),
-        bar_plot                = join(peakqc_dir, "FRiP", "macsNarrow", "macsNarrow.{name}.Q5DD.FRiP_barplot.pdf"),
-        scatter_plot            = join(peakqc_dir, "FRiP", "macsNarrow", "macsNarrow.{name}.Q5DD.FRiP_scatter.pdf")
     params:
         rname                   = "FRiP_macsN",
         tblscript               = join(bin_path, "frip.py"),
-        plotscript              = join(bin_path, "FRiP_plot.R"),
         genome                  = config['references'][genome]['REFLEN'],
         tmpdir                  = tmpdir,
         this_config             = join(workpath, 'config.json')
@@ -441,14 +438,6 @@ rule FRiP_macsN:
             -g {params.genome} \\
             -o {output.tbl} \\
             -x 16
-
-        Rscript {params.plotscript} \\
-            --hm {output.heatmap} \\
-            -t {output.tbl} \\
-            -b {output.bar_plot} \\
-            -s {output.scatter_plot} \\
-            -c {params.this_config} \\
-            -v
         """
 
 
@@ -457,10 +446,7 @@ rule FRiP_Genrich:
         peaks                   = join(genrich_dir, "{name}", "{name}.narrowPeak"),
         bam                     = join(bam_dir, "{name}.Q5DD.bam"),
     output:
-        tbl                     = join(peakqc_dir, "FRiP", "Genrich", "Genrich.{name}.Q5DD.FRiP_table.txt"),
-        heatmap                 = join(peakqc_dir, "FRiP", "Genrich", "Genrich.{name}.Q5DD.FRiP_heatmap.pdf"),
-        bar_plot                = join(peakqc_dir, "FRiP", "Genrich", "Genrich.{name}.Q5DD.FRiP_barplot.pdf"),
-        scatter_plot            = join(peakqc_dir, "FRiP", "Genrich", "Genrich.{name}.Q5DD.FRiP_scatter.pdf")
+        tbl                     = join(peakqc_dir, "FRiP", "Genrich", "Genrich.{name}.Q5DD.FRiP_table.txt")
     params:
         rname                   = "FRiP_Genrich",
         tblscript               = join(bin_path, "frip.py"),
@@ -486,26 +472,15 @@ rule FRiP_Genrich:
             -g {params.genome} \\
             -o {output.tbl} \\
             -x 16
-
-        Rscript {params.plotscript} \\
-            --hm {output.heatmap} \\
-            -t {output.tbl} \\
-            -b {output.bar_plot} \\
-            -s {output.scatter_plot} \\
-            -c {params.this_config} \\
-            -v
         """
 
 
 rule FRiP_macsB:
     input:
-        peaks                   = join(macsB_dir, "{name}", "{name}_peaks.broadPeak"),
+        peaks                   = expand(join(macsB_dir, "{name}", "{name}_peaks.broadPeak"), name=chips),
         bam                     = join(bam_dir, "{name}.Q5DD.bam"),
     output:
         tbl                     = join(peakqc_dir, "FRiP", "macsBroad", "macsBroad.{name}.Q5DD.FRiP_table.txt"),
-        heatmap                 = join(peakqc_dir, "FRiP", "macsBroad", "macsBroad.{name}.Q5DD.FRiP_heatmap.pdf"),
-        bar_plot                = join(peakqc_dir, "FRiP", "macsBroad", "macsBroad.{name}.Q5DD.FRiP_barplot.pdf"),
-        scatter_plot            = join(peakqc_dir, "FRiP", "macsBroad", "macsBroad.{name}.Q5DD.FRiP_scatter.pdf")
     params:
         rname                   = "FRiP_macsB",
         tblscript               = join(bin_path, "frip.py"),
@@ -531,14 +506,6 @@ rule FRiP_macsB:
             -g {params.genome} \\
             -o {output.tbl} \\
             -x 16
-
-        Rscript {params.plotscript} \\
-            --hm {output.heatmap} \\
-            -t {output.tbl} \\
-            -b {output.bar_plot} \\
-            -s {output.scatter_plot} \\
-            -c {params.this_config} \\
-            -v
         """
 
 
@@ -548,9 +515,6 @@ rule FRiP_SEACR:
         bam                     = join(bam_dir, "{name}.Q5DD.bam"),
     output:
         tbl                     = join(peakqc_dir, "FRiP", "SEACR", "SEACR.{name}.Q5DD.FRiP_table.txt"),
-        heatmap                 = join(peakqc_dir, "FRiP", "SEACR", "SEACR.{name}.Q5DD.FRiP_heatmap.pdf"),
-        bar_plot                = join(peakqc_dir, "FRiP", "SEACR", "SEACR.{name}.Q5DD.FRiP_barplot.pdf"),
-        scatter_plot            = join(peakqc_dir, "FRiP", "SEACR", "SEACR.{name}.Q5DD.FRiP_scatter.pdf")
     params:
         rname                   = "FRiP_SEACR",
         tblscript               = join(bin_path, "frip.py"),
@@ -574,17 +538,31 @@ rule FRiP_SEACR:
             -p {input.peaks} \\
             -b {input.bam} \\
             -g {params.genome} \\
-            -o {output} \\
+            -o {output.tbl} \\
             -x 16
+        """
 
-        Rscript {params.plotscript} \\
+
+rule frip_summary:
+    input:
+        tbl                     = expand(join(peakqc_dir, "FRiP", "{pktool}", "{pktool}.{name}.Q5DD.FRiP_table.txt"), pktool=PeakTools, name=samples)
+    output:
+        heatmap                 = join(peakqc_dir, "FRiP", "summary.Q5DD.FRiP_heatmap.pdf"),
+        bar_plot                = join(peakqc_dir, "FRiP", "summary.Q5DD.FRiP_barplot.pdf"),
+        # scatter_plot            = join(peakqc_dir, "FRiP", "summary.Q5DD.FRiP_scatter.pdf")
+    params:
+        rname                   = "frip_summary",
+        plotscript              = join(bin_path, "frip_summary_plot.py"),
+        this_config             = join(workpath, 'config.json')
+    shell:
+        dedent("""
+        {params.plotscript} \\
             --hm {output.heatmap} \\
-            -t {output.tbl} \\
+            -t {input.tbl} \\
             -b {output.bar_plot} \\
-            -s {output.scatter_plot} \\
             -c {params.this_config} \\
             -v
-        """
+        """)
 
 
 rule jaccard_genrich:

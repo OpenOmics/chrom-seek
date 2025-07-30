@@ -58,7 +58,7 @@
         "mem": "100g"
     },
     "enhancer_plot": {
-        "threads": "4",
+        "threads": "12",
         "mem": "32g"
     },
     "preseq": {

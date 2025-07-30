@@ -28,7 +28,7 @@ rule MACS2_broad:
         chip                                = join(bam_dir, "{name}.Q5DD_tagAlign.gz"),
         txt                                 = join(ppqt_dir, "{name}.Q5DD_tagAlign.ppqt.txt"),
         c_option                            = lambda w: join(bam_dir, f"{chip2input[w.name]}.Q5DD_tagAlign.gz")
-                                                if w.name and chip2input[w.name] else [],
+                                                if w.name in chip2input else [],
         frag_length                         = join(ppqt_dir, "{name}.Q5DD.fragment.length"),
     output:
         join(macsB_dir, "{name}", "{name}_peaks.broadPeak"),
@@ -36,7 +36,7 @@ rule MACS2_broad:
         rname                               = 'MACS2_broad',
         gsize                               = config['references'][genome]['EFFECTIVEGENOMESIZE'],
         macsver                             = config['tools']['MACSVER'],
-        flag                                = lambda w: "-c" if chip2input[w.name] else "",
+        flag                                = lambda w: "-c" if w.name in chip2input else "",
         frag_len_script                     = join(bin_path, "ppqt_process.py"),
     shell: 
         """
@@ -60,7 +60,7 @@ rule MACS2_narrow:
         chip                                = join(bam_dir, "{name}.Q5DD_tagAlign.gz"),
         txt                                 = join(ppqt_dir, "{name}.Q5DD.ppqt.txt"),
         c_option                            = lambda w: join(bam_dir, f"{chip2input[w.name]}.Q5DD_tagAlign.gz")
-                                                if w.name and chip2input[w.name] else [],
+                                                if w.name in chip2input else [],
         frag_length                         = join(ppqt_dir, "{name}.Q5DD.fragment.length"),
     output:
         join(macsN_dir, "{name}", "{name}_peaks.narrowPeak"),
@@ -221,7 +221,7 @@ rule SEACR:
     input:
         exp                             = join(bg_dir, "{name}.bedgraph"),
         control                         = lambda w: join(bg_dir, f"{chip2input[w.name]}.bedgraph")
-                                            if chip2input[w.name] else [],
+                                            if w.name in chip2input else [],
     output:
         peaks                           = join(seacr_dir, "{name}", "{name}.stringent.bed")
     params:
