@@ -15,7 +15,7 @@ rule MACS2_broad:
     input:
         chip                            = join(bam_dir, "{name}.Q5DD.bam"),
         c_option                        = lambda w: join(bam_dir, f"{chip2input[w.name]}.Q5DD.bam") 
-                                            if w.name in chip2input else [],
+                                            if w.name in chip2input and chip2input[w.name] != "" else [],
     output:
         join(macsB_dir, "{name}", "{name}_peaks.broadPeak"),
     params:
@@ -42,7 +42,7 @@ rule MACS2_narrow:
     input:
         chip                            = join(bam_dir, "{name}.Q5DD.bam"),
         c_option                        = lambda w: join(bam_dir, f"{chip2input[w.name]}.Q5DD.bam")
-                                            if w.name in chip2input else [],
+                                            if w.name in chip2input and chip2input[w.name] != "" else [],
     output:
         join(macsN_dir, "{name}", "{name}_peaks.narrowPeak"),
     params:
@@ -69,7 +69,7 @@ rule SICER:
         chip                            = lambda w: join(bam_dir, w.name + ".Q5DD.bam"),
         fragLen                         = lambda w: join(qc_dir, name + ".Q5DD.insert_size_metrics.txt"),
         c_option                        = lambda w: join(bam_dir, f"{chip2input[w.name]}.Q5DD.bam")
-                                                        if w.name in chip2input else [],
+                                                        if w.name in chip2input and chip2input[w.name] != "" else [],
     output:
         bed                             = join(sicer_dir, "{name}", "{name}_broadpeaks.bed") if has_inputs else [],
     params:
@@ -206,7 +206,7 @@ rule SEACR:
     input:
         exp                             = join(bg_dir, "{name}.bedgraph"),
         control                         = lambda w: join(bg_dir, f"{chip2input[w.name]}.bedgraph")
-                                            if chip2input[w.name] else [],
+                                            if chip2input[w.name] and chip2input[w.name] != ""else [],
     output:
         peaks                           = join(seacr_dir, "{name}", "{name}.stringent.bed")
     params:

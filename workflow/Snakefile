@@ -136,15 +136,15 @@ else:
 #     rule_all_ins.extend(expand(join(MEME_dir, "{PeakTool}", "{name}_meme", "meme-chip.html"), PeakTool=PeakTools, name=chips))
 #     rule_all_ins.extend(expand(join(MEME_dir, "{PeakTool}", "{name}_ame", "ame.html"), PeakTool=PeakTools, name=chips))
 
-rule_all_ins.append(expand(
+rule_all_ins.extend(expand(
     join(diffbind_qc_dir, "AllSamples-{pktool}", "AllSamples-{pktool}_DiffBindQC.html"),
     pktool=PeakTools
 ))
-rule_all_ins.append(expand(
+rule_all_ins.extend(expand(
     join(diffbind_qc_dir, "AllSamples-{pktool}", "AllSamples-{pktool}_DiffBindQC_TMMcounts.bed"),
     pktool=PeakTools
 ))
-rule_all_ins.append(expand(
+rule_all_ins.extend(expand(
     join(diffbind_qc_dir, "AllSamples-{pktool}", "AllSamples-{pktool}_DiffBind_prep.csv"),
     pktool=PeakTools
 ))
