@@ -28,7 +28,7 @@ rule MACS2_broad:
         chip                                = join(bam_dir, "{name}.Q5DD_tagAlign.gz"),
         txt                                 = join(ppqt_dir, "{name}.Q5DD_tagAlign.ppqt.txt"),
         c_option                            = lambda w: join(bam_dir, f"{chip2input[w.name]}.Q5DD_tagAlign.gz")
-                                                if w.name in chip2input else [],
+                                                if w.name in chip2input and chip2input[w.name] != "" else [],
         frag_length                         = join(ppqt_dir, "{name}.Q5DD.fragment.length"),
     output:
         join(macsB_dir, "{name}", "{name}_peaks.broadPeak"),
@@ -60,7 +60,7 @@ rule MACS2_narrow:
         chip                                = join(bam_dir, "{name}.Q5DD_tagAlign.gz"),
         txt                                 = join(ppqt_dir, "{name}.Q5DD.ppqt.txt"),
         c_option                            = lambda w: join(bam_dir, f"{chip2input[w.name]}.Q5DD_tagAlign.gz")
-                                                if w.name in chip2input else [],
+                                                if w.name in chip2input and chip2input[w.name] != "" else [],
         frag_length                         = join(ppqt_dir, "{name}.Q5DD.fragment.length"),
     output:
         join(macsN_dir, "{name}", "{name}_peaks.narrowPeak"),
@@ -221,7 +221,7 @@ rule SEACR:
     input:
         exp                             = join(bg_dir, "{name}.bedgraph"),
         control                         = lambda w: join(bg_dir, f"{chip2input[w.name]}.bedgraph")
-                                            if w.name in chip2input else [],
+                                            if w.name in chip2input and chip2input[w.name] != "" else [],
     output:
         peaks                           = join(seacr_dir, "{name}", "{name}.stringent.bed")
     params:
