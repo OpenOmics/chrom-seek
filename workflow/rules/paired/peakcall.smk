@@ -15,14 +15,14 @@ rule MACS2_broad:
     input:
         chip                            = join(bam_dir, "{name}.Q5DD.bam"),
         c_option                        = lambda w: join(bam_dir, f"{chip2input[w.name]}.Q5DD.bam") 
-                                            if chip2input[w.name] else [],
+                                            if w.name in chip2input and chip2input[w.name] != "" else [],
     output:
         join(macsB_dir, "{name}", "{name}_peaks.broadPeak"),
     params:
         rname                           = 'MACS2_broad',
         gsize                           = config['references'][genome]['EFFECTIVEGENOMESIZE'],
         macsver                         = config['tools']['MACSVER'],
-        flag                            = lambda w: "-c" if chip2input[w.name] else "",
+        flag                            = lambda w: "-c" if w.name in chip2input else "",
     shell: 
         """
         module load {params.macsver};
@@ -42,14 +42,14 @@ rule MACS2_narrow:
     input:
         chip                            = join(bam_dir, "{name}.Q5DD.bam"),
         c_option                        = lambda w: join(bam_dir, f"{chip2input[w.name]}.Q5DD.bam")
-                                            if chip2input[w.name] else [],
+                                            if w.name in chip2input and chip2input[w.name] != "" else [],
     output:
         join(macsN_dir, "{name}", "{name}_peaks.narrowPeak"),
     params:
         rname                           = 'MACS2_narrow',
         gsize                           = config['references'][genome]['EFFECTIVEGENOMESIZE'],
         macsver                         = config['tools']['MACSVER'],
-        flag                            = lambda w: "-c" if chip2input[w.name] else "",
+        flag                            = lambda w: "-c" if w.name in chip2input else "",
     shell: 
         """
         module load {params.macsver};
@@ -69,7 +69,7 @@ rule SICER:
         chip                            = lambda w: join(bam_dir, w.name + ".Q5DD.bam"),
         fragLen                         = lambda w: join(qc_dir, name + ".Q5DD.insert_size_metrics.txt"),
         c_option                        = lambda w: join(bam_dir, f"{chip2input[w.name]}.Q5DD.bam")
-                                                        if chip2input[w.name] else [],
+                                                        if w.name in chip2input and chip2input[w.name] != "" else [],
     output:
         bed                             = join(sicer_dir, "{name}", "{name}_broadpeaks.bed") if has_inputs else [],
     params:
@@ -80,7 +80,7 @@ rule SICER:
         genomever                       = config['options']['genome'],
         this_sicer_dir                  = join(sicer_dir, "{name}"),
         frac                            = config['references'][genome]['FRAC'],
-        flag                            = lambda w: "-c" if chip2input[w.name] else "",
+        flag                            = lambda w: "-c" if w.name in chip2input else "",
     shell: 
         """
         module load {params.sicerver}
@@ -206,7 +206,7 @@ rule SEACR:
     input:
         exp                             = join(bg_dir, "{name}.bedgraph"),
         control                         = lambda w: join(bg_dir, f"{chip2input[w.name]}.bedgraph")
-                                            if chip2input[w.name] else [],
+                                            if chip2input[w.name] and chip2input[w.name] != ""else [],
     output:
         peaks                           = join(seacr_dir, "{name}", "{name}.stringent.bed")
     params:

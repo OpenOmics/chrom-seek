@@ -36,7 +36,8 @@
             "MEME_VERTEBRATES_DB": "/fdb/meme/motif_databases/JASPAR/JASPAR2018_CORE_vertebrates_non-redundant.meme",
             "MEME_EUKARYOTE_DB": "/fdb/meme/motif_databases/EUKARYOTE/jolma2013.meme",
             "MEME_GENOME_DB": "/fdb/meme/motif_databases/HUMAN/HOCOMOCOv11_full_HUMAN_mono_meme_format.meme",
-            "HOMER_REF": "/fdb/homer/genomes/hg38"
+            "HOMER_REF": "/fdb/homer/genomes/hg38",
+            "ENHANCER": "/data/OpenOmics/references/chrom-seek/hg38_basic/enhancer/hg38_fantom.bed"
         },
         "mm10": {
             "ALIAS": "mm10",
@@ -55,7 +56,8 @@
             "MEME_VERTEBRATES_DB": "/fdb/meme/motif_databases/JASPAR/JASPAR2018_CORE_vertebrates_non-redundant.meme",
             "MEME_EUKARYOTE_DB": "/fdb/meme/motif_databases/EUKARYOTE/jolma2013.meme",
             "MEME_GENOME_DB": "/fdb/meme/motif_databases/MOUSE/HOCOMOCOv11_full_MOUSE_mono_meme_format.meme",
-            "HOMER_REF": "/fdb/homer/genomes/mm10"
+            "HOMER_REF": "/fdb/homer/genomes/mm10",
+            "ENHANCER": "/data/OpenOmics/references/chrom-seek/mm10_basic/enhancer/mm10_fantom.bed"
         },
         "rheMac10": {
             "ALIAS": "rheMac10",

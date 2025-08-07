@@ -3,8 +3,7 @@ from os.path import join, sep
 from textwrap import dedent
 
 localrules: UROPA_prep_in_macsB, UROPA_prep_in_macsN, \
-    UROPA_prep_diffbind_edgeR, UROPA_prep_diffbind_DeSeq2, \
-    rename_edger_dba_uropa
+    UROPA_prep_diffbind_edgeR, UROPA_prep_diffbind_DeSeq2
 
 
 workpath                        = config['project']['workpath']
