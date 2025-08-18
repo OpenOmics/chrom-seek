@@ -151,12 +151,15 @@ Expanded encyclopaedias of DNA elements in the human and mouse genomes. Nature 5
 | hg19           | GrCh37.p13     | https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_19/GRCh37.p13.genome.fa.gz |
 |                | Gencode v19    | https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_19/gencode.v19.annotation.gtf.gz |
 |                | Blacklist v1   | https://www.encodeproject.org/files/ENCFF001TDO/@@download/ENCFF001TDO.bed.gz |
+|                | Enhancer reference   | https://fantom.gsc.riken.jp/5/datafiles/latest/extra/Enhancers/human_permissive_enhancers_phase_1_and_2.bed.gz |
 | hg38           | GRCh38.p12     | https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_28/GRCh38.p12.genome.fa.gz |
 |                | Gencode v28    | https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_28/gencode.v28.annotation.gtf.gz |
 |                | Blacklist v2   | http://mitra.stanford.edu/kundaje/akundaje/release/blacklists/hg38-human/hg38.blacklist.bed.gz |
+|                | Enhancer reference   | https://fantom.gsc.riken.jp/5/datafiles/reprocessed/hg38_v9/extra/CAGE_peaks/hg38_fair_CAGE_peaks_combined_phase1+2.bed.gz |
 | mm10           | GRCm38.p6      | https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_mouse/release_M18/GRCm38.p6.genome.fa.gz |
 |                | Gencode vM18   | https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_mouse/release_M18/gencode.vM18.annotation.gtf.gz |
 |                | Blacklist v2   | http://mitra.stanford.edu/kundaje/akundaje/release/blacklists/mm10-mouse/mm10.blacklist.bed.gz |
+|                | Enhancer reference   | https://fantom.gsc.riken.jp/5/datafiles/reprocessed/mm10_v9/extra/CAGE_peaks/mm10_fair+new_CAGE_peaks_phase1and2.bed.gz |
 | rheMac10       | Ensembl 110    | Chr1 example: https://ftp.ensembl.org/pub/release-110/fasta/macaca_mulatta/dna/Macaca_mulatta.Mmul_10.dna.primary_assembly.1.fa.gz |
 |                | Ensembl 110    | https://ftp.ensembl.org/pub/release-110/gtf/macaca_mulatta/Macaca_mulatta.Mmul_10.110.chr.gtf.gz  |
 
