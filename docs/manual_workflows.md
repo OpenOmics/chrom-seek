@@ -31,15 +31,15 @@ in one place.
 1. Grab the relevant CSV from within ./PeakQC/DB_QC  
 2. Remove rows with samples that should not be included in the analysis.  
 3. Update information in ONLY the following three columns:  
-      a. CONDITION:  
-          This column contains the group information. This is the column
-       DiffBind will use to define the contrast when running the differential binding
-       analysis scripts. Do not start the values with numbers.  
-      b. TREATMENT:  
-          Feel free to add this column as needed. The differential binding analysis
-       scripts use this column for blocking/paired analysis when available. Do not start the values with numbers.  
-      c. REPLICATE:  
-          This is a simple counting device for the tool and nothing more.
+  1. CONDITION:  
+     This column contains the group information. This is the column
+     DiffBind will use to define the contrast when running the differential binding
+     analysis scripts. Do not start the values with numbers.  
+  2. TREATMENT:  
+     Feel free to add this column as needed. The differential binding analysis
+     scripts use this column for blocking/paired analysis when available. Do not start the values with numbers.  
+  3. REPLICATE:  
+     This is a simple counting device for the tool and nothing more.
 4. For differential analysis, you will want to sort your rows so that the top rows are group1 for the contrast group1-group2.
 
 ## Workflow 2: Running DiffBind Analysis
@@ -53,32 +53,88 @@ Perform either quality control analysis or differential binding analysis using D
 
 ### QC Mode Analysis
 
-1. **Run DiffBind QC analysis:**
-
-    a. Get an interactive session with 100G mem, 200G lscratch, and 4 threads.
-     **[Needs filled in]**  
-    b. Initialize the docker containing Diffbind v2.  
-   **[Needs filled in; make sure it still can use lscratch]**  
-    c. Run ./bin/DiffBind_v2_QC.Rmd using example code.  
-    **[Needs filled in; Example code from line 521 of dba.smk]**  
-`Rscript -e 'rmarkdown::render("{params.rscript}", output_file="{output.html}",
-            params=list(csvfile="{output.csvfile}", counts_bed="{output.countsbed}", 
-            counts_csv="{output.countscsv}", peakcaller="{params.peak_tool}"))'`
+1. Get an interactive session with 100G mem, 200G lscratch, and 4 threads. See (biowulf user guid)[https://hpc.nih.gov/docs/userguide.html] for more help with `sinteractive`.
+  ```bash
+  sinteractive -N 1 -n 1 --time=1-12:00:00 --mem=100G --gres=lscratch:200 --cpus-per-task=4
+  ```
+2. Initialize the singularity container for Diffbind v2. See (singularity run documentation)[https://docs.sylabs.io/guides/3.1/user-guide/cli/singularity_run.html] and (singularity metadata and environment)[https://docs.sylabs.io/guides/3.7/user-guide/environment_and_metadata.html] for more help with `singularity run`.  
+  ```bash
+    singularity run \
+      -C \
+      -e \
+      --env TMPDIR=/tmp,TMP=/tmp 
+      -B /lscratch/$SLURM_JOBID:/tmp,<PROJECT_WORKING_DIRECTORY>:/work:rw,<CHROM_SEEK_LIBRARY_BIN_DIRECTORY>:/chromseek \
+      --pwd /work \
+      docker://skchronicles/cfchip_toolkit:v0.5.0 \
+      bash
+  ```
+3. Run ./bin/DiffBind_v2_QC.Rmd using example code. See (Diffbind v3.12.0)[https://bioconductor.statistik.tu-dortmund.de/packages/3.18/bioc/html/DiffBind.html] documentation for reference. 
+  > [!NOTE]
+  > Contextual output tokens (<OUTPUT_*>) need to point to a writable location (/work)
+  > [!NOTE]
+  > The <PEAK_TOOL> token should be one of macsNarrow, Genrich, macsBroad, SEACR
+  ```bash
+  Rscript -e 'rmarkdown::render("/chromseek/DiffBind_v2_QC.Rmd", output_file="/work/CUSTOM_DiffBindQC.html",
+              params=list(csvfile="<INPUT_CSV_FILE>", counts_bed="<OUTPUT_BED_FILE>", 
+              counts_csv="<OUTPUT_COUNTS_CSV_FILE>", peakcaller="<PEAK_TOOL>"))'
+  ```
 
 ### Differential Peak Calling Mode ###
 
-    a. Get an interactive session with 100G mem, 200G lscratch, and 4 threads.
-     **[Needs filled in]**
-    b. Initialize the docker containing Diffbind v2.  
-   **[Needs filled in; make sure it still can use lscratch]**  
-   c. Run ./bin/DiffBind_v2_load.R  
-**[Needs filled in; Example code in rule diffbind_count, begins line 50 of dba.smk]**  
-   d. Run one of the four Rmds:  
-       - ./bin/DiffBind_v2_Deseq2.Rmd  
-       - ./bin/DiffBind_v2_Deseq2_block.Rmd  
-       - ./bin/DiffBind_v2_EdgeR.Rmd  
-       - ./bin/DiffBind_v2_EdgeR_block.Rmd  
-**[Needs filled in; Example code in rule diffbind_edger, begins line 218 of dba.smk]**
+1. Get an interactive session with 100G mem, 200G lscratch, and 4 threads.
+  ```bash
+  sinteractive -N 1 -n 1 --time=1-12:00:00 --mem=100G --gres=lscratch:200 --cpus-per-task=4
+  ```
+2. Initialize the singularity container for Diffbind v2. See (singularity run documentation)[https://docs.sylabs.io/guides/3.1/user-guide/cli/singularity_run.html] and (singularity metadata and environment)[https://docs.sylabs.io/guides/3.7/user-guide/environment_and_metadata.html] for more help with `singularity run`. 
+  ```bash
+  singularity run \
+    -C \
+    -e \
+    --env TMPDIR=/tmp,TMP=/tmp 
+    -B /lscratch/$SLURM_JOBID:/tmp,<PROJECT_WORKING_DIRECTORY>:/work:rw,<CHROM_SEEK_LIBRARY_BIN_DIRECTORY>:/chromseek \
+    --pwd /work \
+    docker://skchronicles/cfchip_toolkit:v0.5.0 \
+    bash
+  ``` 
+3. Run /chromseek/DiffBind_v2_load.R.
+  > [!NOTE]
+  > Contextual output tokens (<OUTPUT_*>) need to point to a writable location (/work)
+  > [!NOTE]
+  > The <PEAK_TOOL> token should be one of macsNarrow, Genrich, macsBroad, SEACR
+  ```bash
+  /chromseek/DiffBind_v2_load.R \
+    --csvfile <INPUT_CSV_FILE> \
+    --counts <OUTPUT_PEAK_COUNTS_CSV_FILE> \
+    --list <OUTPUT_PEAK_BED_FILE> \
+    --peakcaller <PEAK_TOOL>
+  ```
+
+4. Execute differential comparisons using DiffBind v2.15.2.
+  1. Determine which differential application suits your needs: `DeSeq2 or edgeR`
+     > [!NOTE]
+     > DeSeq2 is typically used here unless there are:
+     > - large variance in library size
+     > - library size is confounding
+     > - prior expectations that there should be an equivalent number of peaks on both sides of the contrast
+  2. Verify if your experimential design requires the uses of `blocking` or `no blocking`.
+  3. Find relevant script (<ANALYSIS_SCRIPT>): 
+    - /chromseek/bin/DiffBind_v2_Deseq2.Rmd  
+    - /chromseek/bin/DiffBind_v2_Deseq2_block.Rmd  
+    - /chromseek/bin/DiffBind_v2_EdgeR.Rmd  
+    - /chromseek/bin/DiffBind_v2_EdgeR_block.Rmd
+  4. Collect the outputs from step #3 for use here: <OUTPUT_PEAK_COUNTS_CSV_FILE> = <INPUT_PEAK_COUNTS_CSV_FILE>
+  5. Establish group contrast from experimental setup: "{group1}_vs_{group2}" [string] = <INPUT_CONTRASTS> 
+  6. Establish output locations for tokens: <OUTPUT_DIFFBIND_REPORT_FILE>, <OUTPUT_UP_REGULATED_FILE>, <OUTPUT_DOWN_REGULATED_FILE>, <OUTPUT_PEAK_BED_LIST>
+     > [!NOTE]
+     > Contextual output tokens (<OUTPUT_*>) need to point to a writable location (/work)
+  7. Execute script:
+     > [!NOTE]
+     > The <PEAK_TOOL> token should be one of macsNarrow, Genrich, macsBroad, SEACR
+    ```bash
+    Rscript -e 'rmarkdown::render("<ANALYSIS_SCRIPT>", output_file="<OUTPUT_DIFFBIND_REPORT_FILE>",
+      params=list(csvfile="<INPUT_CSV_FILE>", peakcaller="<PEAK_TOOL>", list_file="<OUTPUT_PEAK_BED_LIST>",
+      up_file="<OUTPUT_UP_REGULATED_FILE>", down_file="<OUTPUT_DOWN_REGULATED_FILE>", contrasts="<INPUT_CONTRASTS>", counts="<INPUT_PEAK_COUNTS_CSV_FILE>"))'
+    ```
 
 ## Workflow 3: Peak Annotation with UROPA
 
@@ -86,40 +142,39 @@ Perform either quality control analysis or differential binding analysis using D
 Annotate genomic peaks with gene information, regulatory elements, and genomic context using UROPA.
 
 ### Input Files Required
-- Peak files (BED or narrowPeak format)
-- GTF annotation file
-- UROPA configuration file
+- Peak files (BED or narrowPeak format) <PEAK_FILE>
+- GTF annotation file <GTF_FILE>
+- UROPA configuration file <UROPA_CONFIG>
 
 ### Steps
 
-1. **Create UROPA configuration file:**
-   ```bash
-   ./bin/create_uropa_config.py \
-     --gtf resources/genomes/hg38/genes.gtf \
-     --output uropa_config.json \
-     --distance 3000
-   ```
+1. Create UROPA configuration file:
+  > [!NOTE]
+  > Contextual output tokens (<OUTPUT_*>) need to point to a writable location (/work)
+  ```json
+  {
+    "queries":[
+          {"name":"promoters", "feature":"gene", "distance":[1000,100], "feature_anchor": "start"},
+          {"name":"forward_exons", "feature":"exon", "distance":[1,1], "internals":"True", "strand":"+"},
+          {"name":"query_level", "filter_attribute":"level", "attribute_values":["1", "2"], "distance":[1000,1000]}
+    ],
+    "show_attributes":"all",
+    "priority": "False",
+    "gtf": "<GTF_FILE>",
+    "bed": "<PEAK_FILE>",
+    "outdir": "<OUTPUT_UROPA_DIR>"
+  }
+  ```
 
 2. **Run UROPA annotation:**
-   ```bash
-   # For single peak file
-   python ./bin/run_uropa_annotation.py \
-     --peaks results/peak_calling/Sample1_peaks.narrowPeak \
-     --config uropa_config.json \
-     --output uropa_annotations/Sample1_annotated.txt
-
-   # For multiple peak files (batch processing)
-   ./bin/batch_uropa_annotation.sh \
-     --peak-dir results/peak_calling \
-     --config uropa_config.json \
-     --output-dir uropa_annotations \
-     --cores 4
-   ```
+  ```bash
+  uropa -i sample_config.json -t 4
+  ```
 
 3. **Expected outputs:**
-   - `uropa_annotations/Sample1_annotated.txt` - Detailed annotations
-   - `uropa_annotations/Sample1_summary.txt` - Annotation summary statistics
-   - `uropa_annotations/annotation_plots.pdf` - Visualization plots
+   - `<OUTPUT_UROPA_DIR>/Sample1_finalhits.txt` - Detailed annotations
+   - `<OUTPUT_UROPA_DIR>/Sample1_allhits.txt` - Annotation summary statistics
+
 
 ### Configuration Options
 The UROPA config file supports various annotation priorities:
@@ -127,6 +182,7 @@ The UROPA config file supports various annotation priorities:
 - **Gene body**: Exons and introns
 - **Intergenic regions**: Regions between genes
 - **Custom features**: User-defined genomic regions
+See (UROPA manual)[https://uropa-manual.readthedocs.io/] for more information.
 
 ### Example Configuration
 ```json
@@ -146,8 +202,8 @@ The UROPA config file supports various annotation priorities:
     }
   ],
   "priority": "True",
-  "gtf": "resources/genomes/hg38/genes.gtf",
-  "bed": "input.bed"
+  "gtf": "<GTF_FILE>",
+  "bed": "<PEAK_FILE>"
 }
 ```
 
@@ -163,75 +219,23 @@ Combine differential binding results from DiffBind with gene annotations from UR
 ### Steps
 
 1. **Merge differential results with annotations:**
-   ```bash
-   python ./bin/merge_diffbind_uropa.py \
-     --diffbind-results diffbind_differential_results/differential_peaks.csv \
-     --uropa-annotations uropa_annotations/ \
-     --output merged_results.tsv \
-     --include-plots
-   ```
+  1. Collect diffbind CSV output from **Differential Peak Calling Mode**: <OUTPUT_PEAK_COUNTS_CSV_FILE> = <DIFFBIND_CSV_FILE>
+  2. Collect UROPA *_finalhits.txt output for input to merge script: <UROPA_FINAL_HITS>
+  3. Collect merge file output file location: <MERGE_OUTPUT>
+     > [!NOTE]
+     > Contextual output tokens (<OUTPUT_*>) need to point to a writable location (/work)
+  2. Decide if you want to filter at a higher FDR or fold change than default UROPA settings [Optional]: <FDR_THRESHOLD>, <FC_THRESHOLD>
+  ```bash
+  python /chromseek/merge_diffbind_uropa.py \
+    --diffbind <DIFFBIND_CSV_FILE> \
+    --uropa <UROPA_FINAL_HITS> \
+    --fdr <FDR_THRESHOLD> \
+    --fold <FC_THRESHOLD> \
+    --output <MERGE_OUTPUT>
+  ```
 
-2. **Generate summary report:**
-   ```bash
-   Rscript ./bin/generate_summary_report.R \
-     --merged-results merged_results.tsv \
-     --output-dir final_results \
-     --create-plots TRUE
-   ```
-
-3. **Expected outputs:**
-   - `merged_results.tsv` - Combined differential and annotation data
-   - `final_results/summary_report.html` - Interactive HTML report
-   - `final_results/enrichment_plots.pdf` - Functional enrichment plots
-   - `final_results/top_genes_table.csv` - Table of top differentially bound genes
-
-### Output Columns in Merged Results
-- **Peak information**: chr, start, end, peak_name
-- **Differential binding**: log2FoldChange, pvalue, padj, baseMean
-- **Annotation**: gene_name, gene_id, feature_type, distance_to_tss
-- **Genomic context**: promoter, exon, intron, intergenic
-- **Additional**: peak_width, summit_position, fold_enrichment
-
-## Advanced Analysis Options
-
-### Custom Filtering and Subsetting
-
-```bash
-# Filter results by fold change and significance
-python ./bin/filter_results.py \
-  --input merged_results.tsv \
-  --output filtered_results.tsv \
-  --min-lfc 2 \
-  --max-padj 0.01 \
-  --feature-types promoter,exon
-
-# Create subsets by genomic features
-python ./bin/subset_by_features.py \
-  --input merged_results.tsv \
-  --output-dir feature_subsets \
-  --group-by feature_type
-```
-
-### Pathway Enrichment Analysis
-
-```bash
-# Run pathway enrichment on differentially bound genes
-Rscript ./bin/pathway_enrichment.R \
-  --gene-list final_results/top_genes_table.csv \
-  --output-dir pathway_analysis \
-  --organism human \
-  --databases GO,KEGG,Reactome
-```
-
-### Visualization and Plotting
-
-```bash
-# Create custom visualizations
-python ./bin/create_custom_plots.py \
-  --results merged_results.tsv \
-  --output-dir custom_plots \
-  --plot-types volcano,ma,heatmap,genomic_distribution
-```
+2. **Expected outputs:**
+   - `<MERGE_OUTPUT>` - Combined differential and annotation data
 
 ## Troubleshooting
 
