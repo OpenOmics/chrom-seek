@@ -88,7 +88,7 @@ Perform either quality control analysis or differential binding analysis using D
   ```bash
   sinteractive -N 1 -n 1 --time=1-12:00:00 --mem=100G --gres=lscratch:200 --cpus-per-task=4
   ```
-2. Initialize the singularity container for Diffbind v2. See [singularity run documentation](https://docs.sylabs.io/guides/3.1/user-guide/cli/singularity_run.html) and (singularity metadata and environment)[https://docs.sylabs.io/guides/3.7/user-guide/environment_and_metadata.html] for more help with `singularity run`. 
+2. Initialize the singularity container for Diffbind v2. See [singularity run documentation](https://docs.sylabs.io/guides/3.1/user-guide/cli/singularity_run.html) and singularity [metadata and environment](https://docs.sylabs.io/guides/3.7/user-guide/environment_and_metadata.html) for more help with `singularity run`. 
   ```bash
   singularity run \
     -C \
@@ -101,9 +101,11 @@ Perform either quality control analysis or differential binding analysis using D
   ``` 
 3. Run `DiffBind_v2_load.R`.
   > [!NOTE]
-  > Contextual output tokens (`<OUTPUT_*>`) need to point to a writable location (/work)
+  > Contextual output tokens (`<OUTPUT_*>`) need to point to a writable location (`/work`)
+
   > [!NOTE]
   > The `<PEAK_TOOL>` token should be one of macsNarrow, Genrich, macsBroad, SEACR
+  
   ```bash
   /chromseek/DiffBind_v2_load.R \
     --csvfile <INPUT_CSV_FILE> \
@@ -112,9 +114,7 @@ Perform either quality control analysis or differential binding analysis using D
     --peakcaller <PEAK_TOOL>
   ```
 
-4. Execute differential comparisons using DiffBind v2.15.2.
-  > [!NOTE]
-  > Contextual output tokens (`<OUTPUT_*>`) need to point to a writable location (/work)
+4. Execute differential comparisons using `DiffBind v2.15.2`.
 
   1. Determine which differential application suits your needs: `DeSeq2 or edgeR`
      - large variance in library size
@@ -132,14 +132,16 @@ Perform either quality control analysis or differential binding analysis using D
   4. Collect the outputs from step #3 for use here: `<OUTPUT_PEAK_COUNTS_CSV_FILE>` = `<INPUT_PEAK_COUNTS_CSV_FILE>`
 
   5. Establish group contrast from experimental setup: "{group1}_vs_{group2}" [string] = `<INPUT_CONTRASTS>`
-  > [!NOTE]
-  > Contextual output tokens (<OUTPUT_*>) need to point to a writable location (/work)
 
   6. Establish output locations for tokens: `<OUTPUT_DIFFBIND_REPORT_FILE>`, `<OUTPUT_UP_REGULATED_FILE>`, `<OUTPUT_DOWN_REGULATED_FILE>`, `<OUTPUT_PEAK_BED_LIST>`
+ 
   > [!NOTE]
-  > The `<PEAK_TOOL>` token should be one of macsNarrow, Genrich, macsBroad, SEACR 
+  > Contextual output tokens (<OUTPUT_*>) need to point to a writable location (`/work`)
 
   7. Execute script:
+
+  > [!NOTE]
+  > The `<PEAK_TOOL>` token should be one of macsNarrow, Genrich, macsBroad, SEACR 
 
   ```bash
   Rscript -e 'rmarkdown::render("<ANALYSIS_SCRIPT>", output_file="<OUTPUT_DIFFBIND_REPORT_FILE>",
@@ -153,15 +155,17 @@ Perform either quality control analysis or differential binding analysis using D
 Annotate genomic peaks with gene information, regulatory elements, and genomic context using UROPA.
 
 ### Input Files Required
-- Peak files (BED or narrowPeak format) <PEAK_FILE>
-- GTF annotation file <GTF_FILE>
-- UROPA configuration file <UROPA_CONFIG>
+- Peak files (BED or narrowPeak format) `<PEAK_FILE>`
+- GTF annotation file `<GTF_FILE>`
+- UROPA configuration file `<UROPA_CONFIG>`
 
 ### Steps
 
 1. Create UROPA configuration file:
+  
   > [!NOTE]
   > Contextual output tokens (<OUTPUT_*>) need to point to a writable location (/work)
+
   ```json
   {
     "queries":[
@@ -189,10 +193,12 @@ Annotate genomic peaks with gene information, regulatory elements, and genomic c
 
 ### Configuration Options
 The UROPA config file supports various annotation priorities:
+
 - **Promoter regions**: TSS ± 3kb
 - **Gene body**: Exons and introns
 - **Intergenic regions**: Regions between genes
 - **Custom features**: User-defined genomic regions
+
 See [UROPA manual](https://uropa-manual.readthedocs.io/) for more information.
 
 ### Example Configuration
@@ -230,12 +236,14 @@ Combine differential binding results from DiffBind with gene annotations from UR
 ### Steps
 
 1. **Merge differential results with annotations:**
-  1. Collect diffbind CSV output from **Differential Peak Calling Mode**: <OUTPUT_PEAK_COUNTS_CSV_FILE> = <DIFFBIND_CSV_FILE>
-  2. Collect UROPA *_finalhits.txt output for input to merge script: <UROPA_FINAL_HITS>
-  3. Collect merge file output file location: <MERGE_OUTPUT>
-     > [!NOTE]
-     > Contextual output tokens (<OUTPUT_*>) need to point to a writable location (/work)
-  2. Decide if you want to filter at a higher FDR or fold change than default UROPA settings [Optional]: <FDR_THRESHOLD>, <FC_THRESHOLD>
+  1. Collect diffbind CSV output from **Differential Peak Calling Mode**: `<OUTPUT_PEAK_COUNTS_CSV_FILE>` = `<DIFFBIND_CSV_FILE>`
+  2. Collect UROPA *_finalhits.txt output for input to merge script: `<UROPA_FINAL_HITS>`
+  3. Collect merge file output file location: `<MERGE_OUTPUT>`
+  2. Decide if you want to filter at a higher FDR or fold change than default UROPA settings [Optional]: `<FDR_THRESHOLD>`, `<FC_THRESHOLD>`
+
+  > [!NOTE]
+  > Contextual output tokens (`<OUTPUT_*>`) need to point to a writable location (/work)
+
   ```bash
   python /chromseek/merge_diffbind_uropa.py \
     --diffbind <DIFFBIND_CSV_FILE> \
