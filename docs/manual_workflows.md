@@ -31,15 +31,15 @@ in one place.
 1. Grab the relevant CSV from within `<PIPELINE_OUTPUT_DIR>/PeakQC/DB_QC`
 2. Remove rows with samples that should not be included in the analysis.  
 3. Update information in ONLY the following three columns:  
-  1. CONDITION:  
-     This column contains the group information. This is the column
-     DiffBind will use to define the contrast when running the differential binding
-     analysis scripts. Do not start the values with numbers.  
-  2. TREATMENT:  
-     Feel free to add this column as needed. The differential binding analysis
-     scripts use this column for blocking/paired analysis when available. Do not start the values with numbers.  
-  3. REPLICATE:  
-     This is a simple counting device for the tool and nothing more.
+   1. **CONDITION:**  
+      This column contains the group information. This is the column
+      DiffBind will use to define the contrast when running the differential binding
+      analysis scripts. Do not start the values with numbers.  
+   2. **TREATMENT:**
+      Feel free to add this column as needed. The differential binding analysis
+      scripts use this column for blocking/paired analysis when available. Do not start the values with numbers.  
+   3. **REPLICATE:**  
+      This is a simple counting device for the tool and nothing more.
 4. For differential analysis, you will want to sort your rows so that the top rows are group1 for the contrast group1-group2.
 
 ## Workflow 2: Running DiffBind Analysis
@@ -135,13 +135,13 @@ Perform either quality control analysis or differential binding analysis using D
 
    6. Establish output locations for tokens: `<OUTPUT_DIFFBIND_REPORT_FILE>`, `<OUTPUT_UP_REGULATED_FILE>`, `<OUTPUT_DOWN_REGULATED_FILE>`, `<OUTPUT_PEAK_BED_LIST>`
  
-   > [!NOTE]
-   > Contextual output tokens (<OUTPUT_*>) need to point to a writable location (`/work`)
+  > [!NOTE]
+  > Contextual output tokens (<OUTPUT_*>) need to point to a writable location (`/work`)
 
    7. Execute script:
 
-   > [!NOTE]
-   > The `<PEAK_TOOL>` token should be one of macsNarrow, Genrich, macsBroad, SEACR 
+  > [!NOTE]
+  > The `<PEAK_TOOL>` token should be one of macsNarrow, Genrich, macsBroad, SEACR 
 
    ```bash
    Rscript -e 'rmarkdown::render("<ANALYSIS_SCRIPT>", output_file="<OUTPUT_DIFFBIND_REPORT_FILE>",
