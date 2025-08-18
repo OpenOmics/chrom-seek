@@ -135,19 +135,19 @@ Perform either quality control analysis or differential binding analysis using D
 
    6. Establish output locations for tokens: `<OUTPUT_DIFFBIND_REPORT_FILE>`, `<OUTPUT_UP_REGULATED_FILE>`, `<OUTPUT_DOWN_REGULATED_FILE>`, `<OUTPUT_PEAK_BED_LIST>`
  
-  > [!NOTE]
-  > Contextual output tokens (<OUTPUT_*>) need to point to a writable location (`/work`)
+      > [!NOTE]
+      > Contextual output tokens (<OUTPUT_*>) need to point to a writable location (`/work`)
 
    7. Execute script:
 
-  > [!NOTE]
-  > The `<PEAK_TOOL>` token should be one of macsNarrow, Genrich, macsBroad, SEACR 
+      > [!NOTE]
+      > The `<PEAK_TOOL>` token should be one of macsNarrow, Genrich, macsBroad, SEACR 
 
-   ```bash
-   Rscript -e 'rmarkdown::render("<ANALYSIS_SCRIPT>", output_file="<OUTPUT_DIFFBIND_REPORT_FILE>",
-     params=list(csvfile="<INPUT_CSV_FILE>", peakcaller="<PEAK_TOOL>", list_file="<OUTPUT_PEAK_BED_LIST>",
-     up_file="<OUTPUT_UP_REGULATED_FILE>", down_file="<OUTPUT_DOWN_REGULATED_FILE>", contrasts="<INPUT_CONTRASTS>", counts="<INPUT_PEAK_COUNTS_CSV_FILE>"))'
-   ```
+      ```bash
+      Rscript -e 'rmarkdown::render("<ANALYSIS_SCRIPT>", output_file="<OUTPUT_DIFFBIND_REPORT_FILE>",
+        params=list(csvfile="<INPUT_CSV_FILE>", peakcaller="<PEAK_TOOL>", list_file="<OUTPUT_PEAK_BED_LIST>",
+        up_file="<OUTPUT_UP_REGULATED_FILE>", down_file="<OUTPUT_DOWN_REGULATED_FILE>", contrasts="<INPUT_CONTRASTS>", counts="<INPUT_PEAK_COUNTS_CSV_FILE>"))'
+      ```
 
 ## Workflow 3: Peak Annotation with UROPA
 
