@@ -21,10 +21,12 @@ bin_path                        = config['project']['binpath']
 workpath                        = config['project']['workpath']
 assay                           = config['options']['assay']
 blocks                          = config['project']['blocks']
+genome                          = config['options']['genome']
 blocking                        = False if set(blocks.values()) in ({None}, {''}) else True
 paired_end                      = False if config['project']['nends'] == 1 else True
 chips                           = config['project']['peaks']['chips']
 contrast                        = config['project']['contrast']
+enhancer_ref                    = config['references'][genome].get('ENHANCER', False)
 
 # list of contrasts in {group1}_vs_{group2}
 contrasts                       = []
@@ -69,6 +71,7 @@ MEME_dir                        = join(workpath, "MEME")
 manorm_dir                      = join(workpath, "MANorm")
 seacr_dir                       = join(workpath, "SEACR")
 homer_dir                       = join(workpath, "HOMER")
+deeptools_dir                   = join(workpath, 'deeptools')
 
 
 # Read in resource information
@@ -133,15 +136,15 @@ else:
 #     rule_all_ins.extend(expand(join(MEME_dir, "{PeakTool}", "{name}_meme", "meme-chip.html"), PeakTool=PeakTools, name=chips))
 #     rule_all_ins.extend(expand(join(MEME_dir, "{PeakTool}", "{name}_ame", "ame.html"), PeakTool=PeakTools, name=chips))
 
-rule_all_ins.append(expand(
+rule_all_ins.extend(expand(
     join(diffbind_qc_dir, "AllSamples-{pktool}", "AllSamples-{pktool}_DiffBindQC.html"),
     pktool=PeakTools
 ))
-rule_all_ins.append(expand(
+rule_all_ins.extend(expand(
     join(diffbind_qc_dir, "AllSamples-{pktool}", "AllSamples-{pktool}_DiffBindQC_TMMcounts.bed"),
     pktool=PeakTools
 ))
-rule_all_ins.append(expand(
+rule_all_ins.extend(expand(
     join(diffbind_qc_dir, "AllSamples-{pktool}", "AllSamples-{pktool}_DiffBind_prep.csv"),
     pktool=PeakTools
 ))
@@ -152,6 +155,7 @@ rule_all_ins.extend(
     PeakTool=PeakTools, 
     name=chips)
 )
+rule_all_ins.append(join(peakqc_dir, "FRiP", "summary.Q5DD.FRiP_heatmap.pdf"))
 rule_all_ins.extend(expand(
     join(bam_dir, "{name}.sorted.bam"), 
     name=samples
@@ -183,6 +187,9 @@ rule_all_ins.extend(expand(
 ))
 
 rule_all_ins.append(join(peakqc_dir, "jaccard", 'jaccard_summary_pca.pdf'))
+
+if enhancer_ref:
+    rule_all_ins.append(join(deeptools_dir, "enhancer_heatmap.Q5DD.pdf"))
 
 if paired_end:
     rule_all_ins.extend(expand(
