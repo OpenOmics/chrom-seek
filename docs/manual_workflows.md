@@ -28,7 +28,7 @@ can be time-consuming and confusing, but the chrom-seek DiffBindQC
 steps produce CSVs with information on all samples in the directory
 in one place.
 
-1. Grab the relevant CSV from within ./PeakQC/DB_QC  
+1. Grab the relevant CSV from within `<PIPELINE_OUTPUT_DIR>/PeakQC/DB_QC`
 2. Remove rows with samples that should not be included in the analysis.  
 3. Update information in ONLY the following three columns:  
   1. CONDITION:  
@@ -71,10 +71,10 @@ Perform either quality control analysis or differential binding analysis using D
 3. Run `DiffBind_v2_QC.Rmd` using example code. See [Diffbind v3.12.0](https://bioconductor.statistik.tu-dortmund.de/packages/3.18/bioc/html/DiffBind.html) documentation for reference.
 
   > [!NOTE]
-  > Contextual output tokens (<OUTPUT_*>) need to point to a writable location (/work)
+  > Contextual output tokens (`<OUTPUT_*>`) need to point to a writable location (/work)
 
   > [!NOTE]
-  > The `<PEAK_TOOL> token should be one of macsNarrow, Genrich, macsBroad, SEACR
+  > The `<PEAK_TOOL>` token should be one of macsNarrow, Genrich, macsBroad, SEACR
   
   ```bash
   Rscript -e 'rmarkdown::render("/chromseek/DiffBind_v2_QC.Rmd", output_file="/work/CUSTOM_DiffBindQC.html",
@@ -88,7 +88,7 @@ Perform either quality control analysis or differential binding analysis using D
   ```bash
   sinteractive -N 1 -n 1 --time=1-12:00:00 --mem=100G --gres=lscratch:200 --cpus-per-task=4
   ```
-2. Initialize the singularity container for Diffbind v2. See [singularity run documentation](https://docs.sylabs.io/guides/3.1/user-guide/cli/singularity_run.html) and (singularity metadata and environment](https://docs.sylabs.io/guides/3.7/user-guide/environment_and_metadata.html) for more help with `singularity run`. 
+2. Initialize the singularity container for Diffbind v2. See [singularity run documentation](https://docs.sylabs.io/guides/3.1/user-guide/cli/singularity_run.html) and (singularity metadata and environment)[https://docs.sylabs.io/guides/3.7/user-guide/environment_and_metadata.html] for more help with `singularity run`. 
   ```bash
   singularity run \
     -C \
