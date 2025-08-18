@@ -134,14 +134,12 @@ Perform either quality control analysis or differential binding analysis using D
    5. Establish group contrast from experimental setup: "{group1}_vs_{group2}" [string] = `<INPUT_CONTRASTS>`
 
    6. Establish output locations for tokens: `<OUTPUT_DIFFBIND_REPORT_FILE>`, `<OUTPUT_UP_REGULATED_FILE>`, `<OUTPUT_DOWN_REGULATED_FILE>`, `<OUTPUT_PEAK_BED_LIST>`
-      ::: {.callout-note}
-      Contextual output tokens (<OUTPUT_*>) need to point to a writable location (`/work`)
-      :::
+      > [!NOTE]
+      > Contextual output tokens (<OUTPUT_*>) need to point to a writable location (`/work`)
 
    7. Execute script:
-      ::: {.callout-note}
-      The `<PEAK_TOOL>` token should be one of macsNarrow, Genrich, macsBroad, SEACR
-      :::
+      > [!NOTE]
+      > The `<PEAK_TOOL>` token should be one of macsNarrow, Genrich, macsBroad, SEACR
 
       ```bash
       Rscript -e 'rmarkdown::render("<ANALYSIS_SCRIPT>", output_file="<OUTPUT_DIFFBIND_REPORT_FILE>",
