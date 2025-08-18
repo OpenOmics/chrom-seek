@@ -17,7 +17,8 @@
             "MEME_VERTEBRATES_DB": "/fdb/meme/motif_databases/JASPAR/JASPAR2018_CORE_vertebrates_non-redundant.meme",
             "MEME_EUKARYOTE_DB": "/fdb/meme/motif_databases/EUKARYOTE/jolma2013.meme",
             "MEME_GENOME_DB": "/fdb/meme/motif_databases/HUMAN/HOCOMOCOv11_full_HUMAN_mono_meme_format.meme",
-            "HOMER_REF": "/fdb/homer/genomes/hg19"
+            "HOMER_REF": "/fdb/homer/genomes/hg19",
+            "ENHANCER": "/data/OpenOmics/references/chrom-seek/hg19/hg19_fantom.bed"
         },
         "hg38": {
             "ALIAS": "hg38",
