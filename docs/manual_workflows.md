@@ -116,38 +116,38 @@ Perform either quality control analysis or differential binding analysis using D
 
 4. Execute differential comparisons using `DiffBind v2.15.2`.
 
-  1. Determine which differential application suits your needs: `DeSeq2 or edgeR`
+   1. Determine which differential application suits your needs: `DeSeq2 or edgeR`
      - large variance in library size
      - library size is confounding
      - prior expectations that there should be an equivalent number of peaks on both sides of the contrast
 
-  2. Verify if your experimential design requires the uses of `blocking` or `no blocking`.
+   2. Verify if your experimential design requires the uses of `blocking` or `no blocking`.
 
-  3. Find relevant script (`<ANALYSIS_SCRIPT>`): 
+   3. Find relevant script (`<ANALYSIS_SCRIPT>`): 
      - /chromseek/bin/DiffBind_v2_Deseq2.Rmd  
      - /chromseek/bin/DiffBind_v2_Deseq2_block.Rmd  
      - /chromseek/bin/DiffBind_v2_EdgeR.Rmd  
      - /chromseek/bin/DiffBind_v2_EdgeR_block.Rmd
 
-  4. Collect the outputs from step #3 for use here: `<OUTPUT_PEAK_COUNTS_CSV_FILE>` = `<INPUT_PEAK_COUNTS_CSV_FILE>`
+   4. Collect the outputs from step #3 for use here: `<OUTPUT_PEAK_COUNTS_CSV_FILE>` = `<INPUT_PEAK_COUNTS_CSV_FILE>`
 
-  5. Establish group contrast from experimental setup: "{group1}_vs_{group2}" [string] = `<INPUT_CONTRASTS>`
+   5. Establish group contrast from experimental setup: "{group1}_vs_{group2}" [string] = `<INPUT_CONTRASTS>`
 
-  6. Establish output locations for tokens: `<OUTPUT_DIFFBIND_REPORT_FILE>`, `<OUTPUT_UP_REGULATED_FILE>`, `<OUTPUT_DOWN_REGULATED_FILE>`, `<OUTPUT_PEAK_BED_LIST>`
+   6. Establish output locations for tokens: `<OUTPUT_DIFFBIND_REPORT_FILE>`, `<OUTPUT_UP_REGULATED_FILE>`, `<OUTPUT_DOWN_REGULATED_FILE>`, `<OUTPUT_PEAK_BED_LIST>`
  
-  > [!NOTE]
-  > Contextual output tokens (<OUTPUT_*>) need to point to a writable location (`/work`)
+   > [!NOTE]
+   > Contextual output tokens (<OUTPUT_*>) need to point to a writable location (`/work`)
 
-  7. Execute script:
+   7. Execute script:
 
-  > [!NOTE]
-  > The `<PEAK_TOOL>` token should be one of macsNarrow, Genrich, macsBroad, SEACR 
+   > [!NOTE]
+   > The `<PEAK_TOOL>` token should be one of macsNarrow, Genrich, macsBroad, SEACR 
 
-  ```bash
-  Rscript -e 'rmarkdown::render("<ANALYSIS_SCRIPT>", output_file="<OUTPUT_DIFFBIND_REPORT_FILE>",
-    params=list(csvfile="<INPUT_CSV_FILE>", peakcaller="<PEAK_TOOL>", list_file="<OUTPUT_PEAK_BED_LIST>",
-    up_file="<OUTPUT_UP_REGULATED_FILE>", down_file="<OUTPUT_DOWN_REGULATED_FILE>", contrasts="<INPUT_CONTRASTS>", counts="<INPUT_PEAK_COUNTS_CSV_FILE>"))'
-  ```
+   ```bash
+   Rscript -e 'rmarkdown::render("<ANALYSIS_SCRIPT>", output_file="<OUTPUT_DIFFBIND_REPORT_FILE>",
+     params=list(csvfile="<INPUT_CSV_FILE>", peakcaller="<PEAK_TOOL>", list_file="<OUTPUT_PEAK_BED_LIST>",
+     up_file="<OUTPUT_UP_REGULATED_FILE>", down_file="<OUTPUT_DOWN_REGULATED_FILE>", contrasts="<INPUT_CONTRASTS>", counts="<INPUT_PEAK_COUNTS_CSV_FILE>"))'
+   ```
 
 ## Workflow 3: Peak Annotation with UROPA
 
@@ -164,7 +164,7 @@ Annotate genomic peaks with gene information, regulatory elements, and genomic c
 1. Create UROPA configuration file:
   
   > [!NOTE]
-  > Contextual output tokens (<OUTPUT_*>) need to point to a writable location (/work)
+  > Contextual output tokens (`<OUTPUT_*>`) need to point to a writable location (/work)
 
   ```json
   {
