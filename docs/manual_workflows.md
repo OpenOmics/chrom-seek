@@ -53,11 +53,11 @@ Perform either quality control analysis or differential binding analysis using D
 
 ### QC Mode Analysis
 
-1. Get an interactive session with 100G mem, 200G lscratch, and 4 threads. See (biowulf user guid)[https://hpc.nih.gov/docs/userguide.html] for more help with `sinteractive`.
+1. Get an interactive session with 100G mem, 200G lscratch, and 4 threads. See [biowulf user guide](https://hpc.nih.gov/docs/userguide.html) for more help with `sinteractive`.
   ```bash
   sinteractive -N 1 -n 1 --time=1-12:00:00 --mem=100G --gres=lscratch:200 --cpus-per-task=4
   ```
-2. Initialize the singularity container for Diffbind v2. See (singularity run documentation)[https://docs.sylabs.io/guides/3.1/user-guide/cli/singularity_run.html] and (singularity metadata and environment)[https://docs.sylabs.io/guides/3.7/user-guide/environment_and_metadata.html] for more help with `singularity run`.  
+2. Initialize the singularity container for Diffbind v2. See [singularity run documentation](https://docs.sylabs.io/guides/3.1/user-guide/cli/singularity_run.html) and [singularity metadata and environment](https://docs.sylabs.io/guides/3.7/user-guide/environment_and_metadata.html) for more help with `singularity run`.  
   ```bash
     singularity run \
       -C \
@@ -68,7 +68,7 @@ Perform either quality control analysis or differential binding analysis using D
       docker://skchronicles/cfchip_toolkit:v0.5.0 \
       bash
   ```
-3. Run ./bin/DiffBind_v2_QC.Rmd using example code. See (Diffbind v3.12.0)[https://bioconductor.statistik.tu-dortmund.de/packages/3.18/bioc/html/DiffBind.html] documentation for reference. 
+3. Run ./bin/DiffBind_v2_QC.Rmd using example code. See [Diffbind v3.12.0](https://bioconductor.statistik.tu-dortmund.de/packages/3.18/bioc/html/DiffBind.html) documentation for reference. 
   > [!NOTE]
   > Contextual output tokens (<OUTPUT_*>) need to point to a writable location (/work)
   > [!NOTE]
@@ -85,7 +85,7 @@ Perform either quality control analysis or differential binding analysis using D
   ```bash
   sinteractive -N 1 -n 1 --time=1-12:00:00 --mem=100G --gres=lscratch:200 --cpus-per-task=4
   ```
-2. Initialize the singularity container for Diffbind v2. See (singularity run documentation)[https://docs.sylabs.io/guides/3.1/user-guide/cli/singularity_run.html] and (singularity metadata and environment)[https://docs.sylabs.io/guides/3.7/user-guide/environment_and_metadata.html] for more help with `singularity run`. 
+2. Initialize the singularity container for Diffbind v2. See [singularity run documentation](https://docs.sylabs.io/guides/3.1/user-guide/cli/singularity_run.html) and ([ingularity metadata and environment](https://docs.sylabs.io/guides/3.7/user-guide/environment_and_metadata.html) for more help with `singularity run`. 
   ```bash
   singularity run \
     -C \
@@ -182,7 +182,7 @@ The UROPA config file supports various annotation priorities:
 - **Gene body**: Exons and introns
 - **Intergenic regions**: Regions between genes
 - **Custom features**: User-defined genomic regions
-See (UROPA manual)[https://uropa-manual.readthedocs.io/] for more information.
+See [UROPA manual](https://uropa-manual.readthedocs.io/) for more information.
 
 ### Example Configuration
 ```json
