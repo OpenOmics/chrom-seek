@@ -15,17 +15,20 @@ def print_tsv_highlighted(tsv_path):
     """
     Prints TSV data with spaces and tabs highlighted.
     """
-    tsv_data = open(tsv_path).read()
-    for line in tsv_data.splitlines():
-        highlighted_line = ""
-        for char in line:
-            if char == ' ':
-                highlighted_line += Colors.cyan + '•' + Colors.end # Highlight spaces with a middle dot
-            elif char == '\t':
-                highlighted_line += Colors.green + '→' + Colors.end # Highlight tabs with an arrow
-            else:
-                highlighted_line += char
-        print(highlighted_line)
+    with open(tsv_path) as tsv_file:
+        tsv_data = tsv_file.read()
+        for line in tsv_data.splitlines():
+            highlighted_line = ""
+            for char in line:
+                if char == ' ':
+                    highlighted_line += Colors.cyan + '•' + Colors.end # Highlight spaces with a middle dot
+                elif char == '\t':
+                    highlighted_line += Colors.green + '→' + Colors.end # Highlight tabs with an arrow
+                else:
+                    highlighted_line += char
+            print(highlighted_line)
+        tsv_file.close()
+    return
 
 def check_for_spaces_in_tsv(filepath):
     """
