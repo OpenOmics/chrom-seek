@@ -206,7 +206,7 @@ def peakcalls(file, delim="\t"):
         block = {}
         for row in rdr:
             if not inputs_exist:
-                pairs[row[SAMPLE_COL]] = None
+                pairs[row[SAMPLE_COL]] = ''
             else:
                 pairs[row[SAMPLE_COL]] = row[INPUT_COL]
             if ',' in row[GROUP_COL]:
@@ -217,11 +217,11 @@ def peakcalls(file, delim="\t"):
                 groups[grp].append(row[SAMPLE_COL])
             if blocks_exist:
                 if row[BLOCK_COL] == '':
-                    block[row[SAMPLE_COL]] = None
+                    block[row[SAMPLE_COL]] = ''
                 else :
                     block[row[SAMPLE_COL]] = row[BLOCK_COL]
             else:
-                block[row[SAMPLE_COL]] = None
+                block[row[SAMPLE_COL]] = ''
 
     # group name requirements validation
     bad_labels = []

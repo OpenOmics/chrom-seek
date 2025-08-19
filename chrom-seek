@@ -160,8 +160,10 @@ def run(sub_args):
     # file have a corresponding FastQ file,
     # this will prevent/catch dryrun errors
     # before they happen.
-    peakcall_samples = list(set(chips_samples + list(input_samples.values())))
-    peakcall_samples = [s for s in peakcall_samples if s.strip()]
+    peakcall_samples = list(set(chips_samples))
+    if set(input_samples.values()) not in ({''}, {None}):
+        peakcall_samples =+ list(set(input_samples.values()))
+    peakcall_samples = [s for s in peakcall_samples if isinstance(s, str) and s.strip()]
     missing_inputs = []
     for s in peakcall_samples:
         if s not in config["samples"]:
