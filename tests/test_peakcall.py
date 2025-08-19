@@ -33,7 +33,7 @@ class TestParsePeakCall(unittest.TestCase):
         # blocking
         for b in ('one', 'two', 'three'):
             self.assertIn(b, blocks.keys())
-        self.assertIsNone(blocks['two'])
+        self.assertEqual(blocks['two'], '')
         self.assertEqual(blocks['three'], 'two')
     
 
@@ -50,9 +50,9 @@ class TestParsePeakCall(unittest.TestCase):
         chip2input, groups, blocks = peakcalls(path)
         input_vals = list(set([v for v in chip2input.values()]))
         # only Nones for input values
-        self.assertEqual(input_vals, [None])
+        self.assertEqual(input_vals, [''])
         self.assertEqual(blocks['three'], 'two')
-        self.assertIsNone(blocks['two'])
+        self.assertEqual(blocks['two'], '')
 
 
     def test_optional_two(self):
@@ -68,9 +68,9 @@ class TestParsePeakCall(unittest.TestCase):
         chip2input, groups, blocks = peakcalls(path)
         input_vals = list(set([v for v in chip2input.values()]))
         # only Nones for input values
-        self.assertEqual(input_vals, [None])
+        self.assertEqual(input_vals, [''])
         # only Nones for blocks values
-        self.assertEqual(set(blocks.values()), {None})
+        self.assertEqual(set(blocks.values()), {''})
 
 
     def test_bad_group_labels(self):
@@ -117,6 +117,19 @@ class TestParsePeakCall(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, r"Spaces exist in peakcall file"):
             chip2input, groups, blocks = peakcalls(path)
 
+
+    def test_reps_no_input_col(self):
+        str2file = "Sample\tGroup\n" + \
+                    "WT_S1\tG1\n" + \
+                    "WT_S2\tG1\n" + \
+                    "WT_S3\tG2\n" + \
+                    "WT_S4\tG2\n"
+        path = os.path.join(self.test_dir, 'test.txt')
+        with open(path, 'w') as f:
+            f.write(str2file)
+            f.close()
+        chip2input, groups, blocks = peakcalls(path)
+        self.assertEqual(set(chip2input.values()), {''})
 
 
 if __name__ == '__main__':
