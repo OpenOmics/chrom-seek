@@ -126,6 +126,16 @@ jobs:
         /opt2/.tests/WT_S4_R1.001.fastq.gz \
         --output /opt2/output --peakcall /opt2/.tests/peakcall_with_replicates_no_inputs.tsv \
         --contrasts /opt2/.tests/contrasts.tsv --mode local --dry-run
+    - name: Dry Run single-end ChIP-seq pipeline, with replicates, missing input column
+      run: |
+        docker run -v $PWD:/opt2 snakemake/snakemake:v5.24.2 \
+        /opt2/chrom-seek run --assay ChIP --genome hg19  --input \
+        /opt2/.tests/WT_S1.R1.fastq.gz \
+        /opt2/.tests/WT_S2_R1.fastq.gz \
+        /opt2/.tests/WT_S3_1.fastq.gz \
+        /opt2/.tests/WT_S4_R1.001.fastq.gz \
+        --output /opt2/output --peakcall /opt2/.tests/peakcall_with_replicates_no_inputs_missing_InputControl.tsv \
+        --contrasts /opt2/.tests/contrasts.tsv --mode local --dry-run
     - name: View the single-end ChIP pipeline config file (with replicates, without inputs)
       run: |
         echo "Generated config file for ChIP pipeline (with replicates, without inputs)...." && cat $PWD/output/config.json
