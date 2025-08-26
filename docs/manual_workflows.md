@@ -59,11 +59,12 @@ Perform either quality control analysis or differential binding analysis using D
   ```
 2. Initialize the singularity container for Diffbind v2. See [singularity run documentation](https://docs.sylabs.io/guides/3.1/user-guide/cli/singularity_run.html) and singularity [metadata and environment guide](https://docs.sylabs.io/guides/3.7/user-guide/environment_and_metadata.html) for more help with `singularity run`.  
   ```bash
+    working_dir=/data/OpenOmics/references/chrom-seek/docs
     singularity run \
       -C \
       -e \
       --env TMPDIR=/tmp,TMP=/tmp 
-      -B /lscratch/$SLURM_JOBID:/tmp,<PROJECT_WORKING_DIRECTORY>:/work:rw,<CHROM_SEEK_LIBRARY_BIN_DIRECTORY>:/chromseek \
+      -B /lscratch/$SLURM_JOBID:/tmp,$working_dir$:/work:rw \
       --pwd /work \
       docker://skchronicles/cfchip_toolkit:v0.5.0 \
       bash
@@ -77,7 +78,7 @@ Perform either quality control analysis or differential binding analysis using D
   > The `<PEAK_TOOL>` token should be one of macsNarrow, Genrich, macsBroad, SEACR
   
   ```bash
-  Rscript -e 'rmarkdown::render("/chromseek/DiffBind_v2_QC.Rmd", output_file="/work/CUSTOM_DiffBindQC.html",
+  Rscript -e 'rmarkdown::render("/work/bin/DiffBind_v2_QC.Rmd", output_file="/work/CUSTOM_DiffBindQC.html",
               params=list(csvfile="<INPUT_CSV_FILE>", counts_bed="<OUTPUT_BED_FILE>", 
               counts_csv="<OUTPUT_COUNTS_CSV_FILE>", peakcaller="<PEAK_TOOL>"))'
   ```
@@ -94,7 +95,7 @@ Perform either quality control analysis or differential binding analysis using D
     -C \
     -e \
     --env TMPDIR=/tmp,TMP=/tmp 
-    -B /lscratch/$SLURM_JOBID:/tmp,<PROJECT_WORKING_DIRECTORY>:/work:rw,<CHROM_SEEK_LIBRARY_BIN_DIRECTORY>:/chromseek \
+    -B /lscratch/$SLURM_JOBID:/tmp,<PROJECT_WORKING_DIRECTORY>:/work:rw \
     --pwd /work \
     docker://skchronicles/cfchip_toolkit:v0.5.0 \
     bash
@@ -107,9 +108,9 @@ Perform either quality control analysis or differential binding analysis using D
   > The `<PEAK_TOOL>` token should be one of macsNarrow, Genrich, macsBroad, SEACR
   
   ```bash
-  /chromseek/DiffBind_v2_load.R \
+  /work/bin/DiffBind_v2_load.R \
     --csvfile <INPUT_CSV_FILE> \
-    --counts <OUTPUT_PEAK_COUNTS_CSV_FILE> \
+    --counts <INPUT_RDS_FILE> \
     --list <OUTPUT_PEAK_BED_FILE> \
     --peakcaller <PEAK_TOOL>
   ```
@@ -124,19 +125,17 @@ Perform either quality control analysis or differential binding analysis using D
    2. Verify if your experimential design requires the uses of `blocking` or `no blocking`.
 
    3. Find relevant script (`<ANALYSIS_SCRIPT>`): 
-     - /chromseek/bin/DiffBind_v2_Deseq2.Rmd  
-     - /chromseek/bin/DiffBind_v2_Deseq2_block.Rmd  
-     - /chromseek/bin/DiffBind_v2_EdgeR.Rmd  
-     - /chromseek/bin/DiffBind_v2_EdgeR_block.Rmd
+     - /work/bin/DiffBind_v2_Deseq2.Rmd  
+     - /work/bin/DiffBind_v2_Deseq2_block.Rmd  
+     - /work/bin/DiffBind_v2_EdgeR.Rmd  
+     - /work/bin/DiffBind_v2_EdgeR_block.Rmd
 
-   4. Collect the outputs from step #3 for use here: `<OUTPUT_PEAK_COUNTS_CSV_FILE>` = `<INPUT_PEAK_COUNTS_CSV_FILE>`
+   4. Establish group contrast from experimental setup: "{group1}_vs_{group2}" [string] = `<INPUT_CONTRASTS>`
 
-   5. Establish group contrast from experimental setup: "{group1}_vs_{group2}" [string] = `<INPUT_CONTRASTS>`
-
-   6. Establish output locations for tokens: `<OUTPUT_DIFFBIND_REPORT_FILE>`, `<OUTPUT_UP_REGULATED_FILE>`, `<OUTPUT_DOWN_REGULATED_FILE>`, `<OUTPUT_PEAK_BED_LIST>`
+   5. Establish output locations for tokens: `<OUTPUT_DIFFBIND_REPORT_FILE>`, `<OUTPUT_UP_REGULATED_FILE>`, `<OUTPUT_DOWN_REGULATED_FILE>`, `<OUTPUT_PEAK_BED_LIST>`
       > Contextual output tokens (<OUTPUT_*>) need to point to a writable location (`/work`)
 
-   7. Execute script:
+   6. Execute script:
       > The `<PEAK_TOOL>` token should be one of macsNarrow, Genrich, macsBroad, SEACR
 
       ```bash
@@ -197,29 +196,6 @@ The UROPA config file supports various annotation priorities:
 
 See [UROPA manual](https://uropa-manual.readthedocs.io/) for more information.
 
-### Example Configuration
-```json
-{
-  "queries": [
-    {
-      "feature": "gene",
-      "feature.anchor": "start",
-      "distance": 3000,
-      "strand": "same"
-    },
-    {
-      "feature": "gene",
-      "feature.anchor": "start",
-      "distance": 10000,
-      "strand": "same"
-    }
-  ],
-  "priority": "True",
-  "gtf": "<GTF_FILE>",
-  "bed": "<PEAK_FILE>"
-}
-```
-
 ## Workflow 4: Merging Annotations with Differential Results
 
 ### Purpose
@@ -241,7 +217,7 @@ Combine differential binding results from DiffBind with gene annotations from UR
   > Contextual output tokens (`<OUTPUT_*>`) need to point to a writable location (/work)
 
   ```bash
-  python /chromseek/merge_diffbind_uropa.py \
+  python /work/bin/merge_diffbind_uropa.py \
     --diffbind <DIFFBIND_CSV_FILE> \
     --uropa <UROPA_FINAL_HITS> \
     --fdr <FDR_THRESHOLD> \
