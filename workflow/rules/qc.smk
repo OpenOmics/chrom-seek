@@ -738,7 +738,7 @@ rule summary_tbls:
         flagstat_q5                 = expand(join(bam_dir, "{name}.Q5.bam.flagstat"), name=samples),
         flagstat_q5dd               = expand(join(bam_dir, "{name}.Q5DD.bam.flagstat"), name=samples),
         # aligns to glob(f"{workpath}/**/*Q5DD.insert_size_metrics.txt") in summary_tables.py
-        insert_size                 = expand(join(qc_dir, "{name}.Q5DD.insert_size_metrics.txt"), name=samples),
+        insert_size                 = expand(join(qc_dir, "{name}.Q5DD.insert_size_metrics.txt"), name=samples) if paired_end else [],
         # glob(f"{workpath}/PeakQC/FRiP/**/*.FRiP_table.txt") in summary_tables.py
         frip                        = expand(join(peakqc_dir, "FRiP", "{pktool}", "{pktool}.{name}.Q5DD.FRiP_table.txt"), pktool=PeakTools, name=samples)
     output:
