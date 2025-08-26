@@ -129,6 +129,13 @@ def main(args):
         this_data = parse_flagstat_text(open(flagfile).readlines())
         flagdata[name] = this_data
     tagged_flag_data = {}
+    sample_keys = list(flagdata.keys())
+    for sample in sample_keys:
+        read_types = list(flagdata[sample].keys())
+        for read_type in read_types:
+            if '(' in read_type:
+                new_key = read_type.split('(')[0].strip()
+                flagdata[sample][new_key] = flagdata[sample].pop(read_type)
     for flagkey, this_flagdata in flagdata.items():
         sample_name = flagkey.split(".")[0]
         file_context = flagkey.split(".")[1]
@@ -144,10 +151,13 @@ def main(args):
         map_summary_row = {
             'SampleID': sample,
             'TrimmedReads': contexts['sorted']['read1']['QC_Pass'],
-            'AlignedReads': contexts['sorted']['mapped']['QC_Pass'],
+            'AlignedReads': contexts['sorted']['properly paired']['QC_Pass'],
             'QualityReads': contexts['Q5']['read1']['QC_Pass'],
             'DedupReads': contexts['Q5DD']['read1']['QC_Pass'],
-            'PercentDuplicated': percent(contexts['Q5']['read1']['QC_Pass'], contexts['Q5DD']['read1']['QC_Pass'])
+            'PercentDuplicated': percent(
+                (contexts['Q5']['read1']['QC_Pass'] - contexts['Q5DD']['read1']['QC_Pass']), 
+                contexts['Q5']['read1']['QC_Pass']
+            )
         }
         mapping_summary = pd.concat([mapping_summary, pd.DataFrame([map_summary_row])], ignore_index=True)
     mapping_summary.reset_index(drop=True, inplace=True)
@@ -156,7 +166,7 @@ def main(args):
     # encode stats
     if args.paired:
         insert_size_data = {}
-        q5dd_insert_size = glob(f"{workpath}/**/*Q5DD.insert_size_metrics.txt")
+        q5dd_insert_size = glob(f"{workpath}/**/*Q5DD.insert_size_metrics.txt", recursive=True)
         nrf_data = {}
         nrf = glob(f"{workpath}/**/*nrf")
         for insertfile in q5dd_insert_size:
@@ -191,7 +201,7 @@ def main(args):
         encode_qc.reset_index(drop=True, inplace=True)
         encode_qc.to_csv(os.path.join(workpath, files_out['encode_qc']), index=False)
     # peak metrics  
-    q5dd_peak_metrics = glob(f"{workpath}/PeakQC/FRiP/**/*.FRiP_table.txt")
+    q5dd_peak_metrics = glob(f"{workpath}/PeakQC/FRiP/**/*.FRiP_table.txt", recursive=True)
     peak_data = pd.DataFrame()
     for peakfile in q5dd_peak_metrics:
         df = pd.read_csv(peakfile, sep="\t")
@@ -209,7 +219,7 @@ def main(args):
             for peakfile in get_peak_files:
                 sample_name = os.path.basename(peakfile).split(peak_callers[caller].replace('*', ''))[0]
                 caller = os.path.normpath(peakfile).split(os.sep)[-3]
-                num_lines = sum(1 for _ in open(peakfile)) - 1  # subtract header
+                num_lines = sum(1 for _ in open(peakfile))
                 if sample_name not in peaks_called_data:
                     peaks_called_data[sample_name] = {}
                 peaks_called_data[sample_name][caller] = num_lines
