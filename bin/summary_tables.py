@@ -151,7 +151,7 @@ def main(args):
         map_summary_row = {
             'SampleID': sample,
             'TrimmedReads': contexts['sorted']['read1']['QC_Pass'],
-            'AlignedReads': contexts['sorted']['properly paired']['QC_Pass'],
+            'AlignedReads': (contexts['sorted']['properly paired']['QC_Pass']//2),
             'QualityReads': contexts['Q5']['read1']['QC_Pass'],
             'DedupReads': contexts['Q5DD']['read1']['QC_Pass'],
             'PercentDuplicated': percent(
