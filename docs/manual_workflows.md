@@ -72,7 +72,7 @@ Perform either quality control analysis or differential binding analysis using D
 
   **Example**:
   ```bash
-    working_dir=/data/OpenOmics/project1
+    working_dir=/data/OpenOmics/dev/datasets/outputs/test_homer
     singularity run \
       -C \
       -e \
@@ -99,9 +99,9 @@ Perform either quality control analysis or differential binding analysis using D
 
   **Example**:
   ```bash
-  Rscript -e 'rmarkdown::render("/work/bin/DiffBind_v2_QC.Rmd", output_file="/work/CUSTOM_DiffBindQC.html",
-              params=list(csvfile="/data/OpenOmics/project1/diffbind_macsNarrow_sample1.csv", counts_bed="/output/diffbind_macsnarrow_counts.bed", 
-              counts_csv="/output/diffbind_macsnarrow_counts.csv", peakcaller="macsNarrow"))'
+  Rscript -e 'rmarkdown::render("/work/bin/DiffBind_v2_QC.Rmd", output_file="/work/PeakQC/DB_QC/AllSamples-macsNarrow/AllSamples-macsNarrow_DiffBindQC.html",
+    params=list(csvfile="/work/PeakQC/DB_QC/AllSamples-macsNarrow/AllSamples-macsNarrow_DiffBind_prep.csv", counts_bed="/work/PeakQC/DB_QC/AllSamples-macsNarrow/AllSamples-macsNarrow_DiffBindQC_TMMcounts.bed", 
+    counts_csv="/work/PeakQC/DB_QC/AllSamples-macsNarrow/AllSamples-macsNarrow_DiffBindQC_TMMcounts.csv", peakcaller="macsNarrow"))'
   ```
 
 ### Differential Peak Calling Mode ###
@@ -126,7 +126,7 @@ Perform either quality control analysis or differential binding analysis using D
 
   **Example**:
   ```bash
-  working_dir=/data/OpenOmics/project1
+  working_dir=/data/OpenOmics/dev/datasets/outputs/test_homer
   singularity run \
     -C \
     -e \
@@ -157,10 +157,10 @@ Perform either quality control analysis or differential binding analysis using D
   **Example**:
   ```bash
   /work/bin/DiffBind_v2_load.R \
-    --csvfile /data/OpenOmics/project1/diffbind_macsNarrow_sample1.csv \
-    --counts /data/OpenOmics/project1/diffbind_macsNarrow_sample1.rds \
-    --list /ouput/project1/diffbind_macsNarrow_sample1.bed \
-    --peakcaller macsNarrow
+    --csvfile /work/DiffBind/IFN0h_vs_IFN24h-macsBroad/IFN0h_vs_IFN24h-macsBroad_Diffbind_prep.csv \
+    --counts /work/DiffBind/IFN0h_vs_IFN24h-macsBroad/IFN0h_vs_IFN24h-macsBroad_Diffbind_counts.rds \
+    --list /work/DiffBind/IFN0h_vs_IFN24h-macsBroad/IFN0h_vs_IFN24h-macsBroad_Diffbind_fullList.bed \
+    --peakcaller macsBroad
   ```
 
 4. Execute differential comparisons using `DiffBind v2.15.2`.
@@ -195,9 +195,8 @@ Perform either quality control analysis or differential binding analysis using D
 
       **Example**:
       ```bash
-      Rscript -e 'rmarkdown::render("/work/bin/DiffBind_v2_Deseq2.Rmd", output_file="/output/project1/diffbind_deseq2_report.html",
-        params=list(csvfile="/data/OpenOmics/project1/diffbind_macsNarrow_sample1.csv", peakcaller="macsNarrow", list_file="/ouput/project1/diffbind_macsNarrow_sample1.bed",
-        up_file="/output/project1/up_regulated_genes.bed", down_file="/output/project1/down_regulated_genes.bed", contrasts="group1_vs_group2", counts="/data/OpenOmics/project1/diffbind_macsNarrow_sample1.rds"))'
+      Rscript -e 'rmarkdown::render("/work/bin/DiffBind_v2_Deseq2.Rmd", output_file="/work/DiffBind/IFN0h_vs_IFN24h-macsNarrow/IFN0h_vs_IFN24h-macsNarrow_Diffbind_DeSeq2.html", 
+       params=list(csvfile="/work/DiffBind/IFN0h_vs_IFN24h-macsNarrow/IFN0h_vs_IFN24h-macsNarrow_Diffbind_prep.csv", peakcaller="macsNarrow", list_file="/work/DiffBind/IFN0h_vs_IFN24h-macsNarrow/IFN0h_vs_IFN24h-macsNarrow_Diffbind_DeSeq2_peak_list.tab", up_file="/work/DiffBind/IFN0h_vs_IFN24h-macsNarrow/IFN0h_vs_IFN24h-macsNarrow_Diffbind_DeSeq2_up.bed", down_file="/work/DiffBind/IFN0h_vs_IFN24h-macsNarrow/IFN0h_vs_IFN24h-macsNarrow_Diffbind_DeSeq2_down.bed", contrasts="IFN0h_vs_IFN24h", counts="/work/DiffBind/IFN0h_vs_IFN24h-macsNarrow/IFN0h_vs_IFN24h-macsNarrow_Diffbind_counts.rds"))'
       ```
 
 ## Workflow 3: Peak Annotation with UROPA
@@ -288,11 +287,6 @@ Annotate genomic peaks with gene information, regulatory elements, and genomic c
   uropa -i sample_config.json -t 4
   ```
 
-3. **Expected outputs:**
-   - `<OUTPUT_UROPA_DIR>/Sample1_finalhits.txt` - Detailed annotations
-   - `<OUTPUT_UROPA_DIR>/Sample1_allhits.txt` - Annotation summary statistics
-
-
 ### Configuration Options
 The UROPA config file supports various annotation priorities:
 
@@ -336,11 +330,11 @@ Combine differential binding results from DiffBind with gene annotations from UR
   **Example**:
   ```bash
   python /work/bin/merge_diffbind_uropa.py \
-    --diffbind /data/OpenOmics/project1/diffbind_macsNarrow_sample1.csv \
-    --uropa /data/OpenOmics/project1/uropa_config.json \
+    --uropa /work/UROPA_annotations/DiffBind/IFN0h_vs_IFN24h-macsNarrow-EdgeR/IFN0h_vs_IFN24h_macsNarrow_EdgeR_protTSS_uropa_finalhits.txt \
+    --diffbind /work/DiffBind/IFN0h_vs_IFN24h-macsNarrow/IFN0h_vs_IFN24h-macsNarrow_Diffbind_EdgeR_peak_list.tab \
+    --output /work/UROPA_DIFFBIND_TBLS/IFN0h_vs_IFN24h-macsNarrow-EdgeR_protTSS_UROPA_DIFFBIND_JOIN.txt \
     --fdr 0.05 \
-    --fold 2 \
-    --output /outputs/uropa_annotation_macsnarrow_diffbind_results.txt
+    --fold 0
   ```
 
 2. **Expected outputs:**
