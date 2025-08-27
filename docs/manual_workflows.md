@@ -63,7 +63,7 @@ Perform either quality control analysis or differential binding analysis using D
     singularity run \
       -C \
       -e \
-      --env TMPDIR=/tmp,TMP=/tmp 
+      --env TMPDIR=/tmp,TMP=/tmp \
       -B /lscratch/$SLURM_JOBID:/tmp,<PROJECT_WORKING_DIR>:/work:rw \
       --pwd /work \
       docker://skchronicles/cfchip_toolkit:v0.5.0 \
@@ -76,8 +76,8 @@ Perform either quality control analysis or differential binding analysis using D
     singularity run \
       -C \
       -e \
-      --env TMPDIR=/tmp,TMP=/tmp 
-      -B /lscratch/$SLURM_JOBID:/tmp,$working_dir$:/work:rw \
+      --env TMPDIR=/tmp,TMP=/tmp \
+      -B /lscratch/$SLURM_JOBID:/tmp,$working_dir:/work:rw \
       --pwd /work \
       docker://skchronicles/cfchip_toolkit:v0.5.0 \
       bash
@@ -117,7 +117,7 @@ Perform either quality control analysis or differential binding analysis using D
   singularity run \
     -C \
     -e \
-    --env TMPDIR=/tmp,TMP=/tmp 
+    --env TMPDIR=/tmp,TMP=/tmp \
     -B /lscratch/$SLURM_JOBID:/tmp,<PROJECT_WORKING_DIRECTORY>:/work:rw \
     --pwd /work \
     docker://skchronicles/cfchip_toolkit:v0.5.0 \
@@ -130,8 +130,8 @@ Perform either quality control analysis or differential binding analysis using D
   singularity run \
     -C \
     -e \
-    --env TMPDIR=/tmp,TMP=/tmp 
-    -B /lscratch/$SLURM_JOBID:/tmp,$working_dir$:/work:rw \
+    --env TMPDIR=/tmp,TMP=/tmp \
+    -B /lscratch/$SLURM_JOBID:/tmp,$working_dir:/work:rw \
     --pwd /work \
     docker://skchronicles/cfchip_toolkit:v0.5.0 \
     bash
