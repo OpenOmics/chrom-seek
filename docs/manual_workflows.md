@@ -58,8 +58,21 @@ Perform either quality control analysis or differential binding analysis using D
   sinteractive -N 1 -n 1 --time=1-12:00:00 --mem=100G --gres=lscratch:200 --cpus-per-task=4
   ```
 2. Initialize the singularity container for Diffbind v2. See [singularity run documentation](https://docs.sylabs.io/guides/3.1/user-guide/cli/singularity_run.html) and singularity [metadata and environment guide](https://docs.sylabs.io/guides/3.7/user-guide/environment_and_metadata.html) for more help with `singularity run`.  
+  **Usage**:
   ```bash
-    working_dir=/data/OpenOmics/references/chrom-seek/docs
+    singularity run \
+      -C \
+      -e \
+      --env TMPDIR=/tmp,TMP=/tmp 
+      -B /lscratch/$SLURM_JOBID:/tmp,<PROJECT_WORKING_DIR>:/work:rw \
+      --pwd /work \
+      docker://skchronicles/cfchip_toolkit:v0.5.0 \
+      bash
+  ```
+
+  **Example**:
+  ```bash
+    working_dir=/data/OpenOmics/project1
     singularity run \
       -C \
       -e \
@@ -77,10 +90,18 @@ Perform either quality control analysis or differential binding analysis using D
   > [!NOTE]
   > The `<PEAK_TOOL>` token should be one of macsNarrow, Genrich, macsBroad, SEACR
   
+  **Usage**:
   ```bash
   Rscript -e 'rmarkdown::render("/work/bin/DiffBind_v2_QC.Rmd", output_file="/work/CUSTOM_DiffBindQC.html",
               params=list(csvfile="<INPUT_CSV_FILE>", counts_bed="<OUTPUT_BED_FILE>", 
               counts_csv="<OUTPUT_COUNTS_CSV_FILE>", peakcaller="<PEAK_TOOL>"))'
+  ```
+
+  **Example**:
+  ```bash
+  Rscript -e 'rmarkdown::render("/work/bin/DiffBind_v2_QC.Rmd", output_file="/work/CUSTOM_DiffBindQC.html",
+              params=list(csvfile="/data/OpenOmics/project1/diffbind_macsNarrow_sample1.csv", counts_bed="/output/diffbind_macsnarrow_counts.bed", 
+              counts_csv="/output/diffbind_macsnarrow_counts.csv", peakcaller="macsNarrow"))'
   ```
 
 ### Differential Peak Calling Mode ###
@@ -90,6 +111,8 @@ Perform either quality control analysis or differential binding analysis using D
   sinteractive -N 1 -n 1 --time=1-12:00:00 --mem=100G --gres=lscratch:200 --cpus-per-task=4
   ```
 2. Initialize the singularity container for Diffbind v2. See [singularity run documentation](https://docs.sylabs.io/guides/3.1/user-guide/cli/singularity_run.html) and singularity [metadata and environment](https://docs.sylabs.io/guides/3.7/user-guide/environment_and_metadata.html) for more help with `singularity run`. 
+
+  **Usage**:
   ```bash
   singularity run \
     -C \
@@ -100,6 +123,20 @@ Perform either quality control analysis or differential binding analysis using D
     docker://skchronicles/cfchip_toolkit:v0.5.0 \
     bash
   ``` 
+
+  **Example**:
+  ```bash
+  working_dir=/data/OpenOmics/project1
+  singularity run \
+    -C \
+    -e \
+    --env TMPDIR=/tmp,TMP=/tmp 
+    -B /lscratch/$SLURM_JOBID:/tmp,$working_dir$:/work:rw \
+    --pwd /work \
+    docker://skchronicles/cfchip_toolkit:v0.5.0 \
+    bash
+  ``` 
+
 3. Run `DiffBind_v2_load.R`.
   > [!NOTE]
   > Contextual output tokens (`<OUTPUT_*>`) need to point to a writable location (`/work`)
@@ -107,12 +144,23 @@ Perform either quality control analysis or differential binding analysis using D
   > [!NOTE]
   > The `<PEAK_TOOL>` token should be one of macsNarrow, Genrich, macsBroad, SEACR
   
+
+  **Usage**:
   ```bash
   /work/bin/DiffBind_v2_load.R \
     --csvfile <INPUT_CSV_FILE> \
     --counts <INPUT_RDS_FILE> \
     --list <OUTPUT_PEAK_BED_FILE> \
     --peakcaller <PEAK_TOOL>
+  ```
+
+  **Example**:
+  ```bash
+  /work/bin/DiffBind_v2_load.R \
+    --csvfile /data/OpenOmics/project1/diffbind_macsNarrow_sample1.csv \
+    --counts /data/OpenOmics/project1/diffbind_macsNarrow_sample1.rds \
+    --list /ouput/project1/diffbind_macsNarrow_sample1.bed \
+    --peakcaller macsNarrow
   ```
 
 4. Execute differential comparisons using `DiffBind v2.15.2`.
@@ -138,10 +186,18 @@ Perform either quality control analysis or differential binding analysis using D
    6. Execute script:
       > The `<PEAK_TOOL>` token should be one of macsNarrow, Genrich, macsBroad, SEACR
 
+      **Usage**:
       ```bash
       Rscript -e 'rmarkdown::render("<ANALYSIS_SCRIPT>", output_file="<OUTPUT_DIFFBIND_REPORT_FILE>",
         params=list(csvfile="<INPUT_CSV_FILE>", peakcaller="<PEAK_TOOL>", list_file="<OUTPUT_PEAK_BED_LIST>",
         up_file="<OUTPUT_UP_REGULATED_FILE>", down_file="<OUTPUT_DOWN_REGULATED_FILE>", contrasts="<INPUT_CONTRASTS>", counts="<INPUT_PEAK_COUNTS_CSV_FILE>"))'
+      ```
+
+      **Example**:
+      ```bash
+      Rscript -e 'rmarkdown::render("/work/bin/DiffBind_v2_Deseq2.Rmd", output_file="/output/project1/diffbind_deseq2_report.html",
+        params=list(csvfile="/data/OpenOmics/project1/diffbind_macsNarrow_sample1.csv", peakcaller="macsNarrow", list_file="/ouput/project1/diffbind_macsNarrow_sample1.bed",
+        up_file="/output/project1/up_regulated_genes.bed", down_file="/output/project1/down_regulated_genes.bed", contrasts="group1_vs_group2", counts="/data/OpenOmics/project1/diffbind_macsNarrow_sample1.rds"))'
       ```
 
 ## Workflow 3: Peak Annotation with UROPA
@@ -163,16 +219,67 @@ Annotate genomic peaks with gene information, regulatory elements, and genomic c
 
   ```json
   {
-    "queries":[
-          {"name":"promoters", "feature":"gene", "distance":[1000,100], "feature_anchor": "start"},
-          {"name":"forward_exons", "feature":"exon", "distance":[1,1], "internals":"True", "strand":"+"},
-          {"name":"query_level", "filter_attribute":"level", "attribute_values":["1", "2"], "distance":[1000,1000]}
+    "queries": [
+        {
+            "feature": ["gene"],
+            "filter_attribute": "gene_type",
+            "attribute_values": ["protein_coding"],
+            "feature_anchor": ["start"],
+            "relative_location": [
+                "PeakInsideFeature",
+                "FeatureInsidePeak",
+                "Upstream",
+                "Downstream",
+                "OverlapStart",
+                "OverlapEnd"
+            ],
+            "strand": "ignore",
+            "distance": [3000, 1000],
+            "name": "query_1"
+        },
+        {
+            "feature": ["gene"],
+            "filter_attribute": "gene_type",
+            "attribute_values": ["protein_coding"],
+            "feature_anchor": ["start"],
+            "relative_location": [
+                "PeakInsideFeature",
+                "FeatureInsidePeak",
+                "Upstream",
+                "Downstream",
+                "OverlapStart",
+                "OverlapEnd"
+            ],
+            "strand": "ignore",
+            "distance": [10000],
+            "name": "query_2"
+        },
+        {
+            "feature": ["gene"],
+            "filter_attribute": "gene_type",
+            "attribute_values": ["protein_coding"],
+            "feature_anchor": ["start"],
+            "relative_location": [
+                "PeakInsideFeature",
+                "FeatureInsidePeak",
+                "Upstream",
+                "Downstream",
+                "OverlapStart",
+                "OverlapEnd"
+            ],
+            "strand": "ignore",
+            "distance": [100000],
+            "name": "query_3"
+        }
     ],
-    "show_attributes":"all",
+    "show_attributes": [
+        "gene_id",
+        "gene_name",
+        "gene_type"
+    ],
     "priority": "False",
     "gtf": "<GTF_FILE>",
-    "bed": "<PEAK_FILE>",
-    "outdir": "<OUTPUT_UROPA_DIR>"
+    "bed": "<PEAK_FILE>"
   }
   ```
 
@@ -216,6 +323,7 @@ Combine differential binding results from DiffBind with gene annotations from UR
   > [!NOTE]
   > Contextual output tokens (`<OUTPUT_*>`) need to point to a writable location (/work)
 
+  **Usage**:
   ```bash
   python /work/bin/merge_diffbind_uropa.py \
     --diffbind <DIFFBIND_CSV_FILE> \
@@ -223,6 +331,16 @@ Combine differential binding results from DiffBind with gene annotations from UR
     --fdr <FDR_THRESHOLD> \
     --fold <FC_THRESHOLD> \
     --output <MERGE_OUTPUT>
+  ```
+
+  **Example**:
+  ```bash
+  python /work/bin/merge_diffbind_uropa.py \
+    --diffbind /data/OpenOmics/project1/diffbind_macsNarrow_sample1.csv \
+    --uropa /data/OpenOmics/project1/uropa_config.json \
+    --fdr 0.05 \
+    --fold 2 \
+    --output /outputs/uropa_annotation_macsnarrow_diffbind_results.txt
   ```
 
 2. **Expected outputs:**
