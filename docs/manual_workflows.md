@@ -65,7 +65,6 @@ Perform either quality control analysis or differential binding analysis using D
       -e \
       --env TMPDIR=/tmp,TMP=/tmp \
       -B /lscratch/$SLURM_JOBID:/tmp,<PROJECT_WORKING_DIR>:<PROJECT_WORKING_DIR>:rw \
-      --pwd /work \
       docker://skchronicles/cfchip_toolkit:v0.5.0 \
       bash
   ```
@@ -78,14 +77,13 @@ Perform either quality control analysis or differential binding analysis using D
       -e \
       --env TMPDIR=/tmp,TMP=/tmp,working_dir=$working_dir \
       -B /lscratch/$SLURM_JOBID:/tmp,$working_dir:$working_dir:rw \
-      --pwd /work \
       docker://skchronicles/cfchip_toolkit:v0.5.0 \
       bash
   ```
 3. Run `DiffBind_v2_QC.Rmd` using example code. See [Diffbind v3.12.0](https://bioconductor.statistik.tu-dortmund.de/packages/3.18/bioc/html/DiffBind.html) documentation for reference.
 
   > [!NOTE]
-  > Contextual output tokens (`<OUTPUT_*>`) need to point to a writable location (/work)
+  > Contextual output tokens (`<OUTPUT_*>`) need to point to a writable location (`$working_dir`)
 
   > [!NOTE]
   > The `<PEAK_TOOL>` token should be one of macsNarrow, Genrich, macsBroad, SEACR
@@ -114,12 +112,12 @@ Perform either quality control analysis or differential binding analysis using D
 
   **Usage**:
   ```bash
+  $working_dir=<PROJECT_WORKING_DIRECTORY>
   singularity run \
     -C \
     -e \
-    --env TMPDIR=/tmp,TMP=/tmp \
-    -B /lscratch/$SLURM_JOBID:/tmp,<PROJECT_WORKING_DIRECTORY>:/work:rw \
-    --pwd /work \
+    --env TMPDIR=/tmp,TMP=/tmp,working_dir=$working_dir \
+    -B /lscratch/$SLURM_JOBID:/tmp,$working_dir:$working_dir:rw \
     docker://skchronicles/cfchip_toolkit:v0.5.0 \
     bash
   ``` 
@@ -130,16 +128,15 @@ Perform either quality control analysis or differential binding analysis using D
   singularity run \
     -C \
     -e \
-    --env TMPDIR=/tmp,TMP=/tmp \
+    --env TMPDIR=/tmp,TMP=/tmp,working_dir=$working_dir \
     -B /lscratch/$SLURM_JOBID:/tmp,$working_dir:$working_dir:rw \
-    --pwd /work \
     docker://skchronicles/cfchip_toolkit:v0.5.0 \
     bash
   ``` 
 
 3. Run `DiffBind_v2_load.R`.
   > [!NOTE]
-  > Contextual output tokens (`<OUTPUT_*>`) need to point to a writable location (`/work`)
+  > Contextual output tokens (`<OUTPUT_*>`) need to point to a writable location (`$working_dir`)
 
   > [!NOTE]
   > The `<PEAK_TOOL>` token should be one of macsNarrow, Genrich, macsBroad, SEACR
@@ -147,7 +144,7 @@ Perform either quality control analysis or differential binding analysis using D
 
   **Usage**:
   ```bash
-  /work/bin/DiffBind_v2_load.R \
+  /data/OpenOmics/dev/datasets/outputs/test_homer/bin/DiffBind_v2_load.R \
     --csvfile <INPUT_CSV_FILE> \
     --counts <INPUT_RDS_FILE> \
     --list <OUTPUT_PEAK_BED_FILE> \
@@ -214,7 +211,7 @@ Annotate genomic peaks with gene information, regulatory elements, and genomic c
 1. Create UROPA configuration file:
   
   > [!NOTE]
-  > Contextual output tokens (`<OUTPUT_*>`) need to point to a writable location (/work)
+  > Contextual output tokens (`<OUTPUT_*>`) need to point to a writable location (`$working_dir`)
 
   ```json
   {
@@ -315,11 +312,11 @@ Combine differential binding results from DiffBind with gene annotations from UR
   2. Decide if you want to filter at a higher FDR or fold change than default UROPA settings [Optional]: `<FDR_THRESHOLD>`, `<FC_THRESHOLD>`
 
   > [!NOTE]
-  > Contextual output tokens (`<OUTPUT_*>`) need to point to a writable location (/work)
+  > Contextual output tokens (`<OUTPUT_*>`) need to point to a writable location (`$working_dir`)
 
   **Usage**:
   ```bash
-  python /work/bin/merge_diffbind_uropa.py \
+  python $working_dir/bin/merge_diffbind_uropa.py \
     --diffbind <DIFFBIND_CSV_FILE> \
     --uropa <UROPA_FINAL_HITS> \
     --fdr <FDR_THRESHOLD> \
