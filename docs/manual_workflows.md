@@ -64,7 +64,7 @@ Perform either quality control analysis or differential binding analysis using D
       -C \
       -e \
       --env TMPDIR=/tmp,TMP=/tmp \
-      -B /lscratch/$SLURM_JOBID:/tmp,<PROJECT_WORKING_DIR>:/work:rw \
+      -B /lscratch/$SLURM_JOBID:/tmp,<PROJECT_WORKING_DIR>:<PROJECT_WORKING_DIR>:rw \
       --pwd /work \
       docker://skchronicles/cfchip_toolkit:v0.5.0 \
       bash
@@ -76,8 +76,8 @@ Perform either quality control analysis or differential binding analysis using D
     singularity run \
       -C \
       -e \
-      --env TMPDIR=/tmp,TMP=/tmp \
-      -B /lscratch/$SLURM_JOBID:/tmp,$working_dir:/work:rw \
+      --env TMPDIR=/tmp,TMP=/tmp,working_dir=$working_dir \
+      -B /lscratch/$SLURM_JOBID:/tmp,$working_dir:$working_dir:rw \
       --pwd /work \
       docker://skchronicles/cfchip_toolkit:v0.5.0 \
       bash
@@ -92,16 +92,16 @@ Perform either quality control analysis or differential binding analysis using D
   
   **Usage**:
   ```bash
-  Rscript -e 'rmarkdown::render("/work/bin/DiffBind_v2_QC.Rmd", output_file="/work/CUSTOM_DiffBindQC.html",
+  Rscript -e 'rmarkdown::render("/data/OpenOmics/dev/datasets/outputs/test_homer/bin/DiffBind_v2_QC.Rmd", output_file="/data/OpenOmics/dev/datasets/outputs/test_homer/CUSTOM_DiffBindQC.html",
               params=list(csvfile="<INPUT_CSV_FILE>", counts_bed="<OUTPUT_BED_FILE>", 
               counts_csv="<OUTPUT_COUNTS_CSV_FILE>", peakcaller="<PEAK_TOOL>"))'
   ```
 
   **Example**:
   ```bash
-  Rscript -e 'rmarkdown::render("/work/bin/DiffBind_v2_QC.Rmd", output_file="/work/PeakQC/DB_QC/AllSamples-macsNarrow/AllSamples-macsNarrow_DiffBindQC.html",
-    params=list(csvfile="/work/PeakQC/DB_QC/AllSamples-macsNarrow/AllSamples-macsNarrow_DiffBind_prep.csv", counts_bed="/work/PeakQC/DB_QC/AllSamples-macsNarrow/AllSamples-macsNarrow_DiffBindQC_TMMcounts.bed", 
-    counts_csv="/work/PeakQC/DB_QC/AllSamples-macsNarrow/AllSamples-macsNarrow_DiffBindQC_TMMcounts.csv", peakcaller="macsNarrow"))'
+  Rscript -e 'rmarkdown::render("/data/OpenOmics/dev/datasets/outputs/test_homer/bin/DiffBind_v2_QC.Rmd", output_file="/data/OpenOmics/dev/datasets/outputs/test_homer/PeakQC/DB_QC/AllSamples-macsNarrow/AllSamples-macsNarrow_DiffBindQC.html",
+    params=list(csvfile="/data/OpenOmics/dev/datasets/outputs/test_homer/PeakQC/DB_QC/AllSamples-macsNarrow/AllSamples-macsNarrow_DiffBind_prep.csv", counts_bed="/data/OpenOmics/dev/datasets/outputs/test_homer/PeakQC/DB_QC/AllSamples-macsNarrow/AllSamples-macsNarrow_DiffBindQC_TMMcounts.bed", 
+    counts_csv="/data/OpenOmics/dev/datasets/outputs/test_homer/PeakQC/DB_QC/AllSamples-macsNarrow/AllSamples-macsNarrow_DiffBindQC_TMMcounts.csv", peakcaller="macsNarrow"))'
   ```
 
 ### Differential Peak Calling Mode ###
@@ -131,7 +131,7 @@ Perform either quality control analysis or differential binding analysis using D
     -C \
     -e \
     --env TMPDIR=/tmp,TMP=/tmp \
-    -B /lscratch/$SLURM_JOBID:/tmp,$working_dir:/work:rw \
+    -B /lscratch/$SLURM_JOBID:/tmp,$working_dir:$working_dir:rw \
     --pwd /work \
     docker://skchronicles/cfchip_toolkit:v0.5.0 \
     bash
@@ -156,10 +156,10 @@ Perform either quality control analysis or differential binding analysis using D
 
   **Example**:
   ```bash
-  /work/bin/DiffBind_v2_load.R \
-    --csvfile /work/DiffBind/IFN0h_vs_IFN24h-macsBroad/IFN0h_vs_IFN24h-macsBroad_Diffbind_prep.csv \
-    --counts /work/DiffBind/IFN0h_vs_IFN24h-macsBroad/IFN0h_vs_IFN24h-macsBroad_Diffbind_counts.rds \
-    --list /work/DiffBind/IFN0h_vs_IFN24h-macsBroad/IFN0h_vs_IFN24h-macsBroad_Diffbind_fullList.bed \
+  /data/OpenOmics/dev/datasets/outputs/test_homer/bin/DiffBind_v2_load.R \
+    --csvfile /data/OpenOmics/dev/datasets/outputs/test_homer/DiffBind/IFN0h_vs_IFN24h-macsBroad/IFN0h_vs_IFN24h-macsBroad_Diffbind_prep.csv \
+    --counts /data/OpenOmics/dev/datasets/outputs/test_homer/DiffBind/IFN0h_vs_IFN24h-macsBroad/IFN0h_vs_IFN24h-macsBroad_Diffbind_counts.rds \
+    --list /data/OpenOmics/dev/datasets/outputs/test_homer/DiffBind/IFN0h_vs_IFN24h-macsBroad/IFN0h_vs_IFN24h-macsBroad_Diffbind_fullList.bed \
     --peakcaller macsBroad
   ```
 
@@ -173,10 +173,10 @@ Perform either quality control analysis or differential binding analysis using D
    2. Verify if your experimential design requires the uses of `blocking` or `no blocking`.
 
    3. Find relevant script (`<ANALYSIS_SCRIPT>`): 
-     - /work/bin/DiffBind_v2_Deseq2.Rmd  
-     - /work/bin/DiffBind_v2_Deseq2_block.Rmd  
-     - /work/bin/DiffBind_v2_EdgeR.Rmd  
-     - /work/bin/DiffBind_v2_EdgeR_block.Rmd
+     - /data/OpenOmics/dev/datasets/outputs/test_homer/bin/DiffBind_v2_Deseq2.Rmd  
+     - /data/OpenOmics/dev/datasets/outputs/test_homer/bin/DiffBind_v2_Deseq2_block.Rmd  
+     - /data/OpenOmics/dev/datasets/outputs/test_homer/bin/DiffBind_v2_EdgeR.Rmd  
+     - /data/OpenOmics/dev/datasets/outputs/test_homer/bin/DiffBind_v2_EdgeR_block.Rmd
 
    4. Establish group contrast from experimental setup: "{group1}_vs_{group2}" [string] = `<INPUT_CONTRASTS>`
 
@@ -195,8 +195,8 @@ Perform either quality control analysis or differential binding analysis using D
 
       **Example**:
       ```bash
-      Rscript -e 'rmarkdown::render("/work/bin/DiffBind_v2_Deseq2.Rmd", output_file="/work/DiffBind/IFN0h_vs_IFN24h-macsNarrow/IFN0h_vs_IFN24h-macsNarrow_Diffbind_DeSeq2.html", 
-       params=list(csvfile="/work/DiffBind/IFN0h_vs_IFN24h-macsNarrow/IFN0h_vs_IFN24h-macsNarrow_Diffbind_prep.csv", peakcaller="macsNarrow", list_file="/work/DiffBind/IFN0h_vs_IFN24h-macsNarrow/IFN0h_vs_IFN24h-macsNarrow_Diffbind_DeSeq2_peak_list.tab", up_file="/work/DiffBind/IFN0h_vs_IFN24h-macsNarrow/IFN0h_vs_IFN24h-macsNarrow_Diffbind_DeSeq2_up.bed", down_file="/work/DiffBind/IFN0h_vs_IFN24h-macsNarrow/IFN0h_vs_IFN24h-macsNarrow_Diffbind_DeSeq2_down.bed", contrasts="IFN0h_vs_IFN24h", counts="/work/DiffBind/IFN0h_vs_IFN24h-macsNarrow/IFN0h_vs_IFN24h-macsNarrow_Diffbind_counts.rds"))'
+      Rscript -e 'rmarkdown::render("/data/OpenOmics/dev/datasets/outputs/test_homer/bin/DiffBind_v2_Deseq2.Rmd", output_file="/data/OpenOmics/dev/datasets/outputs/test_homer/DiffBind/IFN0h_vs_IFN24h-macsNarrow/IFN0h_vs_IFN24h-macsNarrow_Diffbind_DeSeq2.html", 
+       params=list(csvfile="/data/OpenOmics/dev/datasets/outputs/test_homer/DiffBind/IFN0h_vs_IFN24h-macsNarrow/IFN0h_vs_IFN24h-macsNarrow_Diffbind_prep.csv", peakcaller="macsNarrow", list_file="/data/OpenOmics/dev/datasets/outputs/test_homer/DiffBind/IFN0h_vs_IFN24h-macsNarrow/IFN0h_vs_IFN24h-macsNarrow_Diffbind_DeSeq2_peak_list.tab", up_file="/data/OpenOmics/dev/datasets/outputs/test_homer/DiffBind/IFN0h_vs_IFN24h-macsNarrow/IFN0h_vs_IFN24h-macsNarrow_Diffbind_DeSeq2_up.bed", down_file="/data/OpenOmics/dev/datasets/outputs/test_homer/DiffBind/IFN0h_vs_IFN24h-macsNarrow/IFN0h_vs_IFN24h-macsNarrow_Diffbind_DeSeq2_down.bed", contrasts="IFN0h_vs_IFN24h", counts="/data/OpenOmics/dev/datasets/outputs/test_homer/DiffBind/IFN0h_vs_IFN24h-macsNarrow/IFN0h_vs_IFN24h-macsNarrow_Diffbind_counts.rds"))'
       ```
 
 ## Workflow 3: Peak Annotation with UROPA
@@ -329,10 +329,10 @@ Combine differential binding results from DiffBind with gene annotations from UR
 
   **Example**:
   ```bash
-  python /work/bin/merge_diffbind_uropa.py \
-    --uropa /work/UROPA_annotations/DiffBind/IFN0h_vs_IFN24h-macsNarrow-EdgeR/IFN0h_vs_IFN24h_macsNarrow_EdgeR_protTSS_uropa_finalhits.txt \
-    --diffbind /work/DiffBind/IFN0h_vs_IFN24h-macsNarrow/IFN0h_vs_IFN24h-macsNarrow_Diffbind_EdgeR_peak_list.tab \
-    --output /work/UROPA_DIFFBIND_TBLS/IFN0h_vs_IFN24h-macsNarrow-EdgeR_protTSS_UROPA_DIFFBIND_JOIN.txt \
+  python /data/OpenOmics/dev/datasets/outputs/test_homer/bin/merge_uropa_diffbind.py \
+    --uropa /data/OpenOmics/dev/datasets/outputs/test_homer/UROPA_annotations/DiffBind/IFN0h_vs_IFN24h-macsNarrow-EdgeR/IFN0h_vs_IFN24h_macsNarrow_EdgeR_protTSS_uropa_finalhits.txt \
+    --diffbind /data/OpenOmics/dev/datasets/outputs/test_homer/DiffBind/IFN0h_vs_IFN24h-macsNarrow/IFN0h_vs_IFN24h-macsNarrow_Diffbind_EdgeR_peak_list.tab \
+    --output /data/OpenOmics/dev/datasets/outputs/test_homer/UROPA_DIFFBIND_TBLS/IFN0h_vs_IFN24h-macsNarrow-EdgeR_protTSS_UROPA_DIFFBIND_JOIN.txt \
     --fdr 0.05 \
     --fold 0
   ```
