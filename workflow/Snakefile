@@ -219,6 +219,12 @@ if reps and contrast:
             join(diffbind_dir, "{contrast}-{PeakTool}", "{contrast}-{PeakTool}_Diffbind_block_DeSeq2.html"),
             contrast=contrasts, PeakTool=PeakTools
         ))
+    rule_all_ins.extend([
+        join(workpath, "MappingSummary.txt"),
+        join(workpath, "PeakSummary.txt")
+    ])
+    if paired_end:
+        rule_all_ins.append(join(workpath, "EncodeQC.txt"))
 
 rule all:
     input:

@@ -54,7 +54,8 @@
     "deeptools_fingerprint_Q5DD": {
         "threads": "8"
     },
-    "deeptools_genes": {
+    "deeptools_gene_all": {
+        "threads": "12",
         "mem": "100g"
     },
     "enhancer_plot": {

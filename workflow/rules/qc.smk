@@ -729,3 +729,35 @@ rule jaccard_summary:
             --pca {input.pca_cords} \
             --hm {input.hm_cords}
         """)
+
+
+rule summary_tbls:
+    input:
+        # aligns to glob(f"{workpath}/**/*flagstat", recursive=True) in summary_tables.py
+        flagstat_sorted             = expand(join(bam_dir, "{name}.sorted.bam.flagstat"), name=samples),
+        flagstat_q5                 = expand(join(bam_dir, "{name}.Q5.bam.flagstat"), name=samples),
+        flagstat_q5dd               = expand(join(bam_dir, "{name}.Q5DD.bam.flagstat"), name=samples),
+        # aligns to glob(f"{workpath}/**/*Q5DD.insert_size_metrics.txt") in summary_tables.py
+        insert_size                 = expand(join(qc_dir, "{name}.Q5DD.insert_size_metrics.txt"), name=samples) if paired_end else [],
+        # glob(f"{workpath}/PeakQC/FRiP/**/*.FRiP_table.txt") in summary_tables.py
+        frip                        = expand(join(peakqc_dir, "FRiP", "{pktool}", "{pktool}.{name}.Q5DD.FRiP_table.txt"), pktool=PeakTools, name=samples)
+    output:
+        mapping                     = join(workpath, "MappingSummary.txt"),
+        encode                      = join(workpath, "EncodeQC.txt") if paired_end else [],
+        peak                        = join(workpath, "PeakSummary.txt"),
+    container: 
+        config['images']['python']
+    params:
+        rname                   = "summary_tbls",
+        script                  = join(bin_path, "summary_tables.py"),
+        workpath                = workpath,
+        ended_flag              = "--paired" if paired_end else "", 
+        tmpdir                  = tmpdir
+    shell: 
+        dedent("""
+        if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
+        tmp=$(mktemp -d -p "{params.tmpdir}")
+        export TMPDIR="${{tmp}}"
+        trap 'rm -rf "${{tmp}}"' EXIT
+        python {params.script} {params.ended_flag} {params.workpath}
+        """)
