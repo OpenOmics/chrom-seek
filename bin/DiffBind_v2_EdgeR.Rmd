@@ -177,10 +177,20 @@ try(dba.plotHeatmap(DBAnalysisEdgeR, contrast=1, method=DBA_EDGER, correlations=
 
 ```{r EdgeRReport}
 UpPeaks <- DBReportEdgeR[which(DBReportEdgeR$Fold > 0)]
-rtracklayer::export(UpPeaks, up_file)
+if ( isTRUE(UpPeaks) && nrow(UpPeaks) > 0 ) {
+   rtracklayer::export(UpPeaks, up_file)
+} else {
+   file.create(up_file)
+   cat("No **UP** regulated peaks found!", file = up_file, append = TRUE)
+}
 
 DownPeaks <- DBReportEdgeR[which(DBReportEdgeR$Fold < 0)]
-rtracklayer::export(DownPeaks, down_file)
+if ( isTRUE(DownPeaks) && nrow(DownPeaks) > 0 ) {
+   rtracklayer::export(DownPeaks, down_file)
+} else {
+   file.create(down_file)
+   cat("No **DOWN** regulated peaks found!", file = down_file, append = TRUE)
+}
 
 D2i <- length(DBReportEdgeR)
 i <- as.integer(min(c(500, as.integer(max(c(D2i, 1))))))
