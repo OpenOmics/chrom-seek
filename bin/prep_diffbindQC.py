@@ -22,24 +22,8 @@ def valid_json(path):
         return data
 
 
-def sids2group(sids, group):
-    n = len(sids)
-    if group is None:
-        return list(repeat("", n))
-    out_groups = []
-    for sid in sids:
-        this_group = ""
-        for _group, samples in group.items():
-            if sid in samples:
-                this_group = _group
-                break
-        out_groups.append(this_group)
-    return out_groups
-
-
 def main(args):
     extract_sid = lambda fn: basename(fn).replace(".Q5DD.bam", "")
-    n = len(args.sample)
     columns = [
         "SampleID",
         "Condition",
@@ -51,23 +35,32 @@ def main(args):
         "PeakCaller",
     ]
     tbl = {}
-    tbl["SampleID"] = list(map(extract_sid, args.sample))
-    tbl["Condition"] = sids2group(tbl["SampleID"], args.groups)
+
+    control_map = args.cfg['project']['peaks']['inputs']
+    samples = args.cfg['project']['peaks']['chips']
+    n = len(samples)
+    grp2sample = args.cfg['project']['groups']
+    sample2grp = dict.fromkeys(samples, "")
+    bam_map = {extract_sid(b): b for b in args.bams}
+    peak_map = {extract_sid(p): p for p in args.peaks}
+    for grp, grp_sample in grp2sample.items():
+        for s in grp_sample:
+            sample2grp[s] = grp
+
+    tbl["SampleID"] = samples
+    tbl["Condition"] = list(map(sample2grp.get, samples))
     tbl["Replicate"] = list(repeat("1", n))
-    tbl["bamReads"] = args.sample
-    if args.control:
-        tbl["ControlID"] = list(map(extract_sid, args.control))
-        tbl["bamControl"] = args.control
-    else:
-        tbl["ControlID"] = list(repeat("", n))
-        tbl["bamControl"] = list(repeat("", n))
-    tbl["Peaks"] = args.peaks
+    tbl["bamReads"] = list(map(bam_map.get, map(extract_sid, samples)))
+    tbl["ControlID"] = list(map(control_map.get, samples))
+    tbl["bamControl"] = list(map(bam_map.get, map(control_map.get, samples)))
+    tbl["Peaks"] = list(map(peak_map.get, map(extract_sid, args.peaks)))
     tbl["PeakCaller"] = list(repeat(args.pktool, n))
+
     csv = []
     for i in range(n):
         this_row = {}
         for col in columns:
-            this_row[col] = tbl[col][i]
+            this_row[col] = list(tbl[col])[i]
         csv.append(this_row)
 
     out_dir = dirname(args.output)
@@ -98,34 +91,21 @@ if __name__ == "__main__":
         "-o",
         "--output",
         dest="output",
-        type=str,
+        type=lambda p: abspath(p),
         help="Path to output AllSamples-* csvfile",
-    )
-    parser.add_argument(
-        "-s",
-        "--samplebams",
-        dest="sample",
-        nargs="+",
-        help="List of the sample BAM files",
-    )
-    parser.add_argument(
-        "-c",
-        "--controlbams",
-        dest="control",
-        nargs="+",
-        default=None,
-        help="List of the control BAM files",
     )
     parser.add_argument(
         "-p", "--peaks", dest="peaks", nargs="+", help="List of sample PEAKSETs"
     )
     parser.add_argument(
-        "-g",
-        "--groups",
-        dest="groups",
+        "-b", "--bams", dest="bams", nargs="+", help="List of sample and control BAMs"
+    )
+    parser.add_argument(
+        "-c",
+        "--config",
+        dest="cfg",
         type=valid_json,
-        help="JSON file of group mappings",
-        default=None,
-        required=False,
+        help="JSON pipeline configuration file",
+        required=True,
     )
     main(parser.parse_args())
