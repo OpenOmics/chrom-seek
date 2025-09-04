@@ -554,6 +554,8 @@ rule frip_summary:
         rname                   = "frip_summary",
         plotscript              = join(bin_path, "frip_summary_plot.py"),
         this_config             = join(workpath, 'config.json')
+    container: 
+        config['images']['python']
     shell:
         dedent("""
         {params.plotscript} \\
