@@ -58,6 +58,13 @@ remove_negative_coordinates <- function(dbaOBJ) {
   return(dbaOBJ)
 }
 
+remove_negative_coordinates2 <- function(dbaOBJ) {
+  # This version is to remove negative coordinates deriving from the peak callers
+  negCoordIdx <- unique(which(dbaOBJ$merged[,2] <= 0))
+  dbaOBJ$merged[negCoordIdx,2] <- 1
+  return(dbaOBJ)
+}
+
 PCAbasic <- function(pv) {
   # Note: PCA is on a log2 scale when counts are available.
   pv <- DiffBind:::pv.pcmask(pv)
@@ -90,6 +97,7 @@ PCAbasic <- function(pv) {
 Read in sample sheet information and peak information
 ```{r samples} 
 samples <- dba(sampleSheet=csvfile)
+samples <- remove_negative_coordinates2(samples)
 print(samples)
 ```
 

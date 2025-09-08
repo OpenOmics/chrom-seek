@@ -12,12 +12,20 @@ cleanup_arg <- function(arg) {
 }
 
 remove_negative_coordinates <- function(dbaOBJ) {
-  negCoordIdx <- which(dbaOBJ$merged[,2] < 0)
+  # This version is to remove negative coordinates caused by the DiffBind summits calculation
+  negCoordIdx <- unique(which(dbaOBJ$merged[,2] <= 0))
   dbaOBJ$merged[negCoordIdx,2] <- 1
   dbaOBJ$binding[negCoordIdx,2] <- 1
   for ( i in 1:length(dbaOBJ$peaks) ) {
       dbaOBJ$peaks[[i]]$Start[negCoordIdx] <- 1
   }
+  return(dbaOBJ)
+}
+
+remove_negative_coordinates2 <- function(dbaOBJ) {
+  # This version is to remove negative coordinates deriving from the peak callers
+  negCoordIdx <- unique(which(dbaOBJ$merged[,2] <= 0))
+  dbaOBJ$merged[negCoordIdx,2] <- 1
   return(dbaOBJ)
 }
 
@@ -35,6 +43,7 @@ list <- cleanup_arg(xargs$list)
 threads <- as.numeric(cleanup_arg(xargs$threads))
 peakcaller <- cleanup_arg(xargs$peakcaller)
 samples <- dba(sampleSheet=csvfile)
+samples <- remove_negative_coordinates2(samples)
 
 if ( peakcaller == "macsNarrow" ) {
     summits_arg <- 250
