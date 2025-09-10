@@ -455,7 +455,8 @@ def parsed_arguments(name, description):
                                 Assay type or data-processing pipeline. This option
                                 defines which pipeline will be run. chrom-seek supports
                                 the processing of bulk ChIP-seq (ChIP), cell-free DNA 
-                                ChIP-seq (cfChIP), and ATAC-seq (ATAC) samples. Select 
+                                ChIP-seq (cfChIP), ATAC-seq (ATAC) samples, and
+                                CUT & RUN or CUT & TAG (cutnrun). Please select from 
                                 from one of the following data-processing pipelines:
                                     • ChIP
                                     • cfChIP
@@ -465,12 +466,13 @@ def parsed_arguments(name, description):
           --genome GENOME       
                                 Reference genome. This option defines the reference
                                 genome of the samples for alignment and annotation.
-                                There are prebuilt reference files for human and 
-                                mouse samples. Select one of the following options:
+                                There are prebuilt reference files for human, mouse, 
+                                and rhesus samples. Select one of the following options:
                                     • hg19
                                     • hg38
-				    • mm10
+                                    • mm10
                                     • mm39
+                                    • rheMac10
                                   Example: --genome hg19
           --input INPUT [INPUT ...]
                                 Input FastQ file(s) to process. The pipeline does NOT
@@ -500,18 +502,14 @@ def parsed_arguments(name, description):
                                 
                                 This file consists of two required columns and two optional 
                                 columns:
-                                    - Required: 
-                                        - Sample
-                                        - Group
-                                    - Optional
-                                        - Blocks
-                                        - InputControl
+                                  • Required: Sample, Group
+                                  • Optional: Blocks, InputControl
 
                                 The base name of each library should be listed in the `Sample` 
                                 and `InputControl` columns. The base name of a given sample 
                                 can be determined by removing its file extension from the 
                                 sample's R1 FastQ file, example:
-                                    - WT_S4.R1.fastq.gz becomes WT_S4 in the peakcall file.
+                                  • WT_S4.R1.fastq.gz becomes WT_S4 in the peakcall file.
                                
                                   Contents of example peakcalls file:
                                     Sample	InputControl	Group   Block
@@ -611,11 +609,11 @@ def parsed_arguments(name, description):
           -t(--triggers) TRIGGER [TRIGGER ...]
                                 Manual control of the snakemake rerun triggers.
                                 Trigger values must be one or more of:
-                                    - mtime
-                                    - code
-                                    - software-env
-                                    - input
-                                    - params
+                                  • mtime
+                                  • code
+                                  • software-env
+                                  • input
+                                  • params
                                 See https://snakemake.readthedocs.io/en/stable/executing/cli.html
                                 for more details about snakemake rerun triggers.
                                 Default (in prority order):
@@ -695,7 +693,7 @@ def parsed_arguments(name, description):
             return genome
         raise argparse.ArgumentTypeError(
             "Unsupported genome, please use one of:\n"
-            + '\t"hg19", "hg38", "mm10", "rheMac10"\n'
+            + '\t"hg19", "hg38", "mm10", "mm39", "rheMac10"\n'
             + "Or a valid json file ending with .json"
         )
 
