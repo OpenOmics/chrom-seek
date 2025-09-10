@@ -469,7 +469,8 @@ def parsed_arguments(name, description):
                                 mouse samples. Select one of the following options:
                                     • hg19
                                     • hg38
-                                    • mm10
+				    • mm10
+                                    • mm39
                                   Example: --genome hg19
           --input INPUT [INPUT ...]
                                 Input FastQ file(s) to process. The pipeline does NOT
@@ -687,7 +688,7 @@ def parsed_arguments(name, description):
     )
 
     def valid_genome(genome):
-        valid_choices = ["hg19", "hg38", "mm10", "rheMac10"]
+        valid_choices = ["hg19", "hg38", "mm10", "mm39", "rheMac10"]
         if genome in valid_choices:
             return genome
         if os.path.exists(genome) and genome.endswith(".json"):

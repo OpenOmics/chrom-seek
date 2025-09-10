@@ -41,7 +41,7 @@ Each of the following arguments are required. Failure to provide a required argu
 > ***Example:*** `--assay ChIP`
 
 ---
-  `--genome {hg19,hg38,mm10}`  
+  `--genome {hg19,hg38,mm10,mm39}`  
 > **Reference genome.**  
 > *type: string*  
 > 
