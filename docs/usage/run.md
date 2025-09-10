@@ -15,7 +15,7 @@ $ chrom-seek run [--help] \
       [--singularity-cache SINGULARITY_CACHE] \
       [--dry-run] [--threads THREADS] \
       [--contrasts CONTRASTS] \
-      --assay {cfChIP,ChIP,ATAC} \
+      --assay {cfChIP,ChIP,ATAC,cutnrun} \
       --genome GENOME \
       --input INPUT [INPUT ...] \
       --output OUTPUT \
@@ -32,7 +32,7 @@ Use you can always use the `-h` option for information on a specific command.
 
 Each of the following arguments are required. Failure to provide a required argument will result in a non-zero exit-code.
 
-  `--assay {cfChIP,ChIP,ATAC}`  
+  `--assay {cfChIP,ChIP,ATAC,cutnrun}`  
 > **Assay type or data-processing pipeline.**  
 > *type: string*  
 > 
@@ -41,17 +41,17 @@ Each of the following arguments are required. Failure to provide a required argu
 > ***Example:*** `--assay ChIP`
 
 ---
-  `--genome {hg19,hg38,mm10}`  
+  `--genome {hg19,hg38,mm10,mm39}`  
 > **Reference genome.**  
 > *type: string*  
 > 
-> This option defines the reference genome of the samples for alignment and annotation. There are prebuilt reference files for human, mouse, and rhesus data. Please select one of the following options: `hg19`, `hg38`, `mm10`, `rheMac10`.
+> This option defines the reference genome of the samples for alignment and annotation. There are prebuilt reference files for human (hg19 and hg38), mouse (mm10 and mm39), and rhesus data. Please select one of the following options: `hg19`, `hg38`, `mm10`, `mm39`,`rheMac10`.
 > 
 > ***Example:*** `--genome hg19`
 
 ---
   `--input INPUT [INPUT ...]`  
-> **Input FastQ or BAM file(s).**  
+> **Input FastQ.**  
 > *type: file(s)*  
 > 
 > One or more FastQ files can be provided. From the command-line, each input file should seperated by a space. Globbing is supported! This makes selecting FastQ files easy. FastQ files should always be gzipp-ed. Only list files you want processed as all files in the list will be run through the initial pipeline steps. All file merging must be done before running the pipeline.
@@ -172,7 +172,7 @@ Each of the following arguments are optional, and do not need to be provided.
 >
 > Uses a local cache of SIFs on the filesystem. This SIF cache can be shared across users if permissions are set correctly. If a SIF does not exist in the SIF cache, the image will be pulled from Dockerhub and a warning message will be displayed. The `chrom-seek cache` subcommand can be used to create a local SIF cache. Please see `chrom-seek cache` for more information. This command is extremely useful for avoiding DockerHub pull rate limits. It also remove any potential errors that could occur due to network issues or DockerHub being temporarily unavailable. We recommend running chrom-seek with this option when ever possible.
 > 
-> ***Example:*** `--singularity-cache /data/$USER/SIFs`
+> ***Example:*** `--sif-cache /data/$USER/SIFs`
 
 ---  
   `--threads THREADS`   

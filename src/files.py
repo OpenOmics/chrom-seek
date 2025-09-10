@@ -338,22 +338,20 @@ def validate_custom_genome(genome_json):
                 f"JSON syntax is broken in custom genome definition {genome_json}"
             )
     required_keys = [
-        "ALIAS",
-        "SUPPORTED_PIPELINES",
-        "BLACKLISTBWAINDEX",
-        "BLACKLISTGENRICH",
-        "BWA",
-        "cfChIP_TOOLS_SRC",
-        "EFFECTIVEGENOMESIZE",
-        "GENEINFO",
-        "GENOME",
-        "GENOMECHR",
-        "GTFFILE",
-        "REFLEN",
-        "FRAC",
-        "MEME_VERTEBRATES_DB",
-        "MEME_EUKARYOTE_DB",
-        "MEME_GENOME_DB",
+        'ALIAS', 
+        'SUPPORTED_PIPELINES', 
+        'BLACKLISTBWAINDEX', 
+        'BWA', 
+        'EFFECTIVEGENOMESIZE', 
+        'GENEINFO', 
+        'GENOME', 
+        'GTFFILE', 
+        'REFLEN', 
+        'FRAC', 
+        'MEME_VERTEBRATES_DB', 
+        'MEME_EUKARYOTE_DB', 
+        'MEME_GENOME_DB', 
+        'HOMER_REF'
     ]
     bad_columns = []
     genome_alias = list(this_genome["references"].values())[0]["ALIAS"]

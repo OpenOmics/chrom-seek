@@ -29,7 +29,7 @@ rule cfChIPtool:
     params:
         rname                   = 'cfChiP',
         rver                    = "R/4.1.0",
-        toolkit                 = config['references'][genome]['cfChIP_TOOLS_SRC'],
+        toolkit                 = config["bin"]["cfChIP_Toolkit_SRC"],
         tmpfile                 = lambda w: join(cfTool_subdir2, w.name + ".Q5DD.tagAlign"),
         tag                     = lambda w: temp(join(bam_dir, w.name + ".Q5DD_tagAlign"))
     container:

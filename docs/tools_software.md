@@ -146,11 +146,14 @@ high-throughput experiments. Ann Appl Stat 5(3): 1752-1779.</sup>
 **Blacklist citation**: The ENCODE Project Consortium., Moore, J.E., Purcaro, M.J. et al. 
 Expanded encyclopaedias of DNA elements in the human and mouse genomes. Nature 583, 699–710 (2020).
 
+**excluderanges citation**:
+Jonathan D Ogata, Wancen Mu, Eric S Davis, Bingjie Xue, J Chuck Harrell, Nathan C Sheffield, Douglas H Phanstiel, Michael I Love, Mikhail G Dozmorov, excluderanges: exclusion sets for T2T-CHM13, GRCm39, and other genome assemblies, Bioinformatics, Volume 39, Issue 4, April 2023, btad198, https://doi.org/10.1093/bioinformatics/btad198
+
 | **Reference**  | **Version**       | **Website**                                            |
 | -------------- | :---------------: | :----------------------------------------------------- |
 | hg19           | GrCh37.p13     | https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_19/GRCh37.p13.genome.fa.gz |
 |                | Gencode v19    | https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_19/gencode.v19.annotation.gtf.gz |
-|                | Blacklist v1   | https://www.encodeproject.org/files/ENCFF001TDO/@@download/ENCFF001TDO.bed.gz |
+|                | Blacklist v1   | https://www.encodeproject.org/files/ENCFF356LFX/@@download/ENCFF356LFX.bed.gz|
 |                | Enhancer reference   | https://fantom.gsc.riken.jp/5/datafiles/latest/extra/Enhancers/human_permissive_enhancers_phase_1_and_2.bed.gz |
 | hg38           | GRCh38.p12     | https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_28/GRCh38.p12.genome.fa.gz |
 |                | Gencode v28    | https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_28/gencode.v28.annotation.gtf.gz |
@@ -162,6 +165,8 @@ Expanded encyclopaedias of DNA elements in the human and mouse genomes. Nature 5
 |                | Enhancer reference   | https://fantom.gsc.riken.jp/5/datafiles/reprocessed/mm10_v9/extra/CAGE_peaks/mm10_fair+new_CAGE_peaks_phase1and2.bed.gz |
 | rheMac10       | Ensembl 110    | Chr1 example: https://ftp.ensembl.org/pub/release-110/fasta/macaca_mulatta/dna/Macaca_mulatta.Mmul_10.dna.primary_assembly.1.fa.gz |
 |                | Ensembl 110    | https://ftp.ensembl.org/pub/release-110/gtf/macaca_mulatta/Macaca_mulatta.Mmul_10.110.chr.gtf.gz  |
+| mm39           | GRCm39         | https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_mouse/release_M37/GRCm39.primary_assembly.genome.fa.gz |
+|                | Gencode vM37   | https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_mouse/release_M37/gencode.vM37.basic.annotation.gtf.gz |
 
 Note: All fastas and gtfs in built into this pipeline only include reference chromosomes, ie autosomes and sex chromosomes.  
 See: https://github.com/Boyle-Lab/Blacklist/tree/master/lists for all v1 and v2 blacklists available.

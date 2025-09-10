@@ -46,7 +46,7 @@ reps                            = True if len(groupswreps) > 0 else False
 uniq_inputs                     = list(sorted(set([v for v in chip2input.values() if v])))
 sampleswinput                   = [
     chip_sid for chip_sid, input_sid in chip2input.items() \
-    if chip_sid != 'NA' and chip_sid != ''
+    if chip_sid != 'NA' and chip_sid != '' and input_sid != ''
 ]
 inputnorm                       = [""] if len(sampleswinput) == 0 else ["", ".inputnorm"]
 UropaCats                       = ["protTSS", "prot", "protSEC", "genes"]
