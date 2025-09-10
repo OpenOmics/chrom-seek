@@ -1,6 +1,7 @@
 {
     "bin": {
-        "FASTQ_SCREEN": "/data/OpenOmics/references/cfChIP-seek/bin/fastq_screen_v0.9.3/fastq_screen"
+        "FASTQ_SCREEN": "/data/OpenOmics/references/cfChIP-seek/bin/fastq_screen_v0.9.3/fastq_screen",
+        "cfChIP_Toolkit_SRC": "/data/OpenOmics/references/cfChIP-seek/hg19_basic/cfChIP_tools"
     },
     "conda": {},
     "tools": {
