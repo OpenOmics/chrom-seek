@@ -210,7 +210,7 @@ def main(args):
         "macsNarrow": "*_peaks.narrowPeak",
         "macsBroad": "*_peaks.broadPeak",
         "SEACR": "*.stringent.bed",
-        "genrich": "*.narrowPeak",
+        "Genrich": "*.narrowPeak",
     }
     peaks_called_data = {}
     for caller in peak_callers:
