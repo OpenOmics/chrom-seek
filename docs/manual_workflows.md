@@ -100,7 +100,7 @@ read counts.
      bash
    ```
 
-### QC Mode Analysis
+### Stage 2A: QC Mode Analysis
 
 1. Run `DiffBind_v2_QC.Rmd`.  
 
@@ -126,7 +126,7 @@ read counts.
      peakcaller="macsNarrow"))'
    ```
 
-### Differential Peak Calling Analysis
+### Stage 2B: Differential Peak Calling Analysis
 
 1. Load counts using `DiffBind_v2_load.R`.  
 
