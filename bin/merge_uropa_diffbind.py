@@ -172,7 +172,7 @@ if __name__ == "__main__":
         "-d",
         type=valid_path,
         required=True,
-        help="CSV input file from `diffbind_prep`",
+        help="Full table of consensus peaks with FDRs for a given contrast. File name should end '_peak_list.tab'",
     )
     parser.add_argument(
         "--uropa",
