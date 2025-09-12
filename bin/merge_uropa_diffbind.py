@@ -179,7 +179,7 @@ if __name__ == "__main__":
         "-u",
         type=valid_path,
         required=True,
-        help="Allhits input file form `UROPA_diffbind`",
+        help="Finalhits input file form `UROPA_diffbind`",
     )
     parser.add_argument(
         "--output",
