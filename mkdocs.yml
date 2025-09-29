@@ -108,5 +108,6 @@ nav:
     - Glossary of terms: faq/glossary.md
     - Useful reviews: Useful_review_articles.md
     - Input vs IgG: faq/Input_vs_IgG.md
+    - Manually running DiffBind: manual_workflows.md
     - General Questions: faq/questions.md
   - License: license.md
