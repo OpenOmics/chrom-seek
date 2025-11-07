@@ -4,10 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - master
       - main
-  pull_request:
-    branches_ignore: []
 
 jobs:
   Dry_Run_and_Lint:

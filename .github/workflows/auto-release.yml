@@ -1,0 +1,41 @@
+name: Run Script on PR Merge
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  run-on-merge:
+    # Only run when PR is merged (not just closed)
+    if: github.event.pull_request.merged == true
+    
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'  # Change to your desired Python version
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          git clone https://github.com/OpenOmics/snakevision.git $GITHUB_WORKSPACE/vis
+          pip install -r $GITHUB_WORKSPACE/vis/requirements.txt
+          pip install -r .github/release_reqs.txt
+          echo "$GITHUB_WORKSPACE/vis/bin" >> $GITHUB_PATH
+      
+      - name: Run script
+        env:
+            PR_URL: ${{ github.event.pull_request.html_url }}
+            PR_NUMBER: ${{ github.event.pull_request.number }}
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          NEW_VER=$(python .github/autorelease.py $PR_URL -t $GITHUB_TOKEN)
+          echo -e "\n --- $NEW_VER --- \n"
+          python .github/snakevis.py .github/snakevis.cfg $GITHUB_WORKSPACE/upload
+          ls -al $GITHUB_WORKSPACE/upload
+          gh release upload $NEW_VER $GITHUB_WORKSPACE/upload/pipeline_rulegraph.svg --clobber
