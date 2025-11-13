@@ -216,16 +216,17 @@ rule multiqc:
         multiqc                 = config['tools']['MULTIQCVER'],
 	    qcconfig                = join(workpath, config['shared_resources']['MULTIQC_CONFIG']),
 	    excludedir              = join(workpath, extra_fingerprint_dir),
+        workpath                = workpath,
+    container: config['images']['multiqc'],
     shell: 
         """
-        module load {params.multiqc}
         multiqc \\
             -f \\
             -c {params.qcconfig} \\
             --interactive \\
             -e cutadapt \\
             --ignore {params.excludedir} \\
-            -d """ + workpath + """
+            -d "{params.workpath}"
         """
 
 
