@@ -195,6 +195,10 @@ custom_data:
       PBC1:             { title: "PBC1",    format: "{:.3f}" }
       PBC2:             { title: "PBC2",    format: "{:.3f}" }
 
+deeptools:
+  # Disable smoothing / subsampling for the deepTools plots to retain original x-axis labels
+  plotProfile_smooth_points: 999999999999 
+
 # Tell MultiQC where to find the file
 sp:
   encode_qc:

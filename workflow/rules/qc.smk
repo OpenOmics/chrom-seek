@@ -334,8 +334,6 @@ rule deeptools_gene_all:
             --plotType 'se' \\
             --numPlotsPerRow 5 \\
             --outFileNameData {output.mqc} \\
-            --startLabel "-3kb" \\
-            --endLabel "+3kb" \\
             --refPointLabel "TSS" \\
             --xAxisLabel "Distance (bp)" 
         plotHeatmap -m {output.TSSmat} \\
@@ -410,8 +408,6 @@ rule enhancer_plot:
             --plotType 'se' \\
             --numPlotsPerRow 5 \\
             --outFileNameData {output.mqc} \\
-            --startLabel "-3kb" \\
-            --endLabel "+3kb" \\
             --refPointLabel "Enhancer" \\
             --xAxisLabel "Distance (bp)"
         plotHeatmap -m {output.matrix} \\
