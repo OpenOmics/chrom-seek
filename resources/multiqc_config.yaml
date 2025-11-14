@@ -1,102 +1,462 @@
-# Order that modules should appear in report. Try to list in order of analysis,
-# eg. FastQC is usually the first step, so should be last in this list.
+# Cleaned & Organized MultiQC config (v1.32) — ChIP-seq / ATAC-seq
+# Explanations tuned to nf-core’s output docs style.
 
+# === Report Metadata & Top-level Toggles ===
+skip_versions_section: true
+no_ai: true
+title: "Chromatin Profiling QC-test2"
 
-fastqscreen_simpleplot: true
-fn_clean_sample_names: false
-log_filesize_limit: 100000000
+# === Output & Execution ===
+make_data_dir: true
+export_plots: false
+show_empty: true
+
+# === General Stats: Paired-end Collapse ===
+table_sample_merge:
+  "R1": ".R1"
+  "R2": ".R2"
+
+# === Ignore Patterns (infra / peak-calling outputs) ===
+fn_ignore_dirs:
+  - ".snakemake"
+  - ".snakemake/*"
+  - "HOMER"
+  - "homer"
+  - "kraken"
+
+exclude_modules:
+  - cutadapt
+  - macs2
+  - idr
+  - homer
+  - diffbind
+  - csaw
+  - chipseeker
+
+fn_ignore_paths:
+  - "*/macs2/*"
+  - "*/cutadapt/*"
 
 fn_ignore_files:
-    - '*.preseq.dat'
-    - 'spearman_readcounts.Q5DD.tab'
+  - "*cutadapt*.log"
+  - "*cutadapt_report.txt"
+  - "*_peaks.xls"
+  - "*_summits.bed"
+  - "*_model.r"
+  - "*.idr.log"
+  - "*annotatePeaks*"
+  - "*motifResults*"
+  - "*homerResults*"
+  - "*chipseeker*"
+  - "*peak_annotation*"
+  - "*_peakCounts.txt"
+  - "*.frip.txt"
+  - "*peak_regions*"
 
-fn_ignore_dirs:
-    - macsNarrow
+# === Sample Naming & Cleaning ===
+prepend_dirs: false
+dirs_depth: 1
 
-top_modules: 
-    - 'QC_Table'
+sample_names_replace_regex: true
+sample_names_replace:
+  "\\.Q5DD$": ""
+  "\\.Q5$": ""
 
+# === Module-specific: Filename Cleaning (fn_clean_exts) ===
+fastqc:
+  fn_clean_exts:
+    - "_fastqc.zip"
+    - "_fastqc.html"
+    - "/fastqc_data.txt"
+    - ".fastq.gz"
+
+fastq_screen:
+  use_filename: true
+  fn_clean_exts:
+    - ".trim_screen.txt"
+    - "_screen.txt"
+    - ".fastq_screen.txt"
+
+phantompeakqualtools:
+  fn_clean_exts:
+    - ".ppqt.txt"
+
+picard:
+  fn_clean_exts:
+    - ".insert_size_metrics.txt"
+    - ".markdup_metrics.txt"
+    - ".duplication_metrics.txt"
+    - ".MarkDuplicates.metrics.txt"
+    - ".duplic"
+
+samtools:
+  fn_clean_exts:
+    - ".bam.flagstat"
+    - ".bam.idxstats"
+    - ".bam.idxstat"
+
+preseq:
+  fn_clean_exts:
+    - ".ccurve"
+
+# === Module Scanning & Split Rules ===
 module_order:
-    - 'spearman_heatmap'
-    - 'fastq_screen'
-    - 'fastqc'
-    - 'preseq'
-    - 'deepTools'
-    - 'NGSQC_data'
-    - 'samtools'
+  # 1) Inputs QC
+  - fastqc:
+      name: "1. Inputs QC — FastQC (Pre-trim)"
+      path_filters_exclude:
+        - "*.trim_fastqc.zip"
+
+  # 2) Contamination & Taxonomy
+  - fastq_screen:
+      name: "2a. Contamination — FastQ Screen (Species)"
+      path_filters:
+        - "*FQscreen/*screen.txt"
+  - fastq_screen:
+      name: "2b. Contamination — FastQ Screen (Repeats)"
+      path_filters:
+        - "*FQscreen2/*screen.txt"
+  - kraken:
+      name: "2c. Contamination — Kraken (Taxonomic Classification)"
+
+  # 3) Post-trim QC
+  - fastqc:
+      name: "3. Post-trim QC — FastQC (Post-trim)"
+      path_filters:
+        - "*.trim_fastqc.zip"
+
+  # 4) Alignment QC
+  - samtools:
+      name: "4a. Alignment QC — Samtools (sorted)"
+      path_filters:
+        - "*sorted.bam.flagstat"
+#        - "*sorted.bam.idxstats"
+#        - "*sorted.bam.idxstat"
+  - samtools:
+      name: "4b. Alignment QC — Samtools (Q5)"
+      path_filters:
+        - "*Q5.bam.flagstat"
+#        - "*Q5.bam.idxstats"
+#        - "*Q5.bam.idxstat"
+  - samtools:
+      name: "4c. Alignment QC — Samtools (Q5DD)"
+      path_filters:
+        - "*Q5DD.bam.flagstat"
+        - "*Q5DD.bam.idxstats"
+        - "*Q5DD.bam.idxstat"
+
+  # 5) Library Metrics
+  - picard:
+      name: "5a. Library Metrics — Picard Insert Size (sorted)"
+      path_filters:
+        - "*sorted.insert_size_metrics.txt"
+  - picard:
+      name: "5b. Library Metrics — Picard Insert Size (Q5DD)"
+      path_filters:
+        - "*Q5DD.insert_size_metrics.txt"
+  - picard:
+      name: "5c. Library Metrics — Picard MarkDuplicates"
+      path_filters:
+        - "*Q5.duplic"
+        - "*Q5.markdup_metrics.txt"
+        - "*Q5.duplication_metrics.txt"
+        - "*Q5.MarkDuplicates.metrics.txt"
+
+  # 6) Cross-correlation QC
+  - phantompeakqualtools:
+      name: "6. Cross-correlation — PPQT"
+
+  # 7) Library Complexity
+  - preseq:
+      name: "7. Library Complexity — Preseq (ccurve)"
+      path_filters:
+        - "*.ccurve"
+
+  # 8) Genome-wide QC
+  - deeptools:
+      name: "8. Genome-wide QC — deepTools"
 
 custom_data:
-    spearman_heatmap:
-        id: 'spearman_heatmap'
-        section_name: "Spearman correlation heatmap"
-    QC_Table:
-        id: "QC_Table"
-        section_name: "ChIP-specific QC metrics"
-        section_href: https://www.encodeproject.org/chip-seq/
-        description: "Encode3 standards: <br>  Usable fragments (A fragment corresponds to a read mapping to one location in the genome.) If single-end, one read is considered a fragment. If paired-end, one pair is considered a fragment. <br>  Usable fragments for TF/narrow histones: concerning <10M, acceptable 10-20M, ideal >20M. <br>  Useable fragments for broad histones: concerning <20M, acceptable 20-40M, ideal >40M. <br>  NRF: Number of distinct mapping reads after removing duplicates/total number of reads. <br> PBC1: Number of genomic locations where exactly one read maps uniquely/number of distinct genomic locations to which one read maps uniquely. <br> PBC2: Number of genomic locations where only one read maps uniquely/number of genomic locations where two reads map uniquely <br>  Concerning(severe bottlenecking): NRF < 0.5, Acceptable: 0.5 < NRF < 0.8, Ideal (no bottlenecking): NRF > 0.9 <br><br> PPQT standards: https://github.com/crazyhottommy/phantompeakqualtools <br> NSC: cross-correlation value/minimum cross-correlation <br> RSC: (cross-correlation value - minimum cross-correlation) / (correlation at phantom peak - minimum cross-correlation) <br> Optimal NSC: > 1.1, Okay NSC: 1.05 - 1.1. Low NSC means low signal to noise or very few peaks (biological or technical). <br> Optimal RSC: > 1, Okay RSC: 0.8-1. Low RSC means low signal to noise caused by: poor quality ChIP, low read sequence quality, shallow sequencing depth, or few peaks. <br> QualityTag: -2: very low, 2: very high"
-        plot_type: "table"
-        pconfig:
-            id: "QC_Table"
-            namespace: "QC Table"
-        headers:
-            NReads:
-                description: "The number of reads sequenced"
-                format: '{:,.0f}'
-                hidden: True
-            NMappedReads:
-                description: "The number of reads mapped"
-                format: '{:,.0f}'
-                hidden: True
-            NUniqMappedReads:
-                description: "The number of reads remaining after deduplication"
-                format: '{:,.0f}'
-            NRF:
-                description: "Non-Redundant fraction"
-                min: 0
-                max: 0.9
-                scale: 'RdYlGn'
-            PBC1:
-                description: "PCR Bottlenecking Coefficient 1"
-                min: 0
-                max: 0.9
-                scale: 'RdYlGn'
-            PBC2:
-                description: "PCR Bottlenecking Coefficient 2"
-                min: 0.5
-                max: 5
-                scale: 'RdYlGn'
-            FragmentLength:
-                description: "Predicted fragment length by cross-correlation"
-            NSC:
-                description: "Normalized strand cross-correlation coefficient"
-                min: 1
-                max: 1.1
-                scale: 'RdYlGn'
-                format: '{:,.2f}'
-            RSC:
-                description: "Relative strand cross-correlation coefficient"
-                min: 0.5
-                max: 1
-                scale: 'RdYlGn'
-            Qtag:
-                description: "Quality tag based on thresholded RSC"
-                min: 0
-                max: 2
-                scale: 'RdYlGn'
-    NGSQC_data:
-        section_name: "NGSQC plot"
-        plot_type: "linegraph"
-        description: "Total originally mapped reads are randomly subsampled at 50% and 90% density. The similarity QC indicator (simQCi) refers to the fraction of chromatin regions which reveal a proportional decrease of read count intensities (RCIs) in the subset sampled at 90% relative to that sampled at 50% and is plotted for 3 dRCI thresholds, namely, 2.5%, 5% and 10%. simQCi should decrease with increase in dRCI and lower simQCi is an indicator of good overall quality. In other words, the flatter the line the higher the quality. The minimal theoretical value for simQCi is 1."
-        pconfig:
-            xlab: "percent RCI difference"
-            ylab: "Similarity QCi (s90/s50)"
-            ymax: 100
-            ymin: 1
+  encode_qc:
+    file_format: "csv"
+    sample_id: "SampleID"
+    samples_name: "SampleID"
+    section_name: "6. ENCODE Library QC"
+    plot_type: "table"
+    anchor: "encode_qc"
 
+    pconfig:
+      id: "encode_qc_table"
+
+    general_stats: false
+    metrics:
+      MEAN_INSERT_SIZE: { title: "Mean IS", format: "{:,.1f}" }
+      NRF:              { title: "NRF",     format: "{:.3f}" }
+      PBC1:             { title: "PBC1",    format: "{:.3f}" }
+      PBC2:             { title: "PBC2",    format: "{:.3f}" }
+
+# Tell MultiQC where to find the file
 sp:
-    QC_Table:
-        fn: "QCTable.txt"
-    NGSQC_data:
-        fn: "*NGSQC.txt"
-    spearman_heatmap:
-        fn: "spearman_heatmap.sorted.Q5DD.RPGC.png"
+  encode_qc:
+    fn: "EncodeQC.txt"
+
+# === Section Ordering (anchors verified) ===
+report_section_order:
+  fastqc_raw_sequence_counts_plot:
+    after: general_stats_table
+  fastq_screen_plot:
+    after: fastqc_raw_sequence_counts_plot
+  fastq_screen_plot-1:
+    after: fastq_screen_plot
+  kraken_taxa-top-n-plot:
+    after: fastq_screen_plot-1
+  fastqc_trimmed_sequence_counts_plot:
+    after: kraken_taxa-top-n-plot
+  samtools-flagstat-table:
+    after: fastqc_trimmed_sequence_counts_plot
+  samtools-flagstat-pct-table:
+    after: samtools-flagstat-table
+  samtools-idxstats-xy-plot:
+    after: samtools-flagstat-pct-table
+  samtools-idxstats-mapped-reads-plot:
+    after: samtools-idxstats-xy-plot
+  samtools-flagstat-table-1:
+    after: samtools-idxstats-mapped-reads-plot
+  samtools-flagstat-pct-table-1:
+    after: samtools-flagstat-table-1
+  samtools-idxstats-xy-plot-1:
+    after: samtools-flagstat-pct-table-1
+  samtools-idxstats-mapped-reads-plot-1:
+    after: samtools-idxstats-xy-plot-1
+  samtools-flagstat-table-2:
+    after: samtools-idxstats-mapped-reads-plot-1
+  samtools-flagstat-pct-table-2:
+    after: samtools-flagstat-table-2
+  samtools-idxstats-xy-plot-2:
+    after: samtools-flagstat-pct-table-2
+  samtools-idxstats-mapped-reads-plot-2:
+    after: samtools-idxstats-xy-plot-2
+  picard_is_sorted_insert_size:
+    after: samtools-idxstats-mapped-reads-plot-2
+  picard_is_Q5DD_insert_size:
+    after: picard_is_sorted_insert_size
+  picard_md_Q5_deduplication:
+    after: picard_is_Q5DD_insert_size
+  mqc-module-section-encode_qc:
+    after: samtools-flagstat-table   # or another exact id you know works
+  preseq_complexity_plot_molecules:
+    after: mqc-module-section-encode_qc
+  deeptools_correlation_plot:
+    after: preseq_complexity_plot_molecules
+  plotFingerprint_quality_metrics:
+    after: deeptools_correlation_plot
+  read_distribution_profile:
+    after: plotFingerprint_quality_metrics
+
+
+# === removing module sections ===
+remove_sections:
+  - samtools-flagstat-pct
+  - samtools-2_samtools-flagstat-pct
+  - samtools-1_samtools-flagstat-pct
+  - fastqc_per_sequence_quality_scores
+  - fastqc_per_base_n_content
+  - fastqc_sequence_duplication_levels
+  - fastqc_status_checks
+  - fastqc-1_fastqc_per_sequence_quality_scores
+  - fastqc-1_fastqc_sequence_duplication_levels
+  - fastqc-1_fastqc_status_checks
+
+# === General Stats: Column Visibility ===
+table_columns_visible:
+  "mqc_1_inputs_qc_fastqc_pre_trim-percent_duplicates": false
+  "mqc_1_inputs_qc_fastqc_pre_trim-percent_gc": false
+  "mqc_2c_contamination_kraken_taxonomic_classification-pct_top_one": false
+  "mqc_2c_contamination_kraken_taxonomic_classification-pct_top_n": false
+  "mqc_2c_contamination_kraken_taxonomic_classification-pct_unclassified": false
+  "mqc_3_post_trim_qc_fastqc_post_trim-percent_duplicates": false
+  "mqc_3_post_trim_qc_fastqc_post_trim-percent_gc": false
+  "mqc_3_post_trim_qc_fastqc_post_trim-avg_sequence_length": true
+  "mqc_3_post_trim_qc_fastqc_post_trim-median_sequence_length": false
+  "mqc_5a_library_metrics_picard_insert_size_sorted_insertsizemetrics-summed_median": false
+  "mqc_5a_library_metrics_picard_insert_size_sorted_insertsizemetrics-summed_mean": false
+  "mqc_5b_library_metrics_picard_insert_size_q5dd_insertsizemetrics-summed_median": false
+  "mqc_5b_library_metrics_picard_insert_size_q5dd_insertsizemetrics-summed_mean": true
+
+# === General Stats: Column Renames ===
+table_columns_name:
+  # 1. FastQC (Pre-trim)
+  "mqc_1_inputs_qc_fastqc_pre_trim-percent_duplicates": "Dup% (pre)"
+  "mqc_1_inputs_qc_fastqc_pre_trim-percent_gc": "GC% (pre)"
+  "mqc_1_inputs_qc_fastqc_pre_trim-avg_sequence_length": "Read len (pre)"
+  "mqc_1_inputs_qc_fastqc_pre_trim-median_sequence_length": "Median len (pre)"
+  "mqc_1_inputs_qc_fastqc_pre_trim-percent_fails": "Fail% (pre)"
+  "mqc_1_inputs_qc_fastqc_pre_trim-total_sequences": "Reads (pre)"
+
+  # 2c. Kraken (Taxonomic Classification)
+  "mqc_2c_contamination_kraken_taxonomic_classification-pct_top_one": "Kraken: Top-1 taxon %"
+  "mqc_2c_contamination_kraken_taxonomic_classification-pct_top_n": "Kraken: Top-N taxa %"
+  "mqc_2c_contamination_kraken_taxonomic_classification-pct_unclassified": "Kraken: Unclassified %"
+
+  # 3. FastQC (Post-trim)
+  "mqc_3_post_trim_qc_fastqc_post_trim-percent_duplicates": "Dup% (post)"
+  "mqc_3_post_trim_qc_fastqc_post_trim-percent_gc": "GC% (post)"
+  "mqc_3_post_trim_qc_fastqc_post_trim-avg_sequence_length": "Read len (post)"
+  "mqc_3_post_trim_qc_fastqc_post_trim-median_sequence_length": "Median len (post)"
+  "mqc_3_post_trim_qc_fastqc_post_trim-percent_fails": "Fail% (post)"
+  "mqc_3_post_trim_qc_fastqc_post_trim-total_sequences": "Reads (post)"
+
+  # 4a–4c. Samtools (sorted / Q5 / Q5DD)
+  "mqc_4a_alignment_qc_samtools_sorted_flagstat-flagstat_total": "Reads (sorted)"
+  "mqc_4a_alignment_qc_samtools_sorted_flagstat-mapped_passed": "Mapped (sorted)"
+  "mqc_4a_alignment_qc_samtools_sorted_flagstat-mapped_passed_pct": "Mapped% (sorted)"
+
+  "mqc_4b_alignment_qc_samtools_q5_flagstat-flagstat_total": "Reads (Q5)"
+  "mqc_4b_alignment_qc_samtools_q5_flagstat-mapped_passed": "Mapped (Q5)"
+  "mqc_4b_alignment_qc_samtools_q5_flagstat-mapped_passed_pct": "Mapped% (Q5)"
+
+  "mqc_4c_alignment_qc_samtools_q5dd_flagstat-flagstat_total": "Reads (Q5DD)"
+  "mqc_4c_alignment_qc_samtools_q5dd_flagstat-mapped_passed": "Mapped (Q5DD)"
+  "mqc_4c_alignment_qc_samtools_q5dd_flagstat-mapped_passed_pct": "Mapped% (Q5DD)"
+
+  # 5a. Picard Insert Size (sorted)
+  "mqc_5a_library_metrics_picard_insert_size_sorted_insertsizemetrics-summed_median": "Median IS (sorted)"
+  "mqc_5a_library_metrics_picard_insert_size_sorted_insertsizemetrics-summed_mean": "Mean IS (sorted)"
+
+  # 5b. Picard Insert Size (Q5DD)
+  "mqc_5b_library_metrics_picard_insert_size_q5dd_insertsizemetrics-summed_median": "Median IS (Q5DD)"
+  "mqc_5b_library_metrics_picard_insert_size_q5dd_insertsizemetrics-summed_mean": "Mean frag len (Q5DD)"
+
+  # 5c. Picard MarkDuplicates
+  "mqc_5c_library_metrics_picard_markduplicates_mark_duplicates-PERCENT_DUPLICATION": "Dup% (Picard)"
+
+# === Scientist-Focused Descriptions (nf-core style) ===
+section_comments:
+  # ── Overview ──────────────────────────────────────────────────────────────
+  general_stats: >
+    <b>General Statistics.</b> Quick overview of read counts, GC%, mapping, and duplication.
+    Use this to identify clear outliers before diving into individual modules.
+
+  # ── FastQC ──────────────────────────────────────────────────────────────
+
+  fastqc_per_sequence_gc_content: >
+    **FastQC — GC distribution.** ATAC-seq libraries are GC-rich from promoter and
+    enhancer bias; ChIP-seq GC reflects motif composition. Small shifts are expected,
+    but strong multi-modality can indicate contamination or amplification bias.
+
+  fastqc-1_fastqc_per_sequence_gc_content: >
+    **FastQC — GC distribution.** ATAC-seq libraries are GC-rich from promoter and
+    enhancer bias; ChIP-seq GC reflects motif composition. Small shifts are expected,
+    but strong multi-modality can indicate contamination or amplification bias.
+
+  # ── FastQ Screen ──────────────────────────────────────────────────────────
+  fastq_screen: >
+    **FastQ Screen — Species.** Shows reads mapping to different reference genomes.
+    Cross-mapping between closely related mammals (e.g., human vs. mouse) is common
+    and usually benign. Persistent bacterial hits may signal tagmentation reagent
+    contamination — often *Tn5 transposase prep issues* — or environmental carryover.
+    
+  fastq_screen-1: >
+    **FastQ Screen — Repeats.** Highlights repetitive and ribosomal content that reduces
+    unique mappability and can lower peak-calling sensitivity, usually reflecting poor
+    tagmentation efficiency in ATAC-seq or a weak/imprecise immunoprecipitation (IP) in ChIP-seq.
+
+  # ── Kraken ────────────────────────────────────────────────────────────────
+  kraken-top-n: >
+    **Kraken — Taxonomic composition.** Provides species-level classification.
+    Closely related mammalian genomes can be misassigned; focus on unexpected
+    bacterial or fungal taxa. Frequent hits like *E. coli* or *Tn5 source species*
+    suggest reagent contamination rather than true biological content.
+
+  # ── Samtools Flagstat ─────────────────────────────────────────────────────
+  samtools-flagstat: >
+    **Flagstat (sorted).** Summarizes total, mapped, and duplicate reads.
+    Aim for ≥ 70–80 % mapped reads. High duplication lowers usable signal.
+
+  samtools-1_samtools-flagstat: >
+    **Flagstat (Q5).** *Q5 = MAPQ ≥ 5.* Filters low-confidence alignments; expect
+    slight read loss but improved mapping precision.
+
+  samtools-2_samtools-flagstat: >
+    **Flagstat (Q5DD).** *Q5DD = MAPQ ≥ 5 + deduplication.* Focuses on unique,
+    confidently mapped reads for downstream use. **ENCODE** recommends at least
+    **10–20 M usable reads for TF ChIP-seq**, **20–40 M for histone ChIP-seq**, and
+    **≥ 50 M for ATAC-seq** to ensure robust signal and peak reproducibility.
+
+  # ── Samtools Idxstats ─────────────────────────────────────────────────────
+  samtools-idxstats: >
+    **Idxstats — Chromosome counts (sorted).** ATAC-seq and ChIP-seq rarely differ biologically
+    at the chromosome level; large imbalances usually reflect sequencing depth or
+    alignment issues, not biology.
+
+  samtools-1_samtools-idxstats: >
+    **Idxstats — Chromosome counts (Q5).** ATAC-seq and ChIP-seq rarely differ biologically
+    at the chromosome level; large imbalances usually reflect sequencing depth or
+    alignment issues, not biology.
+    
+  samtools-2_samtools-idxstats: >
+    **Idxstats — Chromosome counts (Q5DD).** ATAC-seq and ChIP-seq rarely differ biologically
+    at the chromosome level; large imbalances usually reflect sequencing depth or
+    alignment issues, not biology.
+    
+  samtools-idxstats-xy-counts: >
+    **XY counts (sorted).** Shows read coverage for sex chromosomes. Use this plot to confirm sample sex, as consistent
+    X/Y imbalances reflect expected biological differences.
+
+  samtools-1_samtools-idxstats-xy-counts: >
+    **XY counts (Q5).** Shows read coverage for sex chromosomes. Use this plot to confirm sample sex, as consistent
+    X/Y imbalances reflect expected biological differences.
+
+  samtools-2_samtools-idxstats-xy-counts: >
+    **XY counts (Q5DD).** Shows read coverage for sex chromosomes. Use this plot to confirm sample sex, as consistent
+    X/Y imbalances reflect expected biological differences.
+
+  # ── Picard ────────────────────────────────────────────────────────────────
+  picard-insertsize: >
+    **Insert Size (sorted).** ATAC-seq should display nucleosome ladders (~150/300/450 bp), with the **~150 bp mononucleosome peak**
+    usually the most abundant. ChIP-seq shows a broader fragmentation profile. A spike near 100 bp suggests
+    **adapter dimers** or primer artifacts, while broad or irregular shapes indicate mixed fragment quality.
+
+  picard-1_picard-1-insertsize: >
+    **Insert Size (Q5DD).** Cleaner, post-filter distribution mirroring the sorted profile.
+    In ATAC-seq, the **~150 bp mononucleosome peak** should remain the most abundant.
+    Adapter-dimer peaks should be absent, and broad shapes imply residual low-complexity fragments.
+
+  picard-2_picard-2-markduplicates: >
+    **Duplicates (Picard).** High duplication lowers effective coverage.
+    Typical ranges: **ATAC ~20–50 %**, **ChIP ~10–30 %**; >60 % implies over-amplification
+    or limited library complexity.
+
+  # ── Preseq ────────────────────────────────────────────────────────────────
+  preseq: >
+    **Preseq.** Projects how many additional unique reads deeper sequencing would add.
+    Flat curves = low complexity; rising curves = more depth is beneficial.
+
+  # ── ppqt ────────────────────────────────────────────────────────────────
+  phantompeakqualtools: >
+    **Cross-correlation (PPQT).** Estimates signal-to-noise using strand cross-correlation.
+    Good libraries have **NSC > 1.05** and **RSC > 0.8** (ENCODE guidance); lower scores
+    suggest weak enrichment or noisy data.
+
+  # ── deepTools ─────────────────────────────────────────────────────────────
+  deeptools_correlation: >
+    **deepTools Correlation.** Shows Spearman correlation of genome-wide 25 bp bins. Replicates
+    should cluster closely, while Input/IgG controls remain distinct. Spearman is used instead
+    of Pearson to be more tolerant of global differences in peak height.
+
+  plotFingerprint: >
+    **deepTools Fingerprint.**   Plots signal enrichment over background. A strong left-shift
+    indicates good enrichment; flat lines represent Input/IgG or low-signal libraries. Inputs
+    should remain flat to confirm low background. See the [deepTools documentation on
+    fingerprint plots](https://deeptools.readthedocs.io/en/latest/content/tools/plotFingerprint.html)
+    for a detailed explanation.
+
+  read_distribution_profile_plot: >
+    **TSS Enrichment.** Aggregate read coverage around transcription start sites.
+    Strong, narrow central peaks reflect precise chromatin accessibility or binding.
+    Flat or diffuse profiles imply weak signal or poor fragment size balance.
+
+  encode_qc: >
+    **ENCODE library QC.** NRF (non-redundant fraction), PBC1 and PBC2 summarize
+    library complexity; higher values generally indicate less PCR bottlenecking.
+    Mean insert size is reported in base pairs.

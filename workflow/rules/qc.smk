@@ -208,7 +208,9 @@ rule multiqc:
         expand(join(bam_dir, "{name}.Q5.bam.flagstat"), name=samples),
         join(deeptools_dir, "spearman_readcounts.Q5DD.tab"),
         join(deeptools_dir, "fingerprint.raw.Q5DD.tab"),
-	join(deeptools_dir,"TSS_profile.Q5DD.tab")
+	join(deeptools_dir,"TSS_profile.Q5DD.tab"),
+    	join(deeptools_dir,"enhancer_profile.Q5DD.tab"),
+	join(workpath, "EncodeQC.txt")
     output:
         join(workpath, "multiqc_report.html")
     params:
@@ -235,10 +237,10 @@ rule deeptools_QC:
         [ join(bw_dir, name + ".Q5DD.RPGC.bw") for name in samples ] 
     output:
         heatmap                 = join(deeptools_dir, "spearman_heatmap.Q5DD.pdf"),
+        heatmap2                = join(deeptools_dir, "pearson_heatmap.Q5DD.pdf"),
         pca                     = join(deeptools_dir, "pca.Q5DD.pdf"),
         npz                     = temp(join(deeptools_dir, "Q5DD.npz")),
-	    mqc                     = join(deeptools_dir, "spearman_readcounts.Q5DD.tab"),
-	    png                     = join(deeptools_dir, "spearman_heatmap.Q5DD_mqc.png")
+        mqc                     = join(deeptools_dir, "spearman_readcounts.Q5DD.tab")
     params:
         rname                   = "deeptools_QC",
         parent_dir              = deeptools_dir,
@@ -253,7 +255,8 @@ rule deeptools_QC:
         multiBigwigSummary bins -b {input} -p {threads} -l {params.labels} -out {output.npz}
         plotCorrelation -in {output.npz} -o {output.heatmap} -c 'spearman' -p 'heatmap' \\
                --skipZeros --removeOutliers --outFileCorMatrix {output.mqc}
-        plotCorrelation -in {output.npz} -o {output.png} -c 'spearman' -p 'heatmap' --skipZeros --removeOutliers
+        plotCorrelation -in {output.npz} -o {output.heatmap2} -c 'pearson' -p 'heatmap' \\
+               --skipZeros --removeOutliers
         plotPCA -in {output.npz} -o {output.pca}
         """
 
@@ -263,7 +266,7 @@ rule deeptools_fingerprint:
         [ join(bam_dir, name + ".Q5DD.bam") for name in samples ] 
     output:
         image=join(deeptools_dir, "fingerprint.Q5DD.pdf"),
-        raw=temp(join(deeptools_dir, "fingerprint.raw.Q5DD.tab")),
+        raw=join(deeptools_dir, "fingerprint.raw.Q5DD.tab"),
         metrics=join(deeptools_dir, "fingerprint.metrics.Q5DD.tsv"),
     params:
         rname                   = "deeptools_fingerprint",
@@ -330,7 +333,11 @@ rule deeptools_gene_all:
             --yAxisLabel 'average RPGC' \\
             --plotType 'se' \\
             --numPlotsPerRow 5 \\
-            --outFileNameData {output.mqc}
+            --outFileNameData {output.mqc} \\
+            --startLabel "-3kb" \\
+            --endLabel "+3kb" \\
+            --refPointLabel "TSS" \\
+            --xAxisLabel "Distance (bp)" 
         plotHeatmap -m {output.TSSmat} \\
             -out {output.TSSheat} \\
             --colorMap 'BuPu' \\
@@ -368,7 +375,8 @@ rule enhancer_plot:
     output:
         heatmap                 = join(deeptools_dir, "enhancer_heatmap.Q5DD.pdf"),
         matrix                  = join(deeptools_dir, "enhancer_matrix.Q5DD.tsv"),
-        line                    = join(deeptools_dir, "enhancer_profile.Q5DD.pdf")
+        line                    = join(deeptools_dir, "enhancer_profile.Q5DD.pdf"),
+        mqc                     = join(deeptools_dir, "enhancer_profile.Q5DD.tab")
     params:
         rname                   = "enhancer_plot",
         enhancer_ref            = enhancer_ref,
@@ -400,7 +408,12 @@ rule enhancer_plot:
             -out {output.line} \\
             --yAxisLabel 'average RPGC' \\
             --plotType 'se' \\
-            --numPlotsPerRow 5
+            --numPlotsPerRow 5 \\
+            --outFileNameData {output.mqc} \\
+            --startLabel "-3kb" \\
+            --endLabel "+3kb" \\
+            --refPointLabel "Enhancer" \\
+            --xAxisLabel "Distance (bp)"
         plotHeatmap -m {output.matrix} \\
             -out {output.heatmap} \\
             --yAxisLabel 'average RPGC' \\
