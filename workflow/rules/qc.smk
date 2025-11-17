@@ -222,13 +222,7 @@ rule multiqc:
     container: config['images']['multiqc'],
     shell: 
         """
-        multiqc \\
-            -f \\
-            -c {params.qcconfig} \\
-            --interactive \\
-            -e cutadapt \\
-            --ignore {params.excludedir} \\
-            -d "{params.workpath}"
+multiqc . -c {params.qcconfig} -o multiqc_test_run -n {output}
         """
 
 
@@ -333,9 +327,7 @@ rule deeptools_gene_all:
             --yAxisLabel 'average RPGC' \\
             --plotType 'se' \\
             --numPlotsPerRow 5 \\
-            --outFileNameData {output.mqc} \\
-            --refPointLabel "TSS" \\
-            --xAxisLabel "Distance (bp)" 
+            --outFileNameData {output.mqc}
         plotHeatmap -m {output.TSSmat} \\
             -out {output.TSSheat} \\
             --colorMap 'BuPu' \\
@@ -408,8 +400,7 @@ rule enhancer_plot:
             --plotType 'se' \\
             --numPlotsPerRow 5 \\
             --outFileNameData {output.mqc} \\
-            --refPointLabel "Enhancer" \\
-            --xAxisLabel "Distance (bp)"
+            --refPointLabel "Enhancer"
         plotHeatmap -m {output.matrix} \\
             -out {output.heatmap} \\
             --yAxisLabel 'average RPGC' \\
