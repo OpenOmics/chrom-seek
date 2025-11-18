@@ -4,7 +4,7 @@
 # === Report Metadata & Top-level Toggles ===
 skip_versions_section: true
 no_ai: true
-title: "Chromatin Profiling QC-test2"
+title: "Chromatin Profiling MultiQC Report"
 
 # === Output & Execution ===
 make_data_dir: true
@@ -174,7 +174,30 @@ module_order:
 
   # 8) Genome-wide QC
   - deeptools:
-      name: "8. Genome-wide QC — deepTools"
+      name: "8a. deepTools - Genome-wide"
+      anchor: deeptools_core
+      # Prevent this instance from parsing the profile tables
+      path_filters_exclude:
+        - "deeptools/TSS_profile.Q5DD.tab"
+        - "deeptools/enhancer_profile.Q5DD.tab"
+
+  # deepTools — TSS profile (only the TSS table)
+  - deeptools:
+      name: "8b. deepTools — TSS profile"
+      anchor: deeptools_tss
+      path_filters:
+        - "deeptools/TSS_profile.Q5DD.tab"
+      hide_module_header: true
+      plotProfile_smooth_points: 999999999999
+
+  # deepTools — Enhancer profile (only the Enhancer table)
+  - deeptools:
+      name: "8c. deepTools — Enhancer profile"
+      anchor: deeptools_enh
+      path_filters:
+        - "deeptools/enhancer_profile.Q5DD.tab"
+      hide_module_header: true
+      plotProfile_smooth_points: 999999999999
 
 custom_data:
   encode_qc:
@@ -195,68 +218,10 @@ custom_data:
       PBC1:             { title: "PBC1",    format: "{:.3f}" }
       PBC2:             { title: "PBC2",    format: "{:.3f}" }
 
-deeptools:
-  # Disable smoothing / subsampling for the deepTools plots to retain original x-axis labels
-  plotProfile_smooth_points: 999999999999 
-
 # Tell MultiQC where to find the file
 sp:
   encode_qc:
     fn: "EncodeQC.txt"
-
-# === Section Ordering (anchors verified) ===
-report_section_order:
-  fastqc_raw_sequence_counts_plot:
-    after: general_stats_table
-  fastq_screen_plot:
-    after: fastqc_raw_sequence_counts_plot
-  fastq_screen_plot-1:
-    after: fastq_screen_plot
-  kraken_taxa-top-n-plot:
-    after: fastq_screen_plot-1
-  fastqc_trimmed_sequence_counts_plot:
-    after: kraken_taxa-top-n-plot
-  samtools-flagstat-table:
-    after: fastqc_trimmed_sequence_counts_plot
-  samtools-flagstat-pct-table:
-    after: samtools-flagstat-table
-  samtools-idxstats-xy-plot:
-    after: samtools-flagstat-pct-table
-  samtools-idxstats-mapped-reads-plot:
-    after: samtools-idxstats-xy-plot
-  samtools-flagstat-table-1:
-    after: samtools-idxstats-mapped-reads-plot
-  samtools-flagstat-pct-table-1:
-    after: samtools-flagstat-table-1
-  samtools-idxstats-xy-plot-1:
-    after: samtools-flagstat-pct-table-1
-  samtools-idxstats-mapped-reads-plot-1:
-    after: samtools-idxstats-xy-plot-1
-  samtools-flagstat-table-2:
-    after: samtools-idxstats-mapped-reads-plot-1
-  samtools-flagstat-pct-table-2:
-    after: samtools-flagstat-table-2
-  samtools-idxstats-xy-plot-2:
-    after: samtools-flagstat-pct-table-2
-  samtools-idxstats-mapped-reads-plot-2:
-    after: samtools-idxstats-xy-plot-2
-  picard_is_sorted_insert_size:
-    after: samtools-idxstats-mapped-reads-plot-2
-  picard_is_Q5DD_insert_size:
-    after: picard_is_sorted_insert_size
-  picard_md_Q5_deduplication:
-    after: picard_is_Q5DD_insert_size
-  mqc-module-section-encode_qc:
-    after: samtools-flagstat-table   # or another exact id you know works
-  preseq_complexity_plot_molecules:
-    after: mqc-module-section-encode_qc
-  deeptools_correlation_plot:
-    after: preseq_complexity_plot_molecules
-  plotFingerprint_quality_metrics:
-    after: deeptools_correlation_plot
-  read_distribution_profile:
-    after: plotFingerprint_quality_metrics
-
 
 # === removing module sections ===
 remove_sections:
@@ -337,21 +302,98 @@ table_columns_name:
 # === Scientist-Focused Descriptions (nf-core style) ===
 section_comments:
   # ── Overview ──────────────────────────────────────────────────────────────
-  general_stats: >
-    <b>General Statistics.</b> Quick overview of read counts, GC%, mapping, and duplication.
-    Use this to identify clear outliers before diving into individual modules.
 
-  # ── FastQC ──────────────────────────────────────────────────────────────
+  general_stats: >
+    <b>General Statistics.</b> High-level snapshot of read quality and alignment.
+    Key mapping metrics derive from <i>Samtools Flagstat</i> summaries:
+    <b>Sorted</b> shows overall alignment success,
+    <b>Q5</b> highlights high-confidence alignments (MAPQ ≥ 5),
+    and <b>Q5DD</b> reflects the final unique, deduplicated reads.
+    Use these to compare mapping retention and library complexity across samples.
+    <i>Recommended:</i> ≥10–50 M usable reads.
+
+# ── FastQC (Pre-trimming) ──────────────────────────────────────────────────
+  fastqc_sequence_counts: >
+    **Sequence counts (pre-trimming).** Total read numbers before adapter and
+    quality trimming. High counts reflect sequencing depth; large differences
+    between samples may indicate uneven pooling or run yield variation.
+    Use as a baseline to assess read retention after trimming.
+
+  fastqc_per_base_sequence_quality: >
+    **Per-base quality (pre-trimming).** Raw reads often show declining quality toward
+    the 3′ end, especially on longer runs. Most bases should still exceed
+    Phred Q20–30; sharp drops suggest early-cycle issues or reagent degradation.
+
+  fastqc_per_base_sequence_content: >
+    **Base composition (pre-trimming).** Unequal base frequencies at early cycles are
+    expected from random priming or low-diversity barcodes. Persistent imbalance
+    through the read indicates sequence bias or contamination.
 
   fastqc_per_sequence_gc_content: >
-    **FastQC — GC distribution.** ATAC-seq libraries are GC-rich from promoter and
+    **GC distribution (pre-trimming).** ATAC-seq libraries are GC-rich from promoter and
     enhancer bias; ChIP-seq GC reflects motif composition. Small shifts are expected,
     but strong multi-modality can indicate contamination or amplification bias.
 
+  fastqc_sequence_length_distribution: >
+    **Sequence length (pre-trimming).** Raw data from most sequencers have uniform read
+    lengths (e.g., 50, 75, 100 bp). Any variability suggests prior trimming or
+    mixed run configurations.
+
+  fastqc_adapter_content: >
+    **Adapter content (pre-trimming).** Adapter contamination is expected in raw data,
+    particularly near 3′ ends. Effective trimming should remove these entirely.
+
+  fastqc_overrepresented_sequences: >
+    **Over-represented sequences (pre-trimming).** Commonly include adapters, primers,
+    or abundant transcripts. Persistent enrichment after trimming may reflect
+    contamination or extreme amplification bias.
+
+# ── FastQC-Post ─────────────────────────────────────────────────────────────────
+
+  fastqc-1_fastqc_sequence_counts: >
+    **Sequence counts (post-trimming).** Reads remaining after adapter and
+    quality trimming. Typically >90 % of raw reads are retained; substantial
+    loss suggests over-trimming or poor initial quality. Compare to pre-trim
+    totals to gauge trimming efficiency and data recovery.
+
+  fastqc-1_fastqc_per_base_sequence_quality: >
+    **Per-base quality (post-trimming).** After trimming, all positions should retain
+    Phred scores >30. A gradual decline near read ends is typical; abrupt drops
+    may suggest over-trimming or low-quality cycles.
+
+  fastqc-1_fastqc-1_per_base_sequence_content: >
+    **Per-base sequence content (post-trimming).** After adapter removal, mild base
+    composition bias often remains, especially in ATAC-seq and ChIP-seq libraries
+    where enrichment near regulatory regions or motifs skews early cycles toward
+    specific nucleotides. Overall base frequencies should stabilize across read
+    length; strong or persistent imbalance may indicate contamination, incomplete
+    trimming, or library-specific sequence bias.
+
   fastqc-1_fastqc_per_sequence_gc_content: >
-    **FastQC — GC distribution.** ATAC-seq libraries are GC-rich from promoter and
+    **GC distribution (post-trimming).** ATAC-seq libraries are GC-rich from promoter and
     enhancer bias; ChIP-seq GC reflects motif composition. Small shifts are expected,
     but strong multi-modality can indicate contamination or amplification bias.
+
+  fastqc-1_fastqc_per_base_n_content: >
+    **Per-base N content (post-trimming).** Represents the fraction of undetermined bases
+    (“N”) at each position. After trimming, this should remain near zero across
+    all cycles; elevated N content suggests poor signal quality or sequencing
+    artifacts that trimming could not correct.
+
+  fastqc-1_fastqc_sequence_length_distribution: >
+    **Sequence length (post-trimming).** Read lengths should match the expected insert
+    size after trimming. Variable lengths indicate adapter trimming or merged
+    read pairs; extreme short reads may have been over-trimmed.
+
+  fastqc-1_fastqc_adapter_content: >
+    **Adapter content (post-trimming).** Adapter presence should be near zero after
+    trimming. Residual adapter peaks suggest incomplete trimming or short inserts
+    where read-through occurs.
+
+  fastqc-1_fastqc_overrepresented_sequences: >
+    **Over-represented sequences (post-trimming).** None should exceed 0.1 % after
+    trimming. Matches to adapters, primers, or abundant transcripts can reveal
+    contamination or over-amplification.
 
   # ── FastQ Screen ──────────────────────────────────────────────────────────
   fastq_screen: >
@@ -443,20 +485,26 @@ section_comments:
     suggest weak enrichment or noisy data.
 
   # ── deepTools ─────────────────────────────────────────────────────────────
-  deeptools_correlation: >
+  deeptools_core_deeptools_correlation: >
     **deepTools Correlation.** Shows Spearman correlation of genome-wide 25 bp bins. Replicates
     should cluster closely, while Input/IgG controls remain distinct. Spearman is used instead
     of Pearson to be more tolerant of global differences in peak height.
 
-  plotFingerprint: >
+  deeptools_core_deeptools_fingerprint: >
     **deepTools Fingerprint.**   Plots signal enrichment over background. A strong left-shift
     indicates good enrichment; flat lines represent Input/IgG or low-signal libraries. Inputs
     should remain flat to confirm low background. See the [deepTools documentation on
     fingerprint plots](https://deeptools.readthedocs.io/en/latest/content/tools/plotFingerprint.html)
     for a detailed explanation.
 
-  read_distribution_profile_plot: >
+  deeptools_tss_read_distribution_profile_plot: >
     **TSS Enrichment.** Aggregate read coverage around transcription start sites.
+    Strong, narrow central peaks reflect precise chromatin accessibility or binding.
+    Flat or diffuse profiles imply weak signal or poor fragment size balance.
+
+  deeptools_enh_read_distribution_profile_plot: >
+    **Enhancer Enrichment.** Aggregate read coverage around known enhancers. Enhancer
+    list defined by Fantom5 (https://fantom.gsc.riken.jp/5/).
     Strong, narrow central peaks reflect precise chromatin accessibility or binding.
     Flat or diffuse profiles imply weak signal or poor fragment size balance.
 
@@ -464,3 +512,4 @@ section_comments:
     **ENCODE library QC.** NRF (non-redundant fraction), PBC1 and PBC2 summarize
     library complexity; higher values generally indicate less PCR bottlenecking.
     Mean insert size is reported in base pairs.
+

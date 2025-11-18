@@ -222,7 +222,7 @@ rule multiqc:
     container: config['images']['multiqc'],
     shell: 
         """
-multiqc . -c {params.qcconfig} -o multiqc_test_run -n {output}
+multiqc . -c {params.qcconfig} -n {output}
         """
 
 
