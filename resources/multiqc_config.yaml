@@ -98,7 +98,7 @@ samtools:
 preseq:
   fn_clean_exts:
     - ".ccurve"
-
+    
 # === Module Scanning & Split Rules ===
 module_order:
   # 1) Inputs QC
@@ -187,8 +187,6 @@ module_order:
       anchor: deeptools_tss
       path_filters:
         - "deeptools/TSS_profile.Q5DD.tab"
-      hide_module_header: true
-      plotProfile_smooth_points: 999999999999
 
   # deepTools — Enhancer profile (only the Enhancer table)
   - deeptools:
@@ -196,8 +194,6 @@ module_order:
       anchor: deeptools_enh
       path_filters:
         - "deeptools/enhancer_profile.Q5DD.tab"
-      hide_module_header: true
-      plotProfile_smooth_points: 999999999999
 
 custom_data:
   encode_qc:
@@ -501,15 +497,29 @@ section_comments:
     **TSS Enrichment.** Aggregate read coverage around transcription start sites.
     Strong, narrow central peaks reflect precise chromatin accessibility or binding.
     Flat or diffuse profiles imply weak signal or poor fragment size balance.
+    <br><i>Note:</i> The x-axis ranges from 0 to 600 bins,
+    representing −3 kb to +3 kb around the TSS.
+    The midpoint (x = 300) marks the transcription start site.
 
   deeptools_enh_read_distribution_profile_plot: >
     **Enhancer Enrichment.** Aggregate read coverage around known enhancers. Enhancer
     list defined by Fantom5 (https://fantom.gsc.riken.jp/5/).
     Strong, narrow central peaks reflect precise chromatin accessibility or binding.
     Flat or diffuse profiles imply weak signal or poor fragment size balance.
+    <br><i>Note:</i> The x-axis ranges from 0 to 600 bins,
+    representing −3 kb to +3 kb relative to the enhancer center.
+    The midpoint (x = 300) marks the enhancer midpoint.
 
   encode_qc: >
     **ENCODE library QC.** NRF (non-redundant fraction), PBC1 and PBC2 summarize
     library complexity; higher values generally indicate less PCR bottlenecking.
     Mean insert size is reported in base pairs.
 
+report_plot_overrides:
+  read_distribution_profile:
+    pconfig:
+      xmin: 0
+      xmax: 600
+      xTitle: "Distance (bp)"
+      xlab:   "Distance (bp)"
+      x_lines: [[300, "Center", "#000000", "dash", 2]]
