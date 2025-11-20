@@ -1,0 +1,46 @@
+{
+    "snakefile": "../../workflow/Snakefile",
+    "carry_dirs": [
+        "../../bin",
+        "../../workflow",
+        "../../config"
+    ],
+    "inject": {
+        "options": { 
+            "output": "{{ output_dir }}",
+            "input": "{{ input_files }}"
+        },
+        "project": {
+            "binpath": "{{ bin_dir }}",
+            "datapath": "{{ data_dir }}",
+            "workpath": "{{ output_dir }}"
+        }
+    },
+    "stump": [
+        "deeptools/fingerprint.raqw.Q5DD.tab"
+    ],
+    "files": [
+        "../../.tests/WT_S1.R1.fastq.gz",
+        "../../.tests/WT_S1.R2.fastq.gz",
+        "../../.tests/WT_S2_R1.fastq.gz",
+        "../../.tests/WT_S2_R2.fastq.gz",
+        "../../.tests/WT_S3_1.fastq.gz",
+        "../../.tests/WT_S3_2.fastq.gz",
+        "../../.tests/WT_S4_R1.001.fastq.gz",
+        "../../.tests/WT_S4_R2.001.fastq.gz",
+        "../../.tests/Input_S1.R1.fastq.gz",
+        "../../.tests/Input_S1.R2.fastq.gz",
+        "../../.tests/Input_S2_R1.fastq.gz",
+        "../../.tests/Input_S2_R2.fastq.gz",
+        "../../.tests/Input_S3_1.fastq.gz",
+        "../../.tests/Input_S3_2.fastq.gz",
+        "../../.tests/Input_S4_R1.001.fastq.gz",
+        "../../.tests/Input_S4_R2.001.fastq.gz"
+    ],
+    "copy_files": [
+        "../../workflow/scripts",
+        "../../workflow/rules",
+        "../../bin",
+        "../../config"
+    ]
+}

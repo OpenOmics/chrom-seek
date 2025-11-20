@@ -4,3 +4,4 @@ PyGithub
 snakemake
 networkx
 dagviz
+jinja2

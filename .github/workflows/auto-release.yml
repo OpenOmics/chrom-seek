@@ -36,6 +36,6 @@ jobs:
         run: |
           NEW_VER=$(python .github/autorelease.py $PR_URL -t $GITHUB_TOKEN)
           echo -e "\n --- $NEW_VER --- \n"
-          python .github/snakevis.py .github/snakevis.cfg $GITHUB_WORKSPACE/upload
+          # python .github/sv/snakevis.py .github/sv/cfchip_norep_winput.json $GITHUB_WORKSPACE/upload
           ls -al $GITHUB_WORKSPACE/upload
           gh release upload $NEW_VER $GITHUB_WORKSPACE/upload/pipeline_rulegraph.svg --clobber
