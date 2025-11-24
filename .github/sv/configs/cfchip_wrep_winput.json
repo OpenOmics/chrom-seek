@@ -3,12 +3,6 @@
         "FASTQ_SCREEN": "/data/OpenOmics/references/cfChIP-seek/bin/fastq_screen_v0.9.3/fastq_screen",
         "cfChIP_Toolkit_SRC": "/data/OpenOmics/references/cfChIP-seek/hg19_basic/cfChIP_tools"
     },
-    "bindpaths": [
-        "/opt2",
-        "/opt2/output",
-        "/opt2/.tests",
-        "/root"
-    ],
     "conda": {},
     "images": {
         "cfchip": "docker://skchronicles/cfchip_toolkit:v0.5.0",
@@ -21,18 +15,26 @@
     },
     "options": {
         "assay": "cfchip",
-        "contrasts": "/opt2/.tests/contrasts.tsv",
+        "contrasts": "contrasts.tsv",
         "dry_run": "True",
         "genome": "hg19",
         "input": [
-            "/opt2/.tests/WT_S1.R1.fastq.gz",
-            "/opt2/.tests/WT_S1.R2.fastq.gz",
-            "/opt2/.tests/WT_S4_R1.001.fastq.gz",
-            "/opt2/.tests/WT_S4_R2.001.fastq.gz",
-            "/opt2/.tests/Input_S1.R1.fastq.gz",
-            "/opt2/.tests/Input_S1.R2.fastq.gz",
-            "/opt2/.tests/Input_S4_R1.001.fastq.gz",
-            "/opt2/.tests/Input_S4_R2.001.fastq.gz"
+            "WT_S1.R1.fastq.gz",
+            "WT_S1.R2.fastq.gz",
+            "WT_S2_R1.fastq.gz",
+            "WT_S2_R2.fastq.gz",
+            "WT_S3_1.fastq.gz",
+            "WT_S3_2.fastq.gz",
+            "WT_S4_R1.001.fastq.gz",
+            "WT_S4_R2.001.fastq.gz",
+            "Input_S1.R1.fastq.gz",
+            "Input_S1.R2.fastq.gz",
+            "Input_S2_R1.fastq.gz",
+            "Input_S2_R2.fastq.gz",
+            "Input_S3_1.fastq.gz",
+            "Input_S3_2.fastq.gz",
+            "Input_S4_R1.001.fastq.gz",
+            "Input_S4_R2.001.fastq.gz"
         ],
         "job_name": "pl:chrom-seek",
         "mode": "local",
@@ -40,7 +42,7 @@
         "peak_type_base": [
             "protTSS"
         ],
-        "peakcall": "/opt2/.tests/peakcall_no_replicates_with_inputs.tsv",
+        "peakcall": "peakcall_with_replicates_with_inputs.tsv",
         "sif_cache": "None",
         "silent": "False",
         "singularity_cache": "None",
@@ -52,6 +54,8 @@
         "binpath": "/opt2/output/bin",
         "blocks": {
             "WT_S1": "",
+            "WT_S2": "",
+            "WT_S3": "",
             "WT_S4": ""
         },
         "contrast": [
@@ -62,12 +66,14 @@
         ],
         "datapath": "/opt2/.tests",
         "filetype": "paired-end",
-        "git_commit_hash": "e7a900a6732e2839c39f1ccc533a1ad0aef036a4",
+        "git_commit_hash": "e74ae251c9952f5c0f28021ffac9e69b4b1db8b5",
         "groups": {
             "G1": [
-                "WT_S1"
+                "WT_S1",
+                "WT_S2"
             ],
             "G2": [
+                "WT_S3",
                 "WT_S4"
             ]
         },
@@ -75,16 +81,20 @@
         "peaks": {
             "chips": [
                 "WT_S1",
+                "WT_S2",
+                "WT_S3",
                 "WT_S4"
             ],
             "inputs": {
                 "WT_S1": "Input_S1",
+                "WT_S2": "Input_S2",
+                "WT_S3": "Input_S3",
                 "WT_S4": "Input_S4"
             }
         },
         "pipeline_path": "/opt2",
-        "userhome": "/root",
-        "username": "root",
+        "userhome": "/home/routsongrm",
+        "username": "routsongrm",
         "version": "2.1.1",
         "workpath": "/opt2/output"
     },
@@ -196,8 +206,12 @@
     },
     "samples": [
         "WT_S1",
+        "WT_S2",
+        "WT_S3",
         "WT_S4",
         "Input_S1",
+        "Input_S2",
+        "Input_S3",
         "Input_S4"
     ],
     "shared_resources": {

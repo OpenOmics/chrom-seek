@@ -34,8 +34,9 @@ jobs:
             PR_NUMBER: ${{ github.event.pull_request.number }}
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          export PATH="$GITHUB_WORKSPACE/vis/bin:$PATH"
           NEW_VER=$(python .github/autorelease.py $PR_URL -t $GITHUB_TOKEN)
           echo -e "\n --- $NEW_VER --- \n"
-          # python .github/sv/snakevis.py .github/sv/cfchip_norep_winput.json $GITHUB_WORKSPACE/upload
+          # python .github/sv/snakevis.py -c .github/sv/snakevis.json -s .github/sv/configs/cfchip_norep_winput.json -u upload
           ls -al $GITHUB_WORKSPACE/upload
-          gh release upload $NEW_VER $GITHUB_WORKSPACE/upload/pipeline_rulegraph.svg --clobber
+          gh release upload $NEW_VER $GITHUB_WORKSPACE/upload/* --clobber

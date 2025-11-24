@@ -8,6 +8,7 @@ import tempfile
 import jinja2
 import ast
 import re
+import subprocess
 
 
 def rename(filename):
@@ -200,23 +201,33 @@ def main(args):
     INJECT_TEMPLATE = json.dumps(args.app_config.pop("inject", {}))
 
     with tempfile.TemporaryDirectory() as tmpdirname:
-        # file paths
+        # Initialize file paths
         NEW_SNK_FILE = os.path.join(tmpdirname, "Snakefile")
         CFG_FILE = os.path.join(tmpdirname, "config.json")
         BIN_DIR = os.path.join(tmpdirname, "bin")
         DATA_DIR = os.path.dirname(INPUT_FILES[0])
-        RULE_GRAPH_FILE = os.path.join(tmpdirname, "pipeline_rulegraph.svg")
-        FINAL_RULE_GRAPH = os.path.join(args.upload_path, "pipeline_rulegraph.svg")
+        DOT_GRAPH_FILE = os.path.join(tmpdirname, "pipeline_rulegraph.dot")
+        if os.path.isdir(args.upload_path):
+            RULE_GRAPH_FILENAME = os.path.splitext(os.path.basename(args.snakemake_config['__FILEPATH']))[0]
+            FINAL_RULE_GRAPH = os.path.abspath(os.path.join(args.upload_path, f"{RULE_GRAPH_FILENAME}.svg"))
+        else:
+            FINAL_RULE_GRAPH = os.path.abspath(args.upload_path)
 
-        # Copy pipeline components
+        # Copy snakefile
         shutil.copy(
             os.path.abspath(
                 os.path.join(SNK_CFG_ROOT, args.app_config.get("snakefile", None))
             ),
             NEW_SNK_FILE,
         )
+
+        # Copy pipeline subfolder components
         carry_pipeline_components(args.app_config, tmpdirname)
+
+        # Link data files into pipeline directory
         link_files(INPUT_FILES, tmpdirname)
+
+        # Touch stump files if specified in config
         if "stump" in args.app_config:
             touch_files(args.app_config["stump"], tmpdirname)
 
@@ -237,30 +248,64 @@ def main(args):
                 rendered_inject["options"]["input"]
             )
 
+        # NOTE: dict.update does not do a deep merge, so we need to update nested dicts manually
         for k, v in rendered_inject.items():
-            if k in args.snakemake_config:
+            if k in args.snakemake_config and isinstance(args.snakemake_config[k], dict):
                 args.snakemake_config[k].update(v)
+            else:
+                args.snakemake_config[k] = v
 
+        # Write Snakemake config to pipeline directory
         with open(CFG_FILE, "w") as f:
             json.dump(args.snakemake_config, f, indent=2)
-
-        cmd = (
+        
+        # Call snakemake dry run, make dot rulegraph
+        cmd = ''.join(
             "snakemake "
             f"--configfile {CFG_FILE} "
-            f"-s {NEW_SNK_FILE} -d {tmpdirname} "
-            f"--rulegraph --forceall | dot -Tsvg -o {RULE_GRAPH_FILE}"
+            f"-s {NEW_SNK_FILE} "
+            f"-d {tmpdirname} "
+            "--rulegraph "
+            "--forceall "
+            f"> {DOT_GRAPH_FILE}"
         )
-        ret = os.system(cmd)
-        if ret != 0:
-            print(
-                f"Error: Snakemake visualization generation failed with exit code {ret}",
-                file=sys.stderr,
+        proc = subprocess.Popen(
+            cmd,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        stdout, stderr = proc.communicate()
+        if proc.returncode != 0:
+            raise RuntimeError(
+                f"Error: Snakemake dry run failed with exit code {proc.returncode}\n{stderr.decode()}"
             )
-            sys.exit(1)
-
-        # Move SVG to upload path
-        shutil.move(RULE_GRAPH_FILE, FINAL_RULE_GRAPH)
-        print(f"Snakemake pipeline visualization generated at: {FINAL_RULE_GRAPH}")
+        
+        import ipdb; ipdb.set_trace()
+        # Call snakevis to convert dot to rule graph svg
+        cmd = (
+            "snakevision "
+            "-s all mutliqc "
+            f"-o {FINAL_RULE_GRAPH} "
+            f"{DOT_GRAPH_FILE}"
+        )
+        proc = subprocess.Popen(
+            cmd,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        stdout, stderr = proc.communicate()
+        if proc.returncode != 0:
+            raise RuntimeError(
+                f"Error: Snakevis failed with exit code {proc.returncode}\n{stderr.decode()}"
+            )
+        if os.path.exists(FINAL_RULE_GRAPH):
+            print(f"Snakemake pipeline visualization generated at: {FINAL_RULE_GRAPH}")
+        else:
+            raise FileNotFoundError(
+                f"Failed to generate Snakemake pipeline visualization at: {FINAL_RULE_GRAPH}"
+            )
 
 
 if __name__ == "__main__":

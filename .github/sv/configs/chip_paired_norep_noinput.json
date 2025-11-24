@@ -5,8 +5,8 @@
     },
     "bindpaths": [
         "/opt2",
-        "/opt2/output",
         "/opt2/.tests",
+        "/opt2/output",
         "/root"
     ],
     "conda": {},
@@ -20,7 +20,7 @@
         "uropa": "docker://rroutsong/uropa:4.0.3"
     },
     "options": {
-        "assay": "cfchip",
+        "assay": "chip",
         "contrasts": "/opt2/.tests/contrasts.tsv",
         "dry_run": "True",
         "genome": "hg19",
@@ -28,11 +28,7 @@
             "/opt2/.tests/WT_S1.R1.fastq.gz",
             "/opt2/.tests/WT_S1.R2.fastq.gz",
             "/opt2/.tests/WT_S4_R1.001.fastq.gz",
-            "/opt2/.tests/WT_S4_R2.001.fastq.gz",
-            "/opt2/.tests/Input_S1.R1.fastq.gz",
-            "/opt2/.tests/Input_S1.R2.fastq.gz",
-            "/opt2/.tests/Input_S4_R1.001.fastq.gz",
-            "/opt2/.tests/Input_S4_R2.001.fastq.gz"
+            "/opt2/.tests/WT_S4_R2.001.fastq.gz"
         ],
         "job_name": "pl:chrom-seek",
         "mode": "local",
@@ -40,7 +36,7 @@
         "peak_type_base": [
             "protTSS"
         ],
-        "peakcall": "/opt2/.tests/peakcall_no_replicates_with_inputs.tsv",
+        "peakcall": "/opt2/.tests/peakcall_no_replicates_no_inputs.tsv",
         "sif_cache": "None",
         "silent": "False",
         "singularity_cache": "None",
@@ -78,8 +74,8 @@
                 "WT_S4"
             ],
             "inputs": {
-                "WT_S1": "Input_S1",
-                "WT_S4": "Input_S4"
+                "WT_S1": "",
+                "WT_S4": ""
             }
         },
         "pipeline_path": "/opt2",
@@ -196,9 +192,7 @@
     },
     "samples": [
         "WT_S1",
-        "WT_S4",
-        "Input_S1",
-        "Input_S4"
+        "WT_S4"
     ],
     "shared_resources": {
         "ADAPTERS_FASTA": "resources/adapters.fa",
