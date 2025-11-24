@@ -207,15 +207,15 @@ rule multiqc:
         expand(join(bam_dir, "{name}.Q5DD.bam.flagstat"), name=samples),
         expand(join(bam_dir, "{name}.Q5.bam.flagstat"), name=samples),
         join(deeptools_dir, "spearman_readcounts.Q5DD.tab"),
-        join(deeptools_dir, "fingerprint.raw.Q5DD.tab"),
-	join(deeptools_dir,"TSS_profile.Q5DD.tab")
+        join(deeptools_dir, "fingerprint.raqw.Q5DD.tab"),
+        join(deeptools_dir, "TSS_profile.Q5DD.tab")
     output:
         join(workpath, "multiqc_report.html")
     params:
         rname                   = "multiqc",
         multiqc                 = config['tools']['MULTIQCVER'],
-	    qcconfig                = join(workpath, config['shared_resources']['MULTIQC_CONFIG']),
-	    excludedir              = join(workpath, extra_fingerprint_dir),
+        qcconfig                = join(workpath, config['shared_resources']['MULTIQC_CONFIG']),
+        excludedir              = join(workpath, extra_fingerprint_dir),
     shell: 
         """
         module load {params.multiqc}
@@ -236,8 +236,8 @@ rule deeptools_QC:
         heatmap                 = join(deeptools_dir, "spearman_heatmap.Q5DD.pdf"),
         pca                     = join(deeptools_dir, "pca.Q5DD.pdf"),
         npz                     = temp(join(deeptools_dir, "Q5DD.npz")),
-	    mqc                     = join(deeptools_dir, "spearman_readcounts.Q5DD.tab"),
-	    png                     = join(deeptools_dir, "spearman_heatmap.Q5DD_mqc.png")
+        mqc                     = join(deeptools_dir, "spearman_readcounts.Q5DD.tab"),
+        png                     = join(deeptools_dir, "spearman_heatmap.Q5DD_mqc.png")
     params:
         rname                   = "deeptools_QC",
         parent_dir              = deeptools_dir,
@@ -295,7 +295,7 @@ rule deeptools_gene_all:
         TSSline                 = join(deeptools_dir, "TSS_profile.Q5DD.pdf"),
         TSSmat                  = temp(join(deeptools_dir, "TSS.Q5DD.mat.gz")),
         TSSheat                 = join(deeptools_dir, "TSS_heatmap.Q5DD.pdf"),
-	    mqc                     = join(deeptools_dir, "TSS_profile.Q5DD.tab"),
+        mqc                     = join(deeptools_dir, "TSS_profile.Q5DD.tab"),
         metamat                 = temp(join(deeptools_dir, "metagene.Q5DD.mat.gz")),
         metaline                = join(deeptools_dir, "meta_profile.Q5DD.pdf"),
         metaheat                = join(deeptools_dir, "metagene_heatmap.Q5DD.pdf"),
