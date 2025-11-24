@@ -208,9 +208,9 @@ rule multiqc:
         expand(join(bam_dir, "{name}.Q5.bam.flagstat"), name=samples),
         join(deeptools_dir, "spearman_readcounts.Q5DD.tab"),
         join(deeptools_dir, "fingerprint.raw.Q5DD.tab"),
-	join(deeptools_dir,"TSS_profile.Q5DD.tab"),
+	    join(deeptools_dir,"TSS_profile.Q5DD.tab"),
     	join(deeptools_dir,"enhancer_profile.Q5DD.tab"),
-	join(workpath, "EncodeQC.txt")
+	    join(workpath, "EncodeQC.txt")
     output:
         join(workpath, "multiqc_report.html")
     params:
@@ -221,9 +221,9 @@ rule multiqc:
         workpath                = workpath,
     container: config['images']['multiqc'],
     shell: 
-        """
-multiqc . -c {params.qcconfig} -n {output}
-        """
+        dedent("""
+        multiqc . -c {params.qcconfig} -n {output}
+        """)
 
 
 rule deeptools_QC:
