@@ -210,7 +210,7 @@ rule multiqc:
         join(deeptools_dir, "fingerprint.raw.Q5DD.tab"),
 	    join(deeptools_dir,"TSS_profile.Q5DD.tab"),
     	join(deeptools_dir,"enhancer_profile.Q5DD.tab"),
-	    join(workpath, "EncodeQC.txt")
+	    join(workpath, "EncodeQC.txt") if paired_end else [],
     output:
         join(workpath, "multiqc_report.html")
     params:
