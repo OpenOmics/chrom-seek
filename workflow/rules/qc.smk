@@ -222,7 +222,7 @@ rule multiqc:
     container: config['images']['multiqc'],
     shell: 
         dedent("""
-        multiqc . -c {params.qcconfig} -n {output}
+        multiqc . -f -c {params.qcconfig} -n {output}
         """)
 
 
