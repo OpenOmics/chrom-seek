@@ -293,7 +293,7 @@ rule deeptools_gene_all:
         TSSline                 = join(deeptools_dir, "TSS_profile.Q5DD.pdf"),
         TSSmat                  = temp(join(deeptools_dir, "TSS.Q5DD.mat.gz")),
         TSSheat                 = join(deeptools_dir, "TSS_heatmap.Q5DD.pdf"),
-	    mqc                     = join(deeptools_dir, "TSS_profile.Q5DD.tab"),
+        mqc                     = join(deeptools_dir, "TSS_profile.Q5DD.tab"),
         metamat                 = temp(join(deeptools_dir, "metagene.Q5DD.mat.gz")),
         metaline                = join(deeptools_dir, "meta_profile.Q5DD.pdf"),
         metaheat                = join(deeptools_dir, "metagene_heatmap.Q5DD.pdf"),

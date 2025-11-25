@@ -1,0 +1,235 @@
+{
+    "bin": {
+        "FASTQ_SCREEN": "/data/OpenOmics/references/cfChIP-seek/bin/fastq_screen_v0.9.3/fastq_screen",
+        "cfChIP_Toolkit_SRC": "/data/OpenOmics/references/cfChIP-seek/hg19_basic/cfChIP_tools"
+    },
+    "bindpaths": [
+        "/opt2",
+        "/opt2/output",
+        "/opt2/.tests",
+        "/root"
+    ],
+    "conda": {},
+    "images": {
+        "cfchip": "docker://skchronicles/cfchip_toolkit:v0.5.0",
+        "diffbind": "docker://skchronicles/cfchip_toolkit:v0.5.0",
+        "ppqt": "docker://seqeralabs/phantompeakqualtools:latest",
+        "preseq": "docker://rroutsong/preseq:0.0.1",
+        "python": "docker://rroutsong/chrom_seek_python:0.1.3",
+        "seacr": "docker://rroutsong/seacr:0.0.1",
+        "uropa": "docker://rroutsong/uropa:4.0.3"
+    },
+    "options": {
+        "assay": "cfchip",
+        "contrasts": "/opt2/.tests/contrasts.tsv",
+        "dry_run": "True",
+        "genome": "hg19",
+        "input": [
+            "/opt2/.tests/WT_S1.R1.fastq.gz",
+            "/opt2/.tests/WT_S1.R2.fastq.gz",
+            "/opt2/.tests/WT_S4_R1.001.fastq.gz",
+            "/opt2/.tests/WT_S4_R2.001.fastq.gz",
+            "/opt2/.tests/Input_S1.R1.fastq.gz",
+            "/opt2/.tests/Input_S1.R2.fastq.gz",
+            "/opt2/.tests/Input_S4_R1.001.fastq.gz",
+            "/opt2/.tests/Input_S4_R2.001.fastq.gz"
+        ],
+        "job_name": "pl:chrom-seek",
+        "mode": "local",
+        "output": "/opt2/output",
+        "peak_type_base": [
+            "protTSS"
+        ],
+        "peakcall": "/opt2/.tests/peakcall_no_replicates_with_inputs.tsv",
+        "sif_cache": "None",
+        "silent": "False",
+        "singularity_cache": "None",
+        "threads": "2",
+        "tmp_dir": "/lscratch/$SLURM_JOB_ID/",
+        "triggers": "None"
+    },
+    "project": {
+        "binpath": "/opt2/output/bin",
+        "blocks": {
+            "WT_S1": "",
+            "WT_S4": ""
+        },
+        "contrast": [
+            [
+                "G2",
+                "G1"
+            ]
+        ],
+        "datapath": "/opt2/.tests",
+        "filetype": "paired-end",
+        "git_commit_hash": "e7a900a6732e2839c39f1ccc533a1ad0aef036a4",
+        "groups": {
+            "G1": [
+                "WT_S1"
+            ],
+            "G2": [
+                "WT_S4"
+            ]
+        },
+        "nends": 2,
+        "peaks": {
+            "chips": [
+                "WT_S1",
+                "WT_S4"
+            ],
+            "inputs": {
+                "WT_S1": "Input_S1",
+                "WT_S4": "Input_S4"
+            }
+        },
+        "pipeline_path": "/opt2",
+        "userhome": "/root",
+        "username": "root",
+        "version": "2.1.1",
+        "workpath": "/opt2/output"
+    },
+    "references": {
+        "hg19": {
+            "ALIAS": "hg19",
+            "BLACKLISTBWAINDEX": "/data/OpenOmics/references/chrom-seek/hg19_basic/indexes/hg19.blacklist.chrM",
+            "BWA": "/data/OpenOmics/references/chrom-seek/hg19_basic/indexes/hg19",
+            "EFFECTIVEGENOMESIZE": "2776919808",
+            "ENHANCER": "/data/OpenOmics/references/chrom-seek/hg19/hg19_fantom.bed",
+            "FRAC": "0.8970265870106838",
+            "GENEINFO": "/data/OpenOmics/references/chrom-seek/hg19_basic/geneinfo.bed",
+            "GENOME": "/data/OpenOmics/references/chrom-seek/hg19_basic/ref.fa",
+            "GTFFILE": "/data/OpenOmics/references/chrom-seek/hg19_basic/genes.gtf",
+            "HOMER_REF": "/fdb/homer/genomes/hg19",
+            "MEME_EUKARYOTE_DB": "/fdb/meme/motif_databases/EUKARYOTE/jolma2013.meme",
+            "MEME_GENOME_DB": "/fdb/meme/motif_databases/HUMAN/HOCOMOCOv11_full_HUMAN_mono_meme_format.meme",
+            "MEME_VERTEBRATES_DB": "/fdb/meme/motif_databases/JASPAR/JASPAR2018_CORE_vertebrates_non-redundant.meme",
+            "REFLEN": "/data/OpenOmics/references/chrom-seek/hg19_basic/indexes/hg19.fa.sizes",
+            "SUPPORTED_PIPELINES": [
+                "cfchip",
+                "chip",
+                "atac",
+                "cutnrun"
+            ]
+        },
+        "hg38": {
+            "ALIAS": "hg38",
+            "BLACKLISTBWAINDEX": "/data/OpenOmics/references/chrom-seek/hg38_basic/indexes/hg38.blacklist.chrM",
+            "BWA": "/data/OpenOmics/references/chrom-seek/hg38_basic/indexes/hg38",
+            "EFFECTIVEGENOMESIZE": "2805636331",
+            "ENHANCER": "/data/OpenOmics/references/chrom-seek/hg38_basic/enhancer/hg38_fantom.bed",
+            "FRAC": "0.9084767300375779",
+            "GENEINFO": "/data/OpenOmics/references/chrom-seek/hg38_basic/geneinfo.bed",
+            "GENOME": "/data/OpenOmics/references/chrom-seek/hg38_basic/ref.fa",
+            "GTFFILE": "/data/OpenOmics/references/chrom-seek/hg38_basic/genes.gtf",
+            "HOMER_REF": "/fdb/homer/genomes/hg38",
+            "MEME_EUKARYOTE_DB": "/fdb/meme/motif_databases/EUKARYOTE/jolma2013.meme",
+            "MEME_GENOME_DB": "/fdb/meme/motif_databases/HUMAN/HOCOMOCOv11_full_HUMAN_mono_meme_format.meme",
+            "MEME_VERTEBRATES_DB": "/fdb/meme/motif_databases/JASPAR/JASPAR2018_CORE_vertebrates_non-redundant.meme",
+            "REFLEN": "/data/OpenOmics/references/chrom-seek/hg38_basic/indexes/hg38.fa.sizes",
+            "SUPPORTED_PIPELINES": [
+                "chip",
+                "atac",
+                "cutnrun"
+            ]
+        },
+        "mm10": {
+            "ALIAS": "mm10",
+            "BLACKLISTBWAINDEX": "/data/OpenOmics/references/chrom-seek/mm10_basic/indexes/mm10.blacklist.chrM.chr_rDNA",
+            "BWA": "/data/OpenOmics/references/chrom-seek/mm10_basic/indexes/mm10",
+            "EFFECTIVEGENOMESIZE": "2467481108",
+            "ENHANCER": "/data/OpenOmics/references/chrom-seek/mm10_basic/enhancer/mm10_fantom.bed",
+            "FRAC": "0.9053190260640642",
+            "GENEINFO": "/data/OpenOmics/references/chrom-seek/mm10_basic/geneinfo.bed",
+            "GENOME": "/data/OpenOmics/references/chrom-seek/mm10_basic/ref.fa",
+            "GTFFILE": "/data/OpenOmics/references/chrom-seek/mm10_basic/genes.gtf",
+            "HOMER_REF": "/fdb/homer/genomes/mm10",
+            "MEME_EUKARYOTE_DB": "/fdb/meme/motif_databases/EUKARYOTE/jolma2013.meme",
+            "MEME_GENOME_DB": "/fdb/meme/motif_databases/MOUSE/HOCOMOCOv11_full_MOUSE_mono_meme_format.meme",
+            "MEME_VERTEBRATES_DB": "/fdb/meme/motif_databases/JASPAR/JASPAR2018_CORE_vertebrates_non-redundant.meme",
+            "REFLEN": "/data/OpenOmics/references/chrom-seek/mm10_basic/indexes/mm10.fa.sizes",
+            "SUPPORTED_PIPELINES": [
+                "chip",
+                "atac",
+                "cutnrun"
+            ]
+        },
+        "mm39": {
+            "ALIAS": "mm39",
+            "BLACKLISTBWAINDEX": "/data/OpenOmics/references/chrom-seek/mm39_basic/mm39.blacklist.chrM.fa",
+            "BWA": "/data/OpenOmics/references/chrom-seek/mm39_basic/GRCm39.primary_assembly.genome",
+            "EFFECTIVEGENOMESIZE": "2467473511",
+            "FRAC": "0.9375045835870026",
+            "GENEINFO": "/data/OpenOmics/references/chrom-seek/mm39_basic/geneinfo.bed",
+            "GENOME": "/data/OpenOmics/references/chrom-seek/mm39_basic/GRCm39.primary_assembly.genome.fa.gz",
+            "GTFFILE": "/data/OpenOmics/references/chrom-seek/mm39_basic/mm39.mM37.cleaned.gtf",
+            "HOMER_REF": "/fdb/homer/genomes/mm39",
+            "MEME_EUKARYOTE_DB": "/fdb/meme/motif_databases/EUKARYOTE/jolma2013.meme",
+            "MEME_GENOME_DB": "/fdb/meme/motif_databases/MOUSE/HOCOMOCOv11_full_MOUSE_mono_meme_format.meme",
+            "MEME_VERTEBRATES_DB": "/fdb/meme/motif_databases/JASPAR/JASPAR2018_CORE_vertebrates_non-redundant.meme",
+            "REFLEN": "/data/OpenOmics/references/chrom-seek/mm39_basic/GRCm39.primary_assembly.genome.sizes",
+            "SUPPORTED_PIPELINES": [
+                "chip",
+                "atac",
+                "cutnrun"
+            ]
+        },
+        "rheMac10": {
+            "ALIAS": "rheMac10",
+            "BLACKLISTBWAINDEX": "",
+            "BWA": "/data/OpenOmics/references/chrom-seek/rheMac10/Macaca_mulatta.Mmul_10.dna.chr",
+            "EFFECTIVEGENOMESIZE": "2752365105",
+            "FRAC": "0.9643910116868353",
+            "GENEINFO": "/data/OpenOmics/references/chrom-seek/rheMac10/geneinfo.bed",
+            "GENOME": "/data/OpenOmics/references/chrom-seek/rheMac10/Macaca_mulatta.Mmul_10.dna.chr.fa.gz",
+            "GTFFILE": "/data/OpenOmics/references/chrom-seek/rheMac10/Macaca_mulatta.Mmul_10.110.chr.genetype.gtf",
+            "HOMER_REF": "/fdb/homer/genomes/rheMac10",
+            "MEME_EUKARYOTE_DB": "/fdb/meme/motif_databases/EUKARYOTE/jolma2013.meme",
+            "MEME_GENOME_DB": "",
+            "MEME_VERTEBRATES_DB": "/fdb/meme/motif_databases/JASPAR/JASPAR2018_CORE_vertebrates_non-redundant.meme",
+            "REFLEN": "/data/OpenOmics/references/chrom-seek/rheMac10/Macaca_mulatta.Mmul_10.dna.chr.sizes",
+            "SUPPORTED_PIPELINES": [
+                "chip",
+                "atac",
+                "cutnrun"
+            ]
+        }
+    },
+    "samples": [
+        "WT_S1",
+        "WT_S4",
+        "Input_S1",
+        "Input_S4"
+    ],
+    "shared_resources": {
+        "ADAPTERS_FASTA": "resources/adapters.fa",
+        "FASTQ_SCREEN_CONFIG_P1": "/data/OpenOmics/references/common/fastq_screen_db/fastq_screen_p1.conf",
+        "FASTQ_SCREEN_CONFIG_P2": "/data/OpenOmics/references/common/fastq_screen_db/fastq_screen_p2.conf",
+        "KRAKENBACDB": "/fdb/kraken/20180907_standard_kraken2",
+        "MULTIQC_CONFIG": "resources/multiqc_config.yaml"
+    },
+    "tools": {
+        "BEDTOOLSVER": "bedtools/2.27.1",
+        "BOWTIE2VER": "bowtie/2-2.5.1",
+        "BWAVER": "bwa/0.7.17",
+        "CUTADAPTVER": "cutadapt/4.4",
+        "DEEPTOOLSVER": "deeptools/3.5.5",
+        "FASTQCVER": "fastqc/0.11.9",
+        "GEMVER": "gem/3.4",
+        "GENRICHVER": "genrich/0.6",
+        "HOMERVER": "homer/4.11.1",
+        "IDRVER": "idr/2.0.3",
+        "KRAKENVER": "kraken/2.1.2",
+        "KRONATOOLSVER": "kronatools/2.8.1",
+        "MACSVER": "macs/2.2.7.1",
+        "MULTIQCVER": "multiqc/1.22",
+        "PERLVER": "perl/5.36",
+        "PICARDVER": "picard/2.27.3",
+        "PRESEQVER": "preseq/3.1.2",
+        "PYTHONVER": "python/3.10",
+        "RVER": "R/4.3",
+        "SAMTOOLSVER": "samtools/1.17",
+        "SICERVER": "sicer/2-1.0.3",
+        "UCSCVER": "ucsc/450",
+        "UROPAVER": "uropa/4.0.2"
+    }
+}

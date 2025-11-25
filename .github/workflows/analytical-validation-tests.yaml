@@ -4,10 +4,10 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - master
       - main
   pull_request:
-    branches_ignore: []
+    branches:
+      - main
 
 jobs:
   Dry_Run_and_Lint:
@@ -31,7 +31,7 @@ jobs:
         --contrasts /opt2/.tests/contrasts.tsv --mode local --dry-run
     - name: View the paired-end cfChIP pipeline config file (with replicates, with inputs)
       run: |
-        echo "Generated config file for cfChIP pipeline (with replicates, with inputs)...." && cat $PWD/output/config.json
+        echo "Generated config file for cfChIP pipeline (with replicates, with inputs)...." && jq -C '.' $PWD/output/config.json
     - name: Dry Run paired-end cell-free ChIP-seq pipeline, all options (without replicates, with inputs)
       run: |
         docker run -v $PWD:/opt2 snakemake/snakemake:v5.24.2 \
@@ -44,7 +44,7 @@ jobs:
         --contrasts /opt2/.tests/contrasts.tsv --mode local --dry-run
     - name: View the paired-end cfChIP pipeline config file (without replicates, with inputs)
       run: |
-        echo "Generated config file for cfChIP pipeline (without replicates, with inputs)...." && cat $PWD/output/config.json
+        echo "Generated config file for cfChIP pipeline (without replicates, with inputs)...." && jq -C '.' $PWD/output/config.json
     - name: Dry Run paired-end ChIP-seq pipeline, all options (with replicates, with inputs)
       run: |
         docker run -v $PWD:/opt2 snakemake/snakemake:v5.24.2 \
@@ -61,7 +61,7 @@ jobs:
         --contrasts /opt2/.tests/contrasts.tsv --mode local --dry-run
     - name: View the paired-end ChIP pipeline config file (with replicates, with inputs)
       run: |
-        echo "Generated config file for ChIP pipeline (with replicates, with inputs)...." && cat $PWD/output/config.json
+        echo "Generated config file for ChIP pipeline (with replicates, with inputs)...." && jq -C '.' $PWD/output/config.json
     - name: Dry Run paired-end ChIP-seq pipeline, all options (with replicates, without inputs)
       run: |
         docker run -v $PWD:/opt2 snakemake/snakemake:v5.24.2 \
@@ -74,7 +74,7 @@ jobs:
         --contrasts /opt2/.tests/contrasts.tsv --mode local --dry-run
     - name: View the paired-end ChIP pipeline config file (with replicates, without inputs)
       run: |
-        echo "Generated config file for ChIP pipeline (with replicates, without inputs)...." && cat $PWD/output/config.json
+        echo "Generated config file for ChIP pipeline (with replicates, without inputs)...." && jq -C '.' $PWD/output/config.json
     - name: Dry Run paired-end ChIP-seq pipeline, all options (without replicates, with inputs)
       run: |
         docker run -v $PWD:/opt2 snakemake/snakemake:v5.24.2 \
@@ -87,7 +87,7 @@ jobs:
         --contrasts /opt2/.tests/contrasts.tsv --mode local --dry-run
     - name: View the paired-end ChIP pipeline config file (without replicates, with inputs)
       run: |
-        echo "Generated config file for ChIP pipeline (without replicates, with inputs)...." && cat $PWD/output/config.json
+        echo "Generated config file for ChIP pipeline (without replicates, with inputs)...." && jq -C '.' $PWD/output/config.json
     - name: Dry Run paired-end ChIP-seq pipeline, all options (without replicates, without inputs)
       run: |
         docker run -v $PWD:/opt2 snakemake/snakemake:v5.24.2 \
@@ -98,7 +98,7 @@ jobs:
         --contrasts /opt2/.tests/contrasts.tsv --mode local --dry-run
     - name: View the paired-end ChIP pipeline config file (without replicates, without inputs)
       run: |
-        echo "Generated config file for ChIP pipeline (without replicates, without inputs)...." && cat $PWD/output/config.json
+        echo "Generated config file for ChIP pipeline (without replicates, without inputs)...." && jq -C '.' $PWD/output/config.json
     - name: Dry Run single-end ChIP-seq pipeline, all options (with replicates, with inputs)
       run: |
         docker run -v $PWD:/opt2 snakemake/snakemake:v5.24.2 \
@@ -115,7 +115,7 @@ jobs:
         --contrasts /opt2/.tests/contrasts.tsv --mode local --dry-run
     - name: View the single-end ChIP pipeline config file (with replicates, with inputs)
       run: |
-        echo "Generated config file for ChIP pipeline (with replicates, with inputs)...." && cat $PWD/output/config.json
+        echo "Generated config file for ChIP pipeline (with replicates, with inputs)...." && jq -C '.' $PWD/output/config.json
     - name: Dry Run single-end ChIP-seq pipeline, all options (with replicates, without inputs)
       run: |
         docker run -v $PWD:/opt2 snakemake/snakemake:v5.24.2 \
@@ -138,7 +138,7 @@ jobs:
         --contrasts /opt2/.tests/contrasts.tsv --mode local --dry-run
     - name: View the single-end ChIP pipeline config file (with replicates, without inputs)
       run: |
-        echo "Generated config file for ChIP pipeline (with replicates, without inputs)...." && cat $PWD/output/config.json
+        echo "Generated config file for ChIP pipeline (with replicates, without inputs)...." && jq -C '.' $PWD/output/config.json
     - name: Dry Run single-end ChIP-seq pipeline, all options (without replicates, with inputs)
       run: |
         docker run -v $PWD:/opt2 snakemake/snakemake:v5.24.2 \
@@ -151,7 +151,7 @@ jobs:
         --contrasts /opt2/.tests/contrasts.tsv --mode local --dry-run
     - name: View the single-end ChIP pipeline config file (without replicates, with inputs)
       run: |
-        echo "Generated config file for ChIP pipeline (without replicates, with inputs)...." && cat $PWD/output/config.json
+        echo "Generated config file for ChIP pipeline (without replicates, with inputs)...." && jq -C '.' $PWD/output/config.json
     - name: Dry Run single-end ChIP-seq pipeline, all options (without replicates, without inputs)
       run: |
         docker run -v $PWD:/opt2 snakemake/snakemake:v5.24.2 \
@@ -162,7 +162,7 @@ jobs:
         --contrasts /opt2/.tests/contrasts.tsv --mode local --dry-run
     - name: View the single-end ChIP pipeline config file (without replicates, without inputs)
       run: |
-        echo "Generated config file for ChIP pipeline (without replicates, without inputs)...." && cat $PWD/output/config.json
+        echo "Generated config file for ChIP pipeline (without replicates, without inputs)...." && jq -C '.' $PWD/output/config.json
     - name: Dry Run paired-end ATAC-seq pipeline, all options (with replicates, without inputs)
       run: |
         docker run -v $PWD:/opt2 snakemake/snakemake:v5.24.2 \
@@ -175,7 +175,7 @@ jobs:
         --contrasts /opt2/.tests/contrasts.tsv --mode local --dry-run
     - name: View the paired-end ATAC pipeline config file (with replicates, without inputs)
       run: |
-        echo "Generated config file for ATAC pipeline (with replicates, without inputs)...." && cat $PWD/output/config.json
+        echo "Generated config file for ATAC pipeline (with replicates, without inputs)...." && jq -C '.' $PWD/output/config.json
     - name: Dry Run paired-end ATAC-seq pipeline, all options (without replicates, without inputs)
       run: |
         docker run -v $PWD:/opt2 snakemake/snakemake:v5.24.2 \
@@ -186,7 +186,7 @@ jobs:
         --contrasts /opt2/.tests/contrasts.tsv --mode local --dry-run
     - name: View the paired-end ATAC pipeline config file (without replicates, without inputs)
       run: |
-        echo "Generated config file for ATAC pipeline (without replicates, without inputs)...." && cat $PWD/output/config.json
+        echo "Generated config file for ATAC pipeline (without replicates, without inputs)...." && jq -C '.' $PWD/output/config.json
     - name: Lint Workflow
       continue-on-error: true
       run: |
