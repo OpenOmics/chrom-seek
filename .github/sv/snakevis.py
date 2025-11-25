@@ -281,14 +281,8 @@ def main(args):
                 f"Error: Snakemake dry run failed with exit code {proc.returncode}\n{stderr.decode()}"
             )
         
-        import ipdb; ipdb.set_trace()
         # Call snakevis to convert dot to rule graph svg
-        cmd = (
-            "snakevision "
-            "-s all mutliqc "
-            f"-o {FINAL_RULE_GRAPH} "
-            f"{DOT_GRAPH_FILE}"
-        )
+        cmd = f"snakevision -s all multiqc -o {FINAL_RULE_GRAPH} {DOT_GRAPH_FILE}"
         proc = subprocess.Popen(
             cmd,
             shell=True,
