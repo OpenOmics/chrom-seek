@@ -11,7 +11,8 @@
         "preseq": "docker://rroutsong/preseq:0.0.1",
         "python": "docker://rroutsong/chrom_seek_python:0.1.3",
         "seacr": "docker://rroutsong/seacr:0.0.1",
-        "uropa": "docker://rroutsong/uropa:4.0.3"
+        "uropa": "docker://rroutsong/uropa:4.0.3",
+        "multiqc": "docker://multiqc/multiqc:v1.32"
     },
     "options": {
         "assay": "cfchip",

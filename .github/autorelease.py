@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-import subprocess
-import json
 import argparse
-import sys
+import json
 import os
 import re
+import subprocess
+import sys
 from urllib.parse import urlparse
-from github import Github, GithubException
-from github import Auth
+
+from github import Auth, Github, GithubException
 
 # statics
 RELEASE_NOTES_DELIMITER = "## Release notes"
@@ -140,6 +140,82 @@ def increment_version(version_string, options):
     return '.'.join(map(str, parts))
 
 
+def get_latest_version_from_tags(repo_url):
+    """
+    Get the latest version from all tags in a GitHub repo using gh CLI.
+    Returns version as a string (e.g., "1.2.3").
+    If no tags exist, returns "0.0.0".
+    
+    Args:
+        repo_url: GitHub repo URL (e.g., "https://github.com/owner/repo")
+    
+    Returns:
+        str: Latest version string
+    """
+    # Extract owner/repo from URL
+    if repo_url.startswith("https://github.com/"):
+        repo_path = repo_url.replace("https://github.com/", "").rstrip('/')
+        # Remove .git suffix if present
+        repo_path = repo_path.replace(".git", "")
+    else:
+        repo_path = repo_url
+    
+    try:
+        # Get all tags using gh CLI
+        result = subprocess.run(
+            ["gh", "api", f"/repos/{repo_path}/tags", "--paginate"],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        
+        # Parse the JSON output
+        tags_data = json.loads(result.stdout)
+        
+        # If no tags exist, return "0.0.0"
+        if not tags_data:
+            return "0.0.0"
+        
+        # Extract tag names and parse versions
+        versions = []
+        for tag in tags_data:
+            tag_name = tag.get("name", "")
+            # Remove 'v' prefix if present (e.g., "v1.2.3" -> "1.2.3")
+            version_str = tag_name.lstrip('v')
+            
+            # Try to parse as semantic version (major.minor.patch)
+            try:
+                parts = list(map(int, version_str.split('.')))
+                if len(parts) == 3:
+                    versions.append((parts[0], parts[1], parts[2], version_str))
+            except (ValueError, AttributeError):
+                # Skip tags that don't follow semantic versioning
+                continue
+        
+        # If no valid version tags found, return "0.0.0"
+        if not versions:
+            return "0.0.0"
+        
+        # Sort by semantic version (major, minor, patch) and get the latest
+        versions.sort(reverse=True)
+        latest_version = versions[0][3]  # Return the original version string
+        
+        return latest_version
+        
+    except subprocess.CalledProcessError as e:
+        # Handle gh CLI errors
+        # print(f"Error running gh CLI: {e}")
+        return "0.0.0"
+    except json.JSONDecodeError as e:
+        # Handle JSON parsing errors
+        # print(f"Error parsing JSON: {e}")
+        return "0.0.0"
+    except Exception as e:
+        # Handle any other errors
+        # print(f"Error getting latest version: {e}")
+        return "0.0.0"
+
+
 def get_latest_version(repo_url, token=None):
     """
     Get the latest release version from a GitHub repo.
@@ -164,7 +240,6 @@ def get_latest_version(repo_url, token=None):
     # Initialize GitHub client
     # If no token provided, uses unauthenticated requests (lower rate limit)
     g = Github(auth=Auth.Token(args.token))
-    
     try:
         # Get the repository
         repo = g.get_repo(repo_path)
@@ -182,7 +257,7 @@ def get_latest_version(repo_url, token=None):
     except GithubException as e:
         # Handle "Not Found" error (no releases exist)
         if e.status == 404:
-            return "0.0.0"
+            return get_latest_version_from_tags(repo_url)
         else:
             # Re-raise other exceptions
             raise
