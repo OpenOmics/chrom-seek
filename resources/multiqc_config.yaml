@@ -312,7 +312,7 @@ section_comments:
     <b>Q5</b> highlights high-confidence alignments (MAPQ ≥ 5),
     and <b>Q5DD</b> reflects the final unique, deduplicated reads.
     Use these to compare mapping retention and library complexity across samples.
-    <i>Recommended:</i> ≥10–50 M usable reads.
+    <i>Recommended:</i> ≥10–50 M usable reads [Q5DD]. See https://openomics.github.io/chrom-seek/ for pipeline documentation.
 
 # ── FastQC (Pre-trimming) ──────────────────────────────────────────────────
   fastqc_sequence_counts: >
