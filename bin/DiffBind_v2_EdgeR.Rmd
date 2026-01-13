@@ -177,7 +177,7 @@ try(dba.plotHeatmap(DBAnalysisEdgeR, contrast=1, method=DBA_EDGER, correlations=
 
 ```{r EdgeRReport}
 UpPeaks <- DBReportEdgeR[which(DBReportEdgeR$Fold > 0)]
-if ( isTRUE(UpPeaks) && nrow(UpPeaks) > 0 ) {
+if ( nrow(UpPeaks) > 0 ) {
    rtracklayer::export(UpPeaks, up_file)
 } else {
    file.create(up_file)
@@ -185,7 +185,7 @@ if ( isTRUE(UpPeaks) && nrow(UpPeaks) > 0 ) {
 }
 
 DownPeaks <- DBReportEdgeR[which(DBReportEdgeR$Fold < 0)]
-if ( isTRUE(DownPeaks) && nrow(DownPeaks) > 0 ) {
+if ( nrow(DownPeaks) > 0 ) {
    rtracklayer::export(DownPeaks, down_file)
 } else {
    file.create(down_file)

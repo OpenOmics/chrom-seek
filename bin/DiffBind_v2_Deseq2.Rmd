@@ -180,7 +180,7 @@ try(dba.plotHeatmap(DBAnalysisDeseq2,contrast=1,method = DBA_DESEQ2,correlations
 ## Top 500 or less differentially bound peaks 
 ```{r Deseq2Report}
 UpPeaks <- DBReportDeseq2[which(DBReportDeseq2$Fold > 0)]
-if ( isTRUE(UpPeaks) && nrow(UpPeaks) > 0 ) {
+if ( nrow(UpPeaks) > 0 ) {
    rtracklayer::export(UpPeaks, up_file)
 } else {
    file.create(up_file)
@@ -188,7 +188,7 @@ if ( isTRUE(UpPeaks) && nrow(UpPeaks) > 0 ) {
 }
 
 DownPeaks <- DBReportDeseq2[which(DBReportDeseq2$Fold < 0)]
-if ( isTRUE(DownPeaks) && nrow(DownPeaks) > 0 ) {
+if ( nrow(DownPeaks) > 0 ) {
    rtracklayer::export(DownPeaks, down_file)
 } else {
    file.create(down_file)
