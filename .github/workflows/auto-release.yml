@@ -8,7 +8,7 @@ jobs:
   run-on-merge:
     # Only run when PR is merged (not just closed)
     if: github.event.pull_request.merged == true
-    
+    permissions: write-all    
     runs-on: ubuntu-latest
     
     steps:
