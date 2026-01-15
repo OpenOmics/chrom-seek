@@ -71,8 +71,18 @@ Each of the following arguments are required. Failure to provide a required argu
   `--peakcall PEAKCALL`
 > **Peakcall file.**   
 > *type: file*
->   
-> This tab delimited (TSV) file is used to pair each ChIP sample to its corresponding input sample and to assign any groups that are associated with said sample. Please note that multiple groups can be assigned to a given sample using a comma. Group information is used to setup comparsions within groups of samples. This file consists of three columns containing the name of each ChIP sample, the name of each Input (control) sample, and the name of its groups. Each sample must be assigned to at least one group. The header of this file needs to be `Sample` for the chips column, `InputControl` for the inputs column, and `Group` for the groups column _(the column names are case insensitive; lower- upper- camelcase all work the same)_. Group names currently cannot include ".", "-", or "_". The base name of each sample should be listed in the `Sample` and `InputControl` columns. The base name of a given sample can be determined by removing its file extension from the sample's R1 FastQ file, example: `WT_S4.R1.fastq.gz` becomes `WT_S4` in the peakcall file. `WT_S4_R1_001.fastq.gz` also becomes `WT_S4`. An optional column, called Block, can also be provided to block duplicate correlations between repeated observations. Typically, blocks are biological replicates or multiple samples from same indivdual.  
+> 
+> Path to a sample sheet in TSV format used to map each ChIP/ATAC sample to its group label(s) for downstream comparisons and, for *ChIP-seq only*, optionally pair a sample to an *input control*. The header must include `Sample` and `Group`, and may optionally include `InputControl` and/or `Block` (column names are case-insensitive).
+>
+> #### Required columns
+> * **Sample**: Basename of the sample (derived from the sample’s R1 FastQ by removing the read/extension suffix), e.g. `WT_S4.R1.fastq.gz` becomes `WT_S4` and `WT_S4_R1_001.fastq.gz` becomes `WT_S4`.
+> * **Group**: Group label(s) for the sample. Multiple groups may be provided as a comma-separated list. Each sample must be assigned to at least one group. Group names currently cannot include `.`, `-`, or `_`, and group names should **not** be substrings of other group names (e.g. avoid `WT` and `WT_Treated` together).
+>
+> #### Optional columns
+> * **InputControl**: Basename of the corresponding input control sample for the given `Sample` (derived the same way as above). This column is used to pair each ChIP sample to its matched input control for correction during peak calling. *ATAC-seq samples should never provide `InputControl`.*
+>* **Block**: Blocking factor used to avoid duplicate correlations between repeated observations (commonly biological replicate ID or subject/individual ID, e.g., multiple samples from the same individual).
+>
+> 
 > 
 > **Contents of example peakcalls file:** 
 > ```
