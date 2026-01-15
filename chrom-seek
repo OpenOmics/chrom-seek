@@ -2,6 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 """
+
 ABOUT: This is the main entry for the pipeline.
 REQUIRES:
   - python>=3.6
@@ -28,6 +29,7 @@ USAGE:
   $ chrom-seek <command> [OPTIONS]
 EXAMPLE:
   $ chrom-seek run -h
+
 """
 
 # Python standard library
