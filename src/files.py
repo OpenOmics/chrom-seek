@@ -156,7 +156,8 @@ def peakcalls(file, delim="\t"):
     INPUT_COL = 'InputControl'.lower()
     GROUP_COL = 'Group'.lower()
     BLOCK_COL = 'Block'.lower()
-    tolowerlist = lambda _list: [str(elem).lower() for elem in _list]
+    def tolowerlist(_list):
+        return [str(elem).lower() for elem in _list]
     
     spaces_check = check_for_spaces_in_tsv(file)
     if spaces_check[0]:
@@ -172,7 +173,9 @@ def peakcalls(file, delim="\t"):
         rdr = csv.DictReader(fo, delimiter=delim)
 
         supported_column_names = {"Sample", "InputControl", "Group", "Block"}
-        unrecognized_column_names =  set(rdr.fieldnames) - supported_column_names
+        if rdr.fieldnames is None:
+            raise ValueError("Peakcall file is missing a header row or is empty.")
+        unrecognized_column_names = set(rdr.fieldnames) - supported_column_names
         if unrecognized_column_names:
             print('')
             print_tsv_highlighted(file)

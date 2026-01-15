@@ -149,6 +149,8 @@ def run(sub_args):
         )
         fatal("\t └── {}".format(missing_blocks))
 
+    import ipdb; ipdb.set_trace()
+
     # Adding peakcall information to projects
     chips_samples = list(chip2input.keys())
     input_samples = chip2input
