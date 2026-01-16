@@ -66,7 +66,7 @@ def clean(s, remove=['"', "'"]):
     return s
 
 
-def peakcalls(file, delim="\t"):
+def peakcalls(file, delim="\t", assay="chip"):
     """
     Reads and parses a sample sheet, peakcall.tsv, into a dictionary.
     This file acts as a sample sheet to gather sample metadata and define
@@ -244,6 +244,56 @@ def peakcalls(file, delim="\t"):
         else:
             bad_labels = bad_labels[0]
         raise ValueError('Group(s): ' + bad_labels + '; contain the invalid characters *, -, and/or _ replace and resubmit pipeline')
+    
+    known_assays = (
+        'chip',
+        'atac',
+        'cfchip'
+        'cutnrun'
+    )
+
+    # Assay in known_assays
+    if assay not in known_assays:
+        raise ValueError(f"Unknown assay: {assay}. Supported assays are: {known_assays}")
+    
+    # Look at peak sample sheet for checks
+    with open(file) as fo:
+        rdr = csv.DictReader(fo, delimiter=delim)
+        check_input = []
+        same_input = False
+        same_block = False
+        same_group = False
+        fail_samples = []
+        for row in rdr:
+            if 'InputControl' in row and len(row['InputControl']) > 0:
+                check_input.append(True)
+            else:
+                check_input.append(False)
+            
+            if 'InputControl' in row and row['InputControl'] == row['Sample']:
+                same_input = True
+                fail_samples.append(row['Sample'])
+            if 'Block' in row and row['Block'] == row['Sample']:
+                same_block = True
+                fail_samples.append(row['Sample'])
+            if row['Group'] == row['Sample']:
+                same_group = True
+                fail_samples.append(row['Sample'])
+        fail_samples = tuple(set(fail_samples))
+
+    # Checks happening here, that will throw errors:
+    #  - 1. Ensure this assay == "atac" AND __**ANY**__ InputControl row has text
+    if assay == "atac" and any(check_input):
+        raise ValueError("ATAC-seq assay does not support InputControls, please leave InputColumn empty")
+
+    if same_input:
+        raise ValueError("InputControl cannot be the same as Sample, see samples: " + ' ,'.join(fail_samples))
+
+    if same_block:
+        raise ValueError("Block cannot be the same as Sample, see samples: " + ' ,'.join(fail_samples))
+
+    if same_group:
+        raise ValueError("Group cannot be the same as Sample, see samples: " + ' ,'.join(fail_samples))
 
     return pairs, groups, block
 
