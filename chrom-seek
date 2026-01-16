@@ -132,7 +132,7 @@ def run(sub_args):
     # The contrast.tsv file defines comparsions
     # to be made with groups of samples.
     # Add peakcall information to config.json
-    chip2input, groups, blocks = peakcalls(sub_args.peakcall)
+    chip2input, groups, blocks = peakcalls(sub_args.peakcall, assay=sub_args.assay.lower())
     # Check if optional Block column, if blocking
     # information exists, then each row must have
     # a value, error out if missing values (i.e. None)
