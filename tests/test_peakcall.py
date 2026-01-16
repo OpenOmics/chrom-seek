@@ -172,7 +172,7 @@ class TestParsePeakCall(unittest.TestCase):
         with open(path, 'w') as f:
             f.write(str2file)
             f.close()
-        with self.assertRaisesRegex(ValueError, r"InputControl cannot be the same as Sample, see samples: Sample1"):
+        with self.assertRaisesRegex(ValueError, r"InputControl cannot be the same as Sample. All these samples have an error: Sample1"):
             chip2input, groups, blocks = peakcalls(path)
 
 
@@ -204,7 +204,7 @@ class TestParsePeakCall(unittest.TestCase):
         with open(path, 'w') as f:
             f.write(str2file)
             f.close()
-        with self.assertRaisesRegex(ValueError, r"Block cannot be the same as Sample, see samples: Sample1"):
+        with self.assertRaisesRegex(ValueError, r"Block cannot be the same as Sample. All these samples have an error: Sample1"):
             chip2input, groups, blocks = peakcalls(path)
 
 
@@ -236,7 +236,7 @@ class TestParsePeakCall(unittest.TestCase):
         with open(path, 'w') as f:
             f.write(str2file)
             f.close()
-        with self.assertRaisesRegex(ValueError, r"Group cannot be the same as Sample, see samples: Sample1"):
+        with self.assertRaisesRegex(ValueError, r"Group cannot be the same as Sample. All these samples have an error: Sample1"):
             chip2input, groups, blocks = peakcalls(path)
 
 
