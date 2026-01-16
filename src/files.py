@@ -286,14 +286,14 @@ def peakcalls(file, delim="\t", assay="chip"):
     if assay == "atac" and any(check_input):
         raise ValueError("ATAC-seq assay does not support InputControls, please leave InputColumn empty")
 
-    if same_input:
-        raise ValueError("InputControl cannot be the same as Sample, see samples: " + ' ,'.join(fail_samples))
-
-    if same_block:
-        raise ValueError("Block cannot be the same as Sample, see samples: " + ' ,'.join(fail_samples))
-
     if same_group:
-        raise ValueError("Group cannot be the same as Sample, see samples: " + ' ,'.join(fail_samples))
+        raise ValueError("Group cannot be the same as Sample. All these samples have an error: " + ' ,'.join(fail_samples))
+    
+    if same_input:
+        raise ValueError("InputControl cannot be the same as Sample. All these samples have an error: " + ' ,'.join(fail_samples))
+    
+    if same_block:
+        raise ValueError("Block cannot be the same as Sample. All these samples have an error: " + ' ,'.join(fail_samples))
 
     return pairs, groups, block
 
