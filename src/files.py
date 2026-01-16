@@ -248,7 +248,7 @@ def peakcalls(file, delim="\t", assay="chip"):
     known_assays = (
         'chip',
         'atac',
-        'cfchip'
+        'cfchip',
         'cutnrun'
     )
 
