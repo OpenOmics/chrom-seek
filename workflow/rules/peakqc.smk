@@ -149,7 +149,7 @@ rule FRiP_SEACR:
         export TMPDIR="${{tmp}}"
         trap 'rm -rf "${{tmp}}"' EXIT
 
-        python {params.script} \\
+        python {params.tblscript} \\
             -p {input.peaks} \\
             -b {input.bam} \\
             -g {params.genome} \\
