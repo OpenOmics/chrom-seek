@@ -132,5 +132,150 @@ class TestParsePeakCall(unittest.TestCase):
         self.assertEqual(set(chip2input.values()), {''})
 
 
+    def test_atac_with_input_control(self):
+        """Test that ATAC assay raises error when InputControl column is not blank"""
+        str2file = \
+            "Sample\tInputControl\tGroup\tBlock\n" + \
+            "ATAC_S1\tInput_S1\tG1\tB1\n" + \
+            "ATAC_S2\tInput_S2\tG2\tB2\n"
+        path = os.path.join(self.test_dir, 'test.txt')
+        with open(path, 'w') as f:
+            f.write(str2file)
+            f.close()
+        with self.assertRaisesRegex(ValueError, r"ATAC-seq assay does not support InputControls, please leave InputColumn empty"):
+            chip2input, groups, blocks = peakcalls(path, assay="atac")
+
+
+    def test_atac_without_input_control(self):
+        """Test that ATAC assay works correctly when InputControl column is blank"""
+        str2file = \
+            "Sample\tInputControl\tGroup\tBlock\n" + \
+            "ATAC_S1\t\tG1\tB1\n" + \
+            "ATAC_S2\t\tG2\tB2\n"
+        path = os.path.join(self.test_dir, 'test.txt')
+        with open(path, 'w') as f:
+            f.write(str2file)
+            f.close()
+        # This should not raise an error
+        chip2input, groups, blocks = peakcalls(path, assay="atac")
+        self.assertEqual(chip2input['ATAC_S1'], '')
+        self.assertEqual(chip2input['ATAC_S2'], '')
+
+
+    def test_input_control_equals_sample_positive(self):
+        """Test that error is raised when InputControl equals Sample"""
+        str2file = \
+            "Sample\tInputControl\tGroup\tBlock\n" + \
+            "Sample1\tSample1\tG1\tB1\n" + \
+            "Sample2\tInput2\tG2\tB2\n"
+        path = os.path.join(self.test_dir, 'test.txt')
+        with open(path, 'w') as f:
+            f.write(str2file)
+            f.close()
+        with self.assertRaisesRegex(ValueError, r"InputControl cannot be the same as Sample. All these samples have an error: Sample1"):
+            chip2input, groups, blocks = peakcalls(path)
+
+
+    def test_input_control_equals_sample_negative(self):
+        """Test that no error is raised when InputControl does not equal Sample"""
+        str2file = \
+            "Sample\tInputControl\tGroup\tBlock\n" + \
+            "Sample1\tInput1\tG1\tB1\n" + \
+            "Sample2\tInput2\tG2\tB2\n" + \
+            "Sample3\t\tG3\tB3\n"
+        path = os.path.join(self.test_dir, 'test.txt')
+        with open(path, 'w') as f:
+            f.write(str2file)
+            f.close()
+        # This should not raise an error
+        chip2input, groups, blocks = peakcalls(path)
+        self.assertEqual(chip2input['Sample1'], 'Input1')
+        self.assertEqual(chip2input['Sample2'], 'Input2')
+        self.assertEqual(chip2input['Sample3'], '')
+
+
+    def test_block_equals_sample_positive(self):
+        """Test that error is raised when Block equals Sample"""
+        str2file = \
+            "Sample\tInputControl\tGroup\tBlock\n" + \
+            "Sample1\tInput1\tG1\tSample1\n" + \
+            "Sample2\tInput2\tG2\tB1\n"
+        path = os.path.join(self.test_dir, 'test.txt')
+        with open(path, 'w') as f:
+            f.write(str2file)
+            f.close()
+        with self.assertRaisesRegex(ValueError, r"Block cannot be the same as Sample. All these samples have an error: Sample1"):
+            chip2input, groups, blocks = peakcalls(path)
+
+
+    def test_block_equals_sample_negative(self):
+        """Test that no error is raised when Block does not equal Sample"""
+        str2file = \
+            "Sample\tInputControl\tGroup\tBlock\n" + \
+            "Sample1\tInput1\tG1\tB1\n" + \
+            "Sample2\tInput2\tG2\tB2\n" + \
+            "Sample3\tInput3\tG3\t\n"
+        path = os.path.join(self.test_dir, 'test.txt')
+        with open(path, 'w') as f:
+            f.write(str2file)
+            f.close()
+        # This should not raise an error
+        chip2input, groups, blocks = peakcalls(path)
+        self.assertEqual(blocks['Sample1'], 'B1')
+        self.assertEqual(blocks['Sample2'], 'B2')
+        self.assertEqual(blocks['Sample3'], '')
+
+
+    def test_group_equals_sample_positive(self):
+        """Test that error is raised when Group equals Sample"""
+        str2file = \
+            "Sample\tInputControl\tGroup\tBlock\n" + \
+            "Sample1\tInput1\tSample1\tB1\n" + \
+            "Sample2\tInput2\tG2\tB2\n"
+        path = os.path.join(self.test_dir, 'test.txt')
+        with open(path, 'w') as f:
+            f.write(str2file)
+            f.close()
+        with self.assertRaisesRegex(ValueError, r"Group cannot be the same as Sample. All these samples have an error: Sample1"):
+            chip2input, groups, blocks = peakcalls(path)
+
+
+    def test_group_equals_sample_negative(self):
+        """Test that no error is raised when Group does not equal Sample"""
+        str2file = \
+            "Sample\tInputControl\tGroup\tBlock\n" + \
+            "Sample1\tInput1\tG1\tB1\n" + \
+            "Sample2\tInput2\tG2\tB2\n" + \
+            "Sample3\tInput3\tG3,G4\tB3\n"
+        path = os.path.join(self.test_dir, 'test.txt')
+        with open(path, 'w') as f:
+            f.write(str2file)
+            f.close()
+        # This should not raise an error
+        chip2input, groups, blocks = peakcalls(path)
+        self.assertIn('G1', groups)
+        self.assertIn('G2', groups)
+        self.assertIn('G3', groups)
+        self.assertIn('G4', groups)
+        self.assertEqual(groups['G1'], ['Sample1'])
+        self.assertEqual(groups['G2'], ['Sample2'])
+        self.assertEqual(groups['G3'], ['Sample3'])
+
+
+    def test_multiple_validation_errors(self):
+        """Test that multiple samples can violate the same rule"""
+        str2file = \
+            "Sample\tInputControl\tGroup\tBlock\n" + \
+            "Sample1\tSample1\tG1\tB1\n" + \
+            "Sample2\tSample2\tG2\tB2\n"
+        path = os.path.join(self.test_dir, 'test.txt')
+        with open(path, 'w') as f:
+            f.write(str2file)
+            f.close()
+        # Should raise error mentioning both samples
+        with self.assertRaisesRegex(ValueError, r"InputControl cannot be the same as Sample"):
+            chip2input, groups, blocks = peakcalls(path)
+
+
 if __name__ == '__main__':
     unittest.main()
