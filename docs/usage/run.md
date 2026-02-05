@@ -80,7 +80,7 @@ Each of the following arguments are required. Failure to provide a required argu
 >
 > #### Optional columns
 > * **InputControl**: Basename of the corresponding input control sample for the given `Sample` (derived the same way as above). This column is used to pair each ChIP sample to its matched input control for correction during peak calling. *ATAC-seq samples should never provide `InputControl`.*
->* **Block**: Blocking factor used to avoid duplicate correlations between repeated observations (commonly biological replicate ID or subject/individual ID, e.g., multiple samples from the same individual).
+>* **Block**: Optional label for paired contrasts. Use this to match samples across the two groups in a contrast on a single shared factor (e.g., subject ID, time point, sequencing batch). For a given pairwise contrast, each `Block` value should appear once in each group being compared (e.g., Control S01 vs Treatment S01).
 >
 > 
 > 
