@@ -314,7 +314,7 @@ rule deeptools_gene_all:
         # TSS
         computeMatrix reference-point \\
             -S {input} \\
-            -R {params.prebed} \\
+            -R {output.bed} \\
             -p {threads} \\
             --referencePoint TSS \\
             --upstream 3000 \\
@@ -337,7 +337,7 @@ rule deeptools_gene_all:
         # metagene
         computeMatrix scale-regions \\
             -S {input} \\
-            -R {params.prebed} \\
+            -R {output.bed} \\
             -p {threads} \\
             --upstream 1000 \\
             --regionBodyLength 2000 \\
