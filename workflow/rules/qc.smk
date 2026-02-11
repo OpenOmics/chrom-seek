@@ -16,6 +16,7 @@ ends                            = [1] if not paired_end else [1, 2]
 assay                           = config['options']['assay']
 PeakTools                       = get_peaktools(assay)
 chips                           = config['project']['peaks']['chips']
+enhancer_ref                    = config['references'][genome].get('ENHANCER', False)
 
 # ~~ directories
 qc_dir                          = join(workpath, "QC")
@@ -209,7 +210,7 @@ rule multiqc:
         join(deeptools_dir, "spearman_readcounts.Q5DD.tab"),
         join(deeptools_dir, "fingerprint.raw.Q5DD.tab"),
         join(deeptools_dir,"TSS_profile.Q5DD.tab"),
-        join(deeptools_dir,"enhancer_profile.Q5DD.tab"),
+        join(deeptools_dir,"enhancer_profile.Q5DD.tab") if enhancer_ref else [],
         join(workpath, "EncodeQC.txt") if paired_end else [],
     output:
         join(workpath, "multiqc_report.html")
@@ -302,7 +303,7 @@ rule deeptools_gene_all:
         parent_dir              = deeptools_dir,
         deeptoolsver            = config['tools']['DEEPTOOLSVER'],
         labels                  = samples,
-        prebed                  = config['references'][genome]['GENEINFO'],
+        prebed                  = config['references'][genome]['GENEINFO']
     threads: 4
     # eventually threads should be 16
     shell: 
@@ -313,7 +314,7 @@ rule deeptools_gene_all:
         # TSS
         computeMatrix reference-point \\
             -S {input} \\
-            -R {output.bed} \\
+            -R {params.prebed} \\
             -p {threads} \\
             --referencePoint TSS \\
             --upstream 3000 \\
@@ -336,7 +337,7 @@ rule deeptools_gene_all:
         # metagene
         computeMatrix scale-regions \\
             -S {input} \\
-            -R {output.bed} \\
+            -R {params.prebed} \\
             -p {threads} \\
             --upstream 1000 \\
             --regionBodyLength 2000 \\
