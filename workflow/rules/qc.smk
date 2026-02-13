@@ -16,6 +16,7 @@ ends                            = [1] if not paired_end else [1, 2]
 assay                           = config['options']['assay']
 PeakTools                       = get_peaktools(assay)
 chips                           = config['project']['peaks']['chips']
+enhancer_ref                    = config['references'][genome].get('ENHANCER', False)
 
 # ~~ directories
 qc_dir                          = join(workpath, "QC")
@@ -209,7 +210,7 @@ rule multiqc:
         join(deeptools_dir, "spearman_readcounts.Q5DD.tab"),
         join(deeptools_dir, "fingerprint.raw.Q5DD.tab"),
         join(deeptools_dir,"TSS_profile.Q5DD.tab"),
-        join(deeptools_dir,"enhancer_profile.Q5DD.tab"),
+        join(deeptools_dir,"enhancer_profile.Q5DD.tab") if enhancer_ref else [],
         join(workpath, "EncodeQC.txt") if paired_end else [],
     output:
         join(workpath, "multiqc_report.html")
@@ -289,7 +290,6 @@ rule deeptools_gene_all:
     input:
         [ join(bw_dir, name + ".Q5DD.RPGC.bw") for name in samples ] 
     output:
-        bed                     = temp(join(deeptools_dir, "geneinfo.Q5DD.bed")),
         TSSline                 = join(deeptools_dir, "TSS_profile.Q5DD.pdf"),
         TSSmat                  = temp(join(deeptools_dir, "TSS.Q5DD.mat.gz")),
         TSSheat                 = join(deeptools_dir, "TSS_heatmap.Q5DD.pdf"),
@@ -302,18 +302,18 @@ rule deeptools_gene_all:
         parent_dir              = deeptools_dir,
         deeptoolsver            = config['tools']['DEEPTOOLSVER'],
         labels                  = samples,
-        prebed                  = config['references'][genome]['GENEINFO'],
+        prot_gtf                  = config['references'][genome]['GENEINFO']
     threads: 4
     # eventually threads should be 16
     shell: 
         dedent("""    
         module load {params.deeptoolsver}
         if [ ! -d "{params.parent_dir}" ]; then mkdir "{params.parent_dir}"; fi
-        grep --line-buffered 'protein_coding' {params.prebed} | awk -v OFS='\t' -F'\t' '{{print $1, $2, $3, $5, ".", $4}}' > {output.bed}
+
         # TSS
         computeMatrix reference-point \\
             -S {input} \\
-            -R {output.bed} \\
+            -R {params.prot_gtf} \\
             -p {threads} \\
             --referencePoint TSS \\
             --upstream 3000 \\
@@ -333,10 +333,11 @@ rule deeptools_gene_all:
             --colorMap 'BuPu' \\
             --yAxisLabel 'average RPGC' \\
             --regionsLabel 'genes'
+
         # metagene
         computeMatrix scale-regions \\
             -S {input} \\
-            -R {output.bed} \\
+            -R {params.prot_gtf} \\
             -p {threads} \\
             --upstream 1000 \\
             --regionBodyLength 2000 \\
