@@ -151,9 +151,11 @@ rule_all_ins.extend(expand(
 rule_all_ins.append(join(workpath, "multiqc_report.html"))
 rule_all_ins.extend(expand(join(qc_dir, "{name}.preseq.dat"), name=samples))
 rule_all_ins.extend(
-    expand(join(peakqc_dir, "FRiP", "{PeakTool}", "{PeakTool}.{name}.Q5DD.FRiP_table.txt"), 
-    PeakTool=PeakTools, 
-    name=chips)
+    expand(
+        join(peakqc_dir, "FRiP", "{PeakTool}", "{PeakTool}.{name}.Q5DD.FRiP_table.txt"), 
+        PeakTool=PeakTools, 
+        name=chips
+    )
 )
 rule_all_ins.append(join(peakqc_dir, "FRiP", "summary.Q5DD.FRiP_heatmap.pdf"))
 rule_all_ins.extend(expand(
