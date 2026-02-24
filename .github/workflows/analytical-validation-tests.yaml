@@ -200,6 +200,8 @@ jobs:
         /opt2/chrom-seek run --assay cutnrun --genome hg38  --input \
         /opt2/.tests/WT_S1.R1.fastq.gz /opt2/.tests/WT_S1.R2.fastq.gz \
         /opt2/.tests/WT_S4_R1.001.fastq.gz /opt2/.tests/WT_S4_R2.001.fastq.gz \
+        /opt2/.tests/Input_S1.R1.fastq.gz /opt2/.tests/Input_S1.R2.fastq.gz \
+        /opt2/.tests/Input_S4_R1.001.fastq.gz /opt2/.tests/Input_S4_R2.001.fastq.gz \
         --output /opt2/output --peakcall /opt2/.tests/peakcall_no_replicates_no_inputs.tsv \
         --contrasts /opt2/.tests/contrasts.tsv --mode local --dry-run
     - name: View the paired-end ATAC pipeline config file (without replicates, without inputs)
