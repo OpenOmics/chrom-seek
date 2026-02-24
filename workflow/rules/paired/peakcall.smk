@@ -205,7 +205,7 @@ rule SEACR:
     input:
         exp                             = join(bg_dir, "{name}.bedgraph"),
         control                         = lambda w: join(bg_dir, f"{chip2input[w.name]}.bedgraph")
-                                            if w.name in chip2input else [],
+                                            if w.name in chip2input and chip2input[w.name] != "" else [],
     output:
         peaks                           = join(seacr_dir, "{name}", "{name}.stringent.bed")
     params:
