@@ -198,7 +198,17 @@
         "partition": "quick",
         "time": "04:00:00"
     },
-    "HOMER" : {
+    "HOMER_dba" : {
+        "threads": "32",
+        "mem": "128g",
+        "gres": "lscratch:800"
+    },
+    "HOMER_chip_narrow" : {
+        "threads": "32",
+        "mem": "128g",
+        "gres": "lscratch:800"
+    },
+    "HOMER_chip_broad" : {
         "threads": "32",
         "mem": "128g",
         "gres": "lscratch:800"

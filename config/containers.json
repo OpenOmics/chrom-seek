@@ -4,6 +4,7 @@
         "diffbind": "docker://skchronicles/cfchip_toolkit:v0.5.0",
         "uropa": "docker://rroutsong/uropa:4.0.3",
         "python": "docker://rroutsong/chrom_seek_python:0.1.3",
+        "homer-4": "docker://rroutsong/homer-motif:0.0.1",
         "ppqt": "docker://seqeralabs/phantompeakqualtools:latest",
         "seacr": "docker://rroutsong/seacr:0.0.1",
         "preseq": "docker://rroutsong/preseq:0.0.1",

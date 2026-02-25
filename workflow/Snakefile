@@ -70,7 +70,8 @@ genrich_dir                     = join(workpath, "Genrich")
 MEME_dir                        = join(workpath, "MEME")
 manorm_dir                      = join(workpath, "MANorm")
 seacr_dir                       = join(workpath, "SEACR")
-homer_dir                       = join(workpath, "HOMER")
+homer_dba_dir                   = join(workpath, "HOMER_dba")
+homer_chip_dir                  = join(workpath, "HOMER_chip")
 deeptools_dir                   = join(workpath, 'deeptools')
 
 
@@ -100,7 +101,7 @@ else:
         rule_all_ins.extend(expand(join(qc_dir, "{name}.Q5DD.insert_size_metrics.txt"), name=samples))
     if assay in ("atac", "chip"):
         rule_all_ins.extend(expand(
-            join(homer_dir, "UP_{contrast}_{PeakTool}_{differential_app}", "homer.out"),
+            join(homer_dba_dir, "UP_{contrast}_{PeakTool}_{differential_app}", "homer.out"),
             contrast=contrasts,
             PeakTool=PeakTools,
             differential_app=["DeSeq2", "EdgeR"],
@@ -118,6 +119,9 @@ else:
             application=["macsBroad"],
             _type=peak_types,
         ))
+        # homer
+        rule_all_ins.extend(expand(join(homer_chip_dir, "{name}", "macsNarrow", "{name}_homer.tar.gz"), name=chips))
+        rule_all_ins.extend(expand(join(homer_chip_dir, "{name}", "macsNarrow", "homer.out"), name=chips))  
     if assay in ("cutnrun",):
         # SEACR
         rule_all_ins.append(join(peakqc_dir, "jaccard", 'SEACR_jaccard.txt'))
