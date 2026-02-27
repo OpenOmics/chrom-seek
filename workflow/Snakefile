@@ -154,7 +154,7 @@ rule_all_ins.extend(
     expand(
         join(peakqc_dir, "FRiP", "{PeakTool}", "{PeakTool}.{name}.Q5DD.FRiP_table.txt"), 
         PeakTool=PeakTools, 
-        name=chips
+        name=samples
     )
 )
 rule_all_ins.append(join(peakqc_dir, "FRiP", "summary.Q5DD.FRiP_heatmap.pdf"))
