@@ -184,6 +184,9 @@ jobs:
         /opt2/.tests/WT_S4_R1.001.fastq.gz /opt2/.tests/WT_S4_R2.001.fastq.gz \
         --output /opt2/output --peakcall /opt2/.tests/peakcall_no_replicates_no_inputs.tsv \
         --contrasts /opt2/.tests/contrasts.tsv --mode local --dry-run
+    - name: View the paired-end ATAC pipeline config file (without replicates, without inputs)
+      run: |
+        echo "Generated config file for ATAC pipeline (without replicates, without inputs)...." && jq -C '.' $PWD/output/config.json
     - name: Dry Run paired-end CUT & RUN pipeline, all options (without replicates, with inputs)
       run: |
         docker run -v $PWD:/opt2 snakemake/snakemake:v5.24.2 \
@@ -194,17 +197,22 @@ jobs:
         /opt2/.tests/Input_S4_R1.001.fastq.gz /opt2/.tests/Input_S4_R2.001.fastq.gz \
         --output /opt2/output --peakcall /opt2/.tests/peakcall_no_replicates_with_inputs.tsv \
         --contrasts /opt2/.tests/contrasts.tsv --mode local --dry-run
-    - name: Dry Run paired-end CUT & RUN pipeline, all options (without replicates, without inputs)
+    - name: View the paired-end CUT & RUN pipeline config file (without replicates, without inputs)
+      run: |
+        echo "Generated config file for CUT & RUN pipeline (without replicates, without inputs)...." && jq -C '.' $PWD/output/config.json
+    - name: Dry Run paired-end CUT & RUN pipeline all options, all options (without replicates, without inputs)
       run: |
         docker run -v $PWD:/opt2 snakemake/snakemake:v5.24.2 \
         /opt2/chrom-seek run --assay cutnrun --genome hg38  --input \
         /opt2/.tests/WT_S1.R1.fastq.gz /opt2/.tests/WT_S1.R2.fastq.gz \
         /opt2/.tests/WT_S4_R1.001.fastq.gz /opt2/.tests/WT_S4_R2.001.fastq.gz \
+        /opt2/.tests/Input_S1.R1.fastq.gz /opt2/.tests/Input_S1.R2.fastq.gz \
+        /opt2/.tests/Input_S4_R1.001.fastq.gz /opt2/.tests/Input_S4_R2.001.fastq.gz \
         --output /opt2/output --peakcall /opt2/.tests/peakcall_no_replicates_no_inputs.tsv \
         --contrasts /opt2/.tests/contrasts.tsv --mode local --dry-run
-    - name: View the paired-end ATAC pipeline config file (without replicates, without inputs)
+    - name: View the paired-end CUT & RUN pipeline config file (without replicates, without inputs)
       run: |
-        echo "Generated config file for ATAC pipeline (without replicates, without inputs)...." && jq -C '.' $PWD/output/config.json
+        echo "Generated config file for CUT & RUN pipeline (without replicates, without inputs)...." && jq -C '.' $PWD/output/config.json
     - name: Lint Workflow
       continue-on-error: true
       run: |
