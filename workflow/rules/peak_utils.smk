@@ -139,34 +139,35 @@ pkcaller2homer_size.update({
 
 
 rule HOMER_dba:
-     input:
-         up_file                         = join(
-                                             diffbind_dir,
-                                             "{contrast}-{PeakTool}",
-                                             "{contrast}-{PeakTool}_Diffbind" + block_add + "_{differential_app}_up.bed",
-                                           ),
-         down_file                       = join(
-                                             diffbind_dir,
-                                             "{contrast}-{PeakTool}",
-                                             "{contrast}-{PeakTool}_Diffbind" + block_add + "_{differential_app}_down.bed",
-                                           ),
-     output:
-         down_motifs                     = join(homer_dba_dir, "DOWN_{contrast}_{PeakTool}_{differential_app}", "homer.out"),
-         up_motifs                       = join(homer_dba_dir, "UP_{contrast}_{PeakTool}_{differential_app}", "homer.out")
-     params:
-         rname                           = 'HOMER_dba',
-         homer_genome                    = homer_genome,
-         genomealias                     = genome,
-         genomefa                        = genomefa,
-         out_dir_up                      = join(homer_dba_dir, "UP_{contrast}_{PeakTool}_{differential_app}"),
-         out_dir_down                    = join(homer_dba_dir, "DOWN_{contrast}_{PeakTool}_{differential_app}"),
-         seq_length                      = "8,10",
-         motif_finding_region            = pkcaller2homer_size["{PeakTool}"],
-         tmpdir                          = tmpdir,
-         homer_peak_threshhold           = 20
-     threads:
-         int(cluster['HOMER_dba'].get('threads', cluster['__default__']['threads']))
-     shell:
+    input:
+        up_file                         = join(
+                                            diffbind_dir,
+                                            "{contrast}-{PeakTool}",
+                                            "{contrast}-{PeakTool}_Diffbind" + block_add + "_{differential_app}_up.bed",
+                                        ),
+        down_file                       = join(
+                                            diffbind_dir,
+                                            "{contrast}-{PeakTool}",
+                                            "{contrast}-{PeakTool}_Diffbind" + block_add + "_{differential_app}_down.bed",
+                                        ),
+    output:
+        down_motifs                     = join(homer_dba_dir, "DOWN_{contrast}_{PeakTool}_{differential_app}", "homer.out"),
+        up_motifs                       = join(homer_dba_dir, "UP_{contrast}_{PeakTool}_{differential_app}", "homer.out")
+    params:
+        rname                           = 'HOMER_dba',
+        homer_genome                    = homer_genome,
+        genomealias                     = genome,
+        genomefa                        = genomefa,
+        out_dir_up                      = join(homer_dba_dir, "UP_{contrast}_{PeakTool}_{differential_app}"),
+        out_dir_down                    = join(homer_dba_dir, "DOWN_{contrast}_{PeakTool}_{differential_app}"),
+        seq_length                      = "8,10",
+        motif_finding_region            = pkcaller2homer_size["{PeakTool}"],
+        tmpdir                          = tmpdir,
+        homer_peak_threshhold           = 20
+    threads:
+        int(cluster['HOMER_dba'].get('threads', cluster['__default__']['threads']))
+    container: config['images']['homer-4']
+    shell:
         dedent("""
         if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
         tmp=$(mktemp -d -p "{params.tmpdir}")
@@ -224,13 +225,13 @@ rule HOMER_dba:
 
 
 rule HOMER_chip_narrow:
-     input:
+    input:
         join(macsN_dir, "{name}", "{name}_peaks.narrowPeak"),
-     output:
+    output:
         homer_peaks                     = temp(join(homer_chip_dir, "{name}", "macsNarrow", "{name}_macsNarrow.homer")),  
         breadcrumb                      = join(homer_chip_dir, "{name}", "macsNarrow", "homer.out"),
         tar                             = join(homer_chip_dir, "{name}", "macsNarrow", "{name}_homer.tar.gz")
-     params:
+    params:
         rname                           = 'HOMER_chip',
         homer_genome                    = homer_genome,
         genomealias                     = genome,
@@ -241,42 +242,43 @@ rule HOMER_chip_narrow:
         homer_peak_threshhold_bottom    = 20,
         homer_peak_threshhold_top       = 45000,
         outdir                          = join(homer_chip_dir, "{name}", "macsNarrow")  
-     threads:
-        int(cluster['HOMER_chip_narrow'].get('threads', cluster['__default__']['threads']))
-     shell:
+    threads:
+        int(cluster['HOMER_chip_narrow'].get('threads', cluster['__default__']['threads'])) 
+    container: config['images']['homer-4']
+    shell:
         dedent("""
-        if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
-        tmp=$(mktemp -d -p "{params.tmpdir}")
-        export TMPDIR="${{tmp}}" # used by sort
-        trap 'rm -rf "${{tmp}}"' EXIT
+            if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
+            tmp=$(mktemp -d -p "{params.tmpdir}")
+            export TMPDIR="${{tmp}}" # used by sort
+            trap 'rm -rf "${{tmp}}"' EXIT
 
-        # validate setup
-        [ -d "{params.homer_genome}" ] || {{ echo "Homer does not support this genome!" >&2; exit 1; }}
-        ln -s {params.genomefa} ${{TMPDIR}}/{params.genomealias}
+            # validate setup
+            [ -d "{params.homer_genome}" ] || {{ echo "Homer does not support this genome!" >&2; exit 1; }}
+            ln -s {params.genomefa} ${{TMPDIR}}/{params.genomealias}
 
-        # count peaks
-        bed2pos.pl {input} > {output.homer_peaks}
-        NUM_PEAKS=$(wc -l {output.homer_peaks} | cut -f1 -d$' ')
+            # count peaks
+            bed2pos.pl {input} > {output.homer_peaks}
+            NUM_PEAKS=$(wc -l {output.homer_peaks} | cut -f1 -d$' ')
 
-        if [[ "${{NUM_PEAKS}}" -ge {params.homer_peak_threshhold_top} ]] || [[ "${{NUM_PEAKS}}" -le {params.homer_peak_threshhold_bottom} ]]; then
-            # do homer analysis
-            findMotifsGenome.pl {output.homer_peaks} \\
-                ${{TMPDIR}}/{params.genomealias} \\
-                {params.outdir} \\
-                -preparsedDir ${{TMPDIR}} \\
-                -p {threads} \\
-                -size {params.motif_finding_region} \\
-                -len {params.seq_length} | tee {output.breadcrumb}
-            if [ ! -f {params.outdir}/homerResults.html ]; then
-                echo "!!! Homer failed to make output"
-                exit 1
-            fi
-        else
-            if [[ "${{NUM_PEAKS}}" -ge {params.homer_peak_threshhold_top} ]]; then
-                echo "!!! Too many peaks (${{NUM_PEAKS}}) for {wildcards.name} with HOMER. Not running motif analysis." | tee {output.breadcrumb}
+            if [[ "${{NUM_PEAKS}}" -le {params.homer_peak_threshhold_top} ]] && [[ "${{NUM_PEAKS}}" -ge {params.homer_peak_threshhold_bottom} ]]; then
+                # do homer analysis
+                findMotifsGenome.pl {output.homer_peaks} \\
+                    ${{TMPDIR}}/{params.genomealias} \\
+                    {params.outdir} \\
+                    -preparsedDir ${{TMPDIR}} \\
+                    -p {threads} \\
+                    -size {params.motif_finding_region} \\
+                    -len {params.seq_length} | tee {output.breadcrumb}
+                if [ ! -f {params.outdir}/homerResults.html ]; then
+                    echo "!!! Homer failed to make output"
+                    exit 1
+                fi
             else
-                echo "!!! Too few peaks (${{NUM_PEAKS}}) for {wildcards.name} with HOMER. Not running motif analysis." | tee {output.breadcrumb}
+                if [[ "${{NUM_PEAKS}}" -gt {params.homer_peak_threshhold_top} ]]; then
+                    echo "!!! Too many peaks (${{NUM_PEAKS}}) for {wildcards.name} with HOMER. Not running motif analysis." | tee {output.breadcrumb}
+                elif [[ "${{NUM_PEAKS}}" -lt {params.homer_peak_threshhold_bottom} ]]; then
+                    echo "!!! Too few peaks (${{NUM_PEAKS}}) for {wildcards.name} with HOMER. Not running motif analysis." | tee {output.breadcrumb}
+                fi
+                touch {output.homer_peaks}
             fi
-            touch {output.homer_peaks}
-        fi
         """)
