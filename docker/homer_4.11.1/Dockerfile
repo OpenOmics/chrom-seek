@@ -36,6 +36,11 @@ RUN wget https://github.com/samtools/samtools/releases/download/${VERSION}/samto
 ################## 2ND STAGE: HOMER INSTALLATION ######################
 FROM ubuntu:22.04
 
+# locale for perl
+ENV LANG=en_US.UTF-8
+ENV LC_ALL=en_US.UTF-8
+ENV LANGUAGE=en_US:en
+
 ################## METADATA ######################
 LABEL base_image="ubuntu:22.04"
 LABEL version="1.1.0"
