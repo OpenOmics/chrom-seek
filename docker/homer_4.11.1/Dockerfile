@@ -79,13 +79,13 @@ RUN mkdir /opt/homer/ && cd /opt/homer && wget http://homer.ucsd.edu/homer/confi
 # NOT USED: Genome & Annotation data is too large
 # RUN cd /opt/homer && /usr/bin/perl configureHomer.pl -install hg38 && /usr/bin/perl configureHomer.pl -install human-o
 
-# Genome & Annotation data is too large to include in this image, so it
-# requires a directory to be mounted at /opt/homerdata/ containing
-#  - config.txt - homer configuration file with directories pointing to paths like "data/accession"
-#  - data  - folder containing homer annotation data files
+# Genome & Annotation data is too large to include in this image.
+# At runtime, /fdb/homer is bind-mounted to /opt/homerdata.
+# /fdb/homer contains knownTFs/, genomes/, etc. at the top level (no data/ subdirectory).
+# HOMER looks for data at /opt/homer/data/, so symlink directly to /opt/homerdata.
 
-# Add softlinks for config file and data directory
-RUN rm -rf /opt/homer/data && ln -s /opt/homerdata/data /opt/homer/data
+# Add softlink for data directory and copy config
+RUN rm -rf /opt/homer/data && ln -s /opt/homerdata /opt/homer/data
 COPY config.txt /opt/homer/config.txt
 
 # Add homer installation dir to PATH
