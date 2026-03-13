@@ -81,7 +81,7 @@ RUN mkdir /opt/homer/ && cd /opt/homer && wget http://homer.ucsd.edu/homer/confi
 
 # Add softlinks for config file and data directory
 RUN rm -rf /opt/homer/data && ln -s /opt/homerdata/data /opt/homer/data
-RUN rm -f /opt/homer/config.txt && ln -s /opt/homerdata/config.txt /opt/homer/config.txt
+COPY config.txt /opt/homer/config.txt
 
 # Add homer installation dir to PATH
 ENV PATH=${PATH}:/opt/homer/bin/
