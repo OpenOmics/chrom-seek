@@ -7,7 +7,7 @@ ARG ENV_NAME="samtools"
 ARG VERSION="1.16.1"
 
 ENV DEBIAN_FRONTEND=noninteractive
-ENV PACKAGES="ca-certificates gcc mono-mcs libncurses5-dev libncursesw5-dev zlib1g zlib1g-dev bzip2 libbz2-dev liblzma-dev \
+ENV PACKAGES="ca-certificates pigz gcc mono-mcs libncurses5-dev libncursesw5-dev zlib1g zlib1g-dev bzip2 libbz2-dev liblzma-dev \
     libhtscodecs2 build-essential wget libcurl4 libcurl4-gnutls-dev locales"
 # need libcurl4 and libcurl4-gnutls-dev for GCS access - see https://github.com/samtools/samtools/issues/862
 
@@ -58,7 +58,7 @@ LABEL about.license.samtools="MIT/Expat"
 LABEL maintainer="Matthew Galbraith <matthew.galbraith@cuanschutz.edu>"
 
 ENV DEBIAN_FRONTEND=noninteractive
-ENV PACKAGES="libnss-sss r-base r-base-dev tabix wget ca-certificates libssl-dev libcurl4-openssl-dev libxml2-dev \
+ENV PACKAGES="libnss-sss pigz r-base r-base-dev tabix wget ca-certificates libssl-dev libcurl4-openssl-dev libxml2-dev \
     mono-mcs libncurses5-dev libncursesw5-dev zlib1g zlib1g-dev bzip2 libbz2-dev liblzma-dev libhtscodecs2 locales"
 # dependency samtools installed and copied from 1st stage to control version and save space
 
