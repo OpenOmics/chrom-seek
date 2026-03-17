@@ -308,6 +308,11 @@ def resolve_additional_bind_paths(search_paths):
     common_paths = []
     indexed_paths = {}
 
+    if '/fdb/homer' in search_paths:
+        homer = search_paths.pop(search_paths.index('/fdb/homer'))
+        homer = f'{homer}:/opt/homerdata'
+        common_paths.append(homer)
+
     for ref in search_paths:
         # Skip over resources with remote URI and
         # skip over strings that are not file PATHS as

@@ -302,7 +302,7 @@ rule deeptools_gene_all:
         parent_dir              = deeptools_dir,
         deeptoolsver            = config['tools']['DEEPTOOLSVER'],
         labels                  = samples,
-        prot_gtf                  = config['references'][genome]['GENEINFO']
+        prot_bed                = config['references'][genome]['PROTEIN_CODING_BED']
     threads: 4
     # eventually threads should be 16
     shell: 
@@ -313,7 +313,7 @@ rule deeptools_gene_all:
         # TSS
         computeMatrix reference-point \\
             -S {input} \\
-            -R {params.prot_gtf} \\
+            -R {params.prot_bed} \\
             -p {threads} \\
             --referencePoint TSS \\
             --upstream 3000 \\
@@ -337,7 +337,7 @@ rule deeptools_gene_all:
         # metagene
         computeMatrix scale-regions \\
             -S {input} \\
-            -R {params.prot_gtf} \\
+            -R {params.prot_bed} \\
             -p {threads} \\
             --upstream 1000 \\
             --regionBodyLength 2000 \\

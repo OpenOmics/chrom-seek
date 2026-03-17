@@ -169,58 +169,58 @@ rule HOMER_dba:
     container: config['images']['homer-4']
     shell:
         dedent("""
-        if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
-        tmp=$(mktemp -d -p "{params.tmpdir}")
-        trap 'rm -rf "${{tmp}}"' EXIT
-        export TMPDIR="${{tmp}}" # used by sort
-        module load homer/4.11.1
-        cd ${{TMPDIR}}
-        [ -d "{params.homer_genome}" ] || {{ echo "Homer does not support this genome!" >&2; exit 1; }}
-        ln -s {params.genomefa} ${{TMPDIR}}/{params.genomealias}
-        uppeaks=$(wc -l {input.up_file} | cut -f1 -d$' ')
-        downpeaks=$(wc -l {input.down_file} | cut -f1 -d$' ')
-        thres=$(("{params.homer_peak_threshhold}"))
-        thres=$((${{thres}} + 1))
-        awk 'BEGIN {{FS="\\t"; OFS="\\t"}} {{print $4, $1, $2, $3, $6}}' {input.up_file} | sed -e 's/\./+/g' > ${{tmp}}/homer_up_input.bed
-        if [ "${{uppeaks}}" -ge ${{thres}} ]; then
-            echo -e "\\n\\n-------- HOMER UP_GENES_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app} sample sheet --------"
-            head ${{tmp}}/homer_up_input.bed
-            echo -e "-------- HOMER UP_GENES_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app} sample sheet --------\\n\\n"
-            findMotifsGenome.pl ${{tmp}}/homer_up_input.bed \\
-                ${{TMPDIR}}/{params.genomealias} \\
-                {params.out_dir_up} \\
-                -preparsedDir ${{TMPDIR}} \\
-                -p {threads} \\
-                -size {params.motif_finding_region} \\
-                -len {params.seq_length} | tee {output.up_motifs}
-            if [ ! -f {params.out_dir_up}/homerResults.html ]; then
-                echo "!!! Homer failed to make output"
-                exit 1
+            export PERL_BADLANG=0 # perl doesn't like locales, singularity -c interferes
+            # set up analysis and tmp directories
+            if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
+            tmp=$(mktemp -d -p "{params.tmpdir}")
+            export TMPDIR="${{tmp}}" # used by sort
+            trap 'rm -rf "${{tmp}}"' EXIT
+            ln -s {params.genomefa} ${{TMPDIR}}/{params.genomealias}
+
+            uppeaks=$(wc -l {input.up_file} | cut -f1 -d$' ')
+            downpeaks=$(wc -l {input.down_file} | cut -f1 -d$' ')
+            thres=$(("{params.homer_peak_threshhold}"))
+            thres=$((${{thres}} + 1))
+            awk 'BEGIN {{FS="\\t"; OFS="\\t"}} {{print $4, $1, $2, $3, $6}}' {input.up_file} | sed -e 's/\./+/g' > ${{tmp}}/homer_up_input.bed
+            if [ "${{uppeaks}}" -ge ${{thres}} ]; then
+                echo -e "\\n\\n-------- HOMER UP_GENES_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app} sample sheet --------"
+                head ${{tmp}}/homer_up_input.bed
+                echo -e "-------- HOMER UP_GENES_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app} sample sheet --------\\n\\n"
+                findMotifsGenome.pl ${{tmp}}/homer_up_input.bed \\
+                    ${{TMPDIR}}/{params.genomealias} \\
+                    {params.out_dir_up} \\
+                    -preparsedDir ${{TMPDIR}} \\
+                    -p {threads} \\
+                    -size {params.motif_finding_region} \\
+                    -len {params.seq_length} | tee {output.up_motifs}
+                if [ ! -f {params.out_dir_up}/homerResults.html ]; then
+                    echo "!!! Homer failed to make output"
+                    exit 1
+                fi
+            else
+                echo -e "Not enough peaks\n" >> {output.up_motifs}
+                echo -e "{input.up_file} has less than 20 peaks; Not running homer!\n" >> {output.up_motifs}
             fi
-        else
-            echo -e "Not enough peaks\n" >> {output.up_motifs}
-            echo -e "{input.up_file} has less than 20 peaks; Not running homer!\n" >> {output.up_motifs}
-        fi
-        awk 'BEGIN {{FS="\\t"; OFS="\\t"}} {{print $4, $1, $2, $3, $6}}' {input.down_file} | sed -e 's/\./+/g' > ${{tmp}}/homer_down_input.bed
-        if [ "${{downpeaks}}" -ge ${{thres}} ]; then
-            echo -e "\\n\\n-------- HOMER DOWN_GENES_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app} sample sheet --------"
-            head ${{tmp}}/homer_down_input.bed
-            echo -e "-------- HOMER DOWN_GENES_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app} sample sheet --------\\n\\n"
-            findMotifsGenome.pl ${{tmp}}/homer_down_input.bed \\
-                ${{TMPDIR}}/{params.genomealias} \\
-                {params.out_dir_down} \\
-                -preparsedDir ${{TMPDIR}} \\
-                -p {threads} \\
-                -size {params.motif_finding_region} \\
-                -len {params.seq_length} | tee {output.down_motifs}
-            if [ ! -f {params.out_dir_down}/homerResults.html ]; then
-                echo "!!! Homer failed to make output"
-                exit 1
+            awk 'BEGIN {{FS="\\t"; OFS="\\t"}} {{print $4, $1, $2, $3, $6}}' {input.down_file} | sed -e 's/\./+/g' > ${{tmp}}/homer_down_input.bed
+            if [ "${{downpeaks}}" -ge ${{thres}} ]; then
+                echo -e "\\n\\n-------- HOMER DOWN_GENES_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app} sample sheet --------"
+                head ${{tmp}}/homer_down_input.bed
+                echo -e "-------- HOMER DOWN_GENES_{wildcards.contrast}_{wildcards.PeakTool}_{wildcards.differential_app} sample sheet --------\\n\\n"
+                findMotifsGenome.pl ${{tmp}}/homer_down_input.bed \\
+                    ${{TMPDIR}}/{params.genomealias} \\
+                    {params.out_dir_down} \\
+                    -preparsedDir ${{TMPDIR}} \\
+                    -p {threads} \\
+                    -size {params.motif_finding_region} \\
+                    -len {params.seq_length} | tee {output.down_motifs}
+                if [ ! -f {params.out_dir_down}/homerResults.html ]; then
+                    echo "!!! Homer failed to make output"
+                    exit 1
+                fi
+            else
+                echo -e "Not enough peaks\n" >> {output.down_motifs}
+                echo -e "{input.down_file} has less than 20 peaks; Not running homer!\n" >> {output.down_motifs}
             fi
-        else
-            echo -e "Not enough peaks\n" >> {output.down_motifs}
-            echo -e "{input.down_file} has less than 20 peaks; Not running homer!\n" >> {output.down_motifs}
-        fi
         """)
 
 
@@ -247,13 +247,12 @@ rule HOMER_chip_narrow:
     container: config['images']['homer-4']
     shell:
         dedent("""
+            export PERL_BADLANG=0 # perl doesn't like locales, singularity -c interferes
+            # set up analysis and tmp directories
             if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
             tmp=$(mktemp -d -p "{params.tmpdir}")
             export TMPDIR="${{tmp}}" # used by sort
             trap 'rm -rf "${{tmp}}"' EXIT
-
-            # validate setup
-            [ -d "{params.homer_genome}" ] || {{ echo "Homer does not support this genome!" >&2; exit 1; }}
             ln -s {params.genomefa} ${{TMPDIR}}/{params.genomealias}
 
             # count peaks
@@ -269,10 +268,13 @@ rule HOMER_chip_narrow:
                     -p {threads} \\
                     -size {params.motif_finding_region} \\
                     -len {params.seq_length} | tee {output.breadcrumb}
-                if [ ! -f {params.outdir}/homerResults.html ]; then
+                if [ ! -f {params.outdir}/knownResults.html ]; then
                     echo "!!! Homer failed to make output"
                     exit 1
                 fi
+                tmptar="/tmp/$(basename {output.tar})"
+                tar -I pigz -cf ${{tmptar}} -C {params.outdir} .
+                mv ${{tmptar}} {output.tar}
             else
                 if [[ "${{NUM_PEAKS}}" -gt {params.homer_peak_threshhold_top} ]]; then
                     echo "!!! Too many peaks (${{NUM_PEAKS}}) for {wildcards.name} with HOMER. Not running motif analysis." | tee {output.breadcrumb}
@@ -280,5 +282,6 @@ rule HOMER_chip_narrow:
                     echo "!!! Too few peaks (${{NUM_PEAKS}}) for {wildcards.name} with HOMER. Not running motif analysis." | tee {output.breadcrumb}
                 fi
                 touch {output.homer_peaks}
+                touch {output.tar}
             fi
         """)
