@@ -119,9 +119,9 @@ else:
             application=["macsBroad"],
             _type=peak_types,
         ))
+        
         # homer
         rule_all_ins.extend(expand(join(homer_chip_dir, "{name}", "macsNarrow", "{name}_homer.tar.gz"), name=chips))
-        rule_all_ins.extend(expand(join(homer_chip_dir, "{name}", "macsNarrow", "homer.out"), name=chips))  
     if assay in ("cutnrun",):
         # SEACR
         rule_all_ins.append(join(peakqc_dir, "jaccard", 'SEACR_jaccard.txt'))

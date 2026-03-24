@@ -228,8 +228,8 @@ rule HOMER_chip_narrow:
     input:
         join(macsN_dir, "{name}", "{name}_peaks.narrowPeak"),
     output:
-        homer_peaks                     = temp(join(homer_chip_dir, "{name}", "macsNarrow", "{name}_macsNarrow.homer")),  
-        breadcrumb                      = join(homer_chip_dir, "{name}", "macsNarrow", "homer.out"),
+        knownResults                    = [join(homer_chip_dir, "{name}", "macsNarrow", "knownResults.html"), 
+                                            join(homer_chip_dir, "{name}", "macsNarrow", "knownResults.txt")],
         tar                             = join(homer_chip_dir, "{name}", "macsNarrow", "{name}_homer.tar.gz")
     params:
         rname                           = 'HOMER_chip',
@@ -241,6 +241,8 @@ rule HOMER_chip_narrow:
         tmpdir                          = tmpdir,
         homer_peak_threshhold_bottom    = 20,
         homer_peak_threshhold_top       = 45000,
+        breadcrumb                      = join(homer_chip_dir, "{name}", "macsNarrow", "homer.out"),
+        homer_peaks                     = join(homer_chip_dir, "{name}", "macsNarrow", "{name}_macsNarrow.homer"),
         outdir                          = join(homer_chip_dir, "{name}", "macsNarrow")  
     threads:
         int(cluster['HOMER_chip_narrow'].get('threads', cluster['__default__']['threads'])) 
@@ -256,32 +258,39 @@ rule HOMER_chip_narrow:
             ln -s {params.genomefa} ${{TMPDIR}}/{params.genomealias}
 
             # count peaks
-            bed2pos.pl {input} > {output.homer_peaks}
-            NUM_PEAKS=$(wc -l {output.homer_peaks} | cut -f1 -d$' ')
+            bed2pos.pl {input} > {params.homer_peaks}
+            NUM_PEAKS=$(wc -l {params.homer_peaks} | cut -f1 -d$' ')
 
             if [[ "${{NUM_PEAKS}}" -le {params.homer_peak_threshhold_top} ]] && [[ "${{NUM_PEAKS}}" -ge {params.homer_peak_threshhold_bottom} ]]; then
                 # do homer analysis
-                findMotifsGenome.pl {output.homer_peaks} \\
+                findMotifsGenome.pl {params.homer_peaks} \\
                     ${{TMPDIR}}/{params.genomealias} \\
                     {params.outdir} \\
                     -preparsedDir ${{TMPDIR}} \\
                     -p {threads} \\
                     -size {params.motif_finding_region} \\
-                    -len {params.seq_length} | tee {output.breadcrumb}
+                    -len {params.seq_length} | tee {params.breadcrumb}
                 if [ ! -f {params.outdir}/knownResults.html ]; then
                     echo "!!! Homer failed to make output"
                     exit 1
                 fi
+                
+                # make homer output tarball
                 tmptar="/tmp/$(basename {output.tar})"
                 tar -I pigz -cf ${{tmptar}} -C {params.outdir} .
+                rm -rf "{params.outdir}"
+                mkdir -p {params.outdir}
+
+                # move tarball to final output location
                 mv ${{tmptar}} {output.tar}
+                cd {params.outdir} && tar -xzf {output.tar} --wildcards '*knownResults\.*'
             else
                 if [[ "${{NUM_PEAKS}}" -gt {params.homer_peak_threshhold_top} ]]; then
-                    echo "!!! Too many peaks (${{NUM_PEAKS}}) for {wildcards.name} with HOMER. Not running motif analysis." | tee {output.breadcrumb}
+                    echo "!!! Too many peaks (${{NUM_PEAKS}}) for {wildcards.name} with HOMER. Not running motif analysis." | tee {params.breadcrumb}
                 elif [[ "${{NUM_PEAKS}}" -lt {params.homer_peak_threshhold_bottom} ]]; then
-                    echo "!!! Too few peaks (${{NUM_PEAKS}}) for {wildcards.name} with HOMER. Not running motif analysis." | tee {output.breadcrumb}
+                    echo "!!! Too few peaks (${{NUM_PEAKS}}) for {wildcards.name} with HOMER. Not running motif analysis." | tee {params.breadcrumb}
                 fi
-                touch {output.homer_peaks}
+                touch {output.knownResults[0]} {output.knownResults[1]}
                 touch {output.tar}
             fi
         """)
