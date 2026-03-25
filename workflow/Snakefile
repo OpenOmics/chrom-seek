@@ -101,7 +101,7 @@ else:
         rule_all_ins.extend(expand(join(qc_dir, "{name}.Q5DD.insert_size_metrics.txt"), name=samples))
     if assay in ("atac", "chip"):
         rule_all_ins.extend(expand(
-            join(homer_dba_dir, "UP_{contrast}_{PeakTool}_{differential_app}", "homer.out"),
+            join(homer_dba_dir, "UP_{contrast}_{PeakTool}_{differential_app}", "homer.tar.gz"),
             contrast=contrasts,
             PeakTool=PeakTools,
             differential_app=["DeSeq2", "EdgeR"],

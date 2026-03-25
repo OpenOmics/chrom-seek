@@ -151,9 +151,13 @@ rule HOMER_dba:
                                             "{contrast}-{PeakTool}_Diffbind" + block_add + "_{differential_app}_down.bed",
                                         ),
     output:
-        down_motifs                     = join(homer_dba_dir, "DOWN_{contrast}_{PeakTool}_{differential_app}", "homer.out"),
-        up_motifs                       = join(homer_dba_dir, "UP_{contrast}_{PeakTool}_{differential_app}", "homer.out")
-    params:
+        down_motifs_tar                 = join(homer_dba_dir, "DOWN_{contrast}_{PeakTool}_{differential_app}", "homer.tar.gz"),
+        down_motifs_report              = [join(homer_dba_dir, "DOWN_{contrast}_{PeakTool}_{differential_app}", "knownResults.html"),
+                                            join(homer_dba_dir, "DOWN_{contrast}_{PeakTool}_{differential_app}", "knownResults.txt")],
+        up_motifs_tar                   = join(homer_dba_dir, "UP_{contrast}_{PeakTool}_{differential_app}", "homer.tar.gz"),
+        up_motifs_report                = [join(homer_dba_dir, "UP_{contrast}_{PeakTool}_{differential_app}", "knownResults.html"),
+                                            join(homer_dba_dir, "UP_{contrast}_{PeakTool}_{differential_app}", "knownResults.txt")],
+    params: 
         rname                           = 'HOMER_dba',
         homer_genome                    = homer_genome,
         genomealias                     = genome,
@@ -192,14 +196,26 @@ rule HOMER_dba:
                     -preparsedDir ${{TMPDIR}} \\
                     -p {threads} \\
                     -size {params.motif_finding_region} \\
-                    -len {params.seq_length} | tee {output.up_motifs}
-                if [ ! -f {params.out_dir_up}/homerResults.html ]; then
+                    -len {params.seq_length} | tee {params.out_dir_up}/homer.out
+
+                # make homer output tarball
+                tmptar="/tmp/$(basename {output.up_motifs_tar})"
+                tar -I pigz -cf ${{tmptar}} -C {params.out_dir_up} .
+                rm -rf "{params.out_dir_up}"
+                mkdir -p {params.out_dir_up}
+
+                # move tarball to final output location
+                mv ${{tmptar}} {output.up_motifs_tar}
+                cd {params.out_dir_up} && tar -xzf {output.up_motifs_tar} --wildcards '*knownResults\.*'
+
+                if [ ! -f {params.out_dir_up}/knownResults.html ]; then
                     echo "!!! Homer failed to make output"
                     exit 1
                 fi
             else
-                echo -e "Not enough peaks\n" >> {output.up_motifs}
-                echo -e "{input.up_file} has less than 20 peaks; Not running homer!\n" >> {output.up_motifs}
+                echo -e "Not enough peaks\n" >> {output.up_motifs_tar}
+                echo -e "{input.up_file} has less than 20 peaks; Not running homer!\n" >> {output.up_motifs_tar}
+                touch {output.up_motifs_report[0]} {output.up_motifs_report[1]}
             fi
             awk 'BEGIN {{FS="\\t"; OFS="\\t"}} {{print $4, $1, $2, $3, $6}}' {input.down_file} | sed -e 's/\./+/g' > ${{tmp}}/homer_down_input.bed
             if [ "${{downpeaks}}" -ge ${{thres}} ]; then
@@ -212,14 +228,26 @@ rule HOMER_dba:
                     -preparsedDir ${{TMPDIR}} \\
                     -p {threads} \\
                     -size {params.motif_finding_region} \\
-                    -len {params.seq_length} | tee {output.down_motifs}
-                if [ ! -f {params.out_dir_down}/homerResults.html ]; then
+                    -len {params.seq_length} | tee {params.out_dir_down}/homer.out
+
+                # make homer output tarball
+                tmptar="/tmp/$(basename {output.down_motifs_tar})"
+                tar -I pigz -cf ${{tmptar}} -C {params.out_dir_down} .
+                rm -rf "{params.out_dir_down}"
+                mkdir -p {params.out_dir_down}
+
+                # move tarball to final output location
+                mv ${{tmptar}} {output.down_motifs_tar}
+                cd {params.out_dir_down} && tar -xzf {output.down_motifs_tar} --wildcards '*knownResults\.*'
+
+                if [ ! -f {params.out_dir_down}/knownResults.html ]; then
                     echo "!!! Homer failed to make output"
                     exit 1
                 fi
             else
-                echo -e "Not enough peaks\n" >> {output.down_motifs}
-                echo -e "{input.down_file} has less than 20 peaks; Not running homer!\n" >> {output.down_motifs}
+                echo -e "Not enough peaks\n" >> {output.down_motifs_tar}
+                echo -e "{input.down_file} has less than 20 peaks; Not running homer!\n" >> {output.down_motifs_tar}
+                touch {output.down_motifs_report[0]} {output.down_motifs_report[1]}
             fi
         """)
 
