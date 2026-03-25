@@ -24,7 +24,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           git clone https://github.com/OpenOmics/snakevision.git $GITHUB_WORKSPACE/vis
-          cd $GITHUB_WORKSPACE/vis; pip install .
+          pip install $GITHUB_WORKSPACE/vis
           pip install -r .github/release_reqs.txt
           echo "$GITHUB_WORKSPACE/vis/bin" >> $GITHUB_PATH
       
