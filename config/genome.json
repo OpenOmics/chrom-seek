@@ -78,6 +78,7 @@
             "BWA": "/data/OpenOmics/references/chrom-seek/rheMac10/Macaca_mulatta.Mmul_10.dna.chr",
             "EFFECTIVEGENOMESIZE": "2752365105",
             "GENEINFO": "/data/OpenOmics/references/chrom-seek/rheMac10/prot_gene_only.gtf",
+            "PROTEIN_CODING_BED": "/data/OpenOmics/references/chrom-seek/rheMac10/protein_coding_only.bed",
             "GENOME": "/data/OpenOmics/references/chrom-seek/rheMac10/Macaca_mulatta.Mmul_10.dna.chr.fa.gz",
             "GTFFILE": "/data/OpenOmics/references/chrom-seek/rheMac10/Macaca_mulatta.Mmul_10.110.chr.genetype.gtf",
             "REFLEN": "/data/OpenOmics/references/chrom-seek/rheMac10/Macaca_mulatta.Mmul_10.dna.chr.sizes",
