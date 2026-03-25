@@ -119,10 +119,24 @@ def run(sub_args):
         sub_args, ifiles=input_files, repo_path=git_repo, output_path=sub_args.output
     )
 
+    # Step 2a. Remove any bindpath references 
+    # that need specific landing paths on the
+    # singularity container, place their bind
+    # string manually into `bindpaths`
+    refs = config['references'][sub_args.genome]
+    homer_mount = None
+    homer_key = 'HOMER_REF'
+    if homer_key in refs.keys():
+        homer_mount = config['references'][sub_args.genome][homer_key]
+
     # Step 3. Resolve docker/singularity bind
     # paths from the config file.
     bindpaths = bind(sub_args, config=config)
 
+    # Step 3a. continue from 2a.
+    if homer_mount:
+        bindpaths.append(f"{homer_mount}:/opt/homerdata")
+        
     config["bindpaths"] = bindpaths
 
     # Add peakcall.tsv and contrasts.tsv file
