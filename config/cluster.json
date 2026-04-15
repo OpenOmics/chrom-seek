@@ -60,7 +60,7 @@
     },
     "enhancer_plot": {
         "threads": "28",
-        "mem": "128g"
+        "mem": "240g"
     },
     "preseq": {
         "mem": "24g"
