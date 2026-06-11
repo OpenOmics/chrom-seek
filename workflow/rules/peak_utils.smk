@@ -164,6 +164,8 @@ rule HOMER_dba:
         genomefa                        = genomefa,
         out_dir_up                      = join(homer_dba_dir, "UP_{contrast}_{PeakTool}_{differential_app}"),
         out_dir_down                    = join(homer_dba_dir, "DOWN_{contrast}_{PeakTool}_{differential_app}"),
+        up_error                        = join(homer_dba_dir, "UP_{contrast}_{PeakTool}_{differential_app}", "pipeline-warnings.txt"),
+        down_error                      = join(homer_dba_dir, "DOWN_{contrast}_{PeakTool}_{differential_app}", "pipeline-warnings.txt"),
         seq_length                      = "8,10",
         motif_finding_region            = pkcaller2homer_size["{PeakTool}"],
         tmpdir                          = tmpdir,
@@ -213,9 +215,9 @@ rule HOMER_dba:
                     exit 1
                 fi
             else
-                echo -e "Not enough peaks\n" >> {output.up_motifs_tar}
-                echo -e "{input.up_file} has less than 20 peaks; Not running homer!\n" >> {output.up_motifs_tar}
-                touch {output.up_motifs_report[0]} {output.up_motifs_report[1]}
+                echo -e "Not enough peaks\n" >> {params.up_error}
+                echo -e "{input.up_file} has less than 20 peaks; Not running homer!\n" >> {params.up_error}
+                touch {output.up_motifs_report[0]} {output.up_motifs_report[1]} {output.up_motifs_tar}
             fi
             awk 'BEGIN {{FS="\\t"; OFS="\\t"}} {{print $4, $1, $2, $3, $6}}' {input.down_file} | sed -e 's/\./+/g' > ${{tmp}}/homer_down_input.bed
             if [ "${{downpeaks}}" -ge ${{thres}} ]; then
@@ -245,9 +247,9 @@ rule HOMER_dba:
                     exit 1
                 fi
             else
-                echo -e "Not enough peaks\n" >> {output.down_motifs_tar}
-                echo -e "{input.down_file} has less than 20 peaks; Not running homer!\n" >> {output.down_motifs_tar}
-                touch {output.down_motifs_report[0]} {output.down_motifs_report[1]}
+                echo -e "Not enough peaks\n" >> {params.down_error}
+                echo -e "{input.down_file} has less than 20 peaks; Not running homer!\n" >> {params.down_error}
+                touch {output.down_motifs_report[0]} {output.down_motifs_report[1]} {output.down_motifs_tar}
             fi
         """)
 
