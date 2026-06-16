@@ -56,7 +56,8 @@
     },
     "deeptools_gene_all": {
         "threads": "12",
-        "mem": "100g"
+        "mem": "100g",
+        "gres": "lscratch:64"
     },
     "enhancer_plot": {
         "threads": "28",

@@ -302,18 +302,69 @@ rule deeptools_gene_all:
         parent_dir              = deeptools_dir,
         deeptoolsver            = config['tools']['DEEPTOOLSVER'],
         labels                  = samples,
-        prot_bed                = config['references'][genome]['PROTEIN_CODING_BED']
-    threads: 4
-    # eventually threads should be 16
+        prot_bed                = config['references'][genome]['PROTEIN_CODING_BED'],
+        tmpdir                  = tmpdir,
+    threads: int(allocated("threads", "deeptools_gene_all", cluster))
     shell: 
         dedent("""    
         module load {params.deeptoolsver}
         if [ ! -d "{params.parent_dir}" ]; then mkdir "{params.parent_dir}"; fi
+        # Setups temporary directory for
+        # intermediate files with built-in
+        # mechanism for deletion on exit
+        if [ ! -d "{params.tmpdir}" ]; then mkdir -p "{params.tmpdir}"; fi
+        tmp=$(mktemp -d -p "{params.tmpdir}")
+        export TMPDIR="${{tmp}}"
+        trap 'rm -rf "${{tmp}}"' EXIT
+        # Check the frequency of strand-like
+        # fields in the fourth column of the
+        # provided protein-coding BED file,
+        # WHY? In the past we were providing a
+        # geneinfo.bed file to this rule. That
+        # file did not follow standard BED
+        # format.
+        # Here's is the format of geneinfo.bed:
+        #  Col1=chr, Col2=start, Col3=stop,
+        #  Col4=strand, Col5=gene_id,
+        #  Col6=biotype, Col7=genename
+        # This strandinfo check acts a safeguard
+        # to create a new, BED-compliant file if
+        # a geneinfo.bed was provided
+        strandinfo=$(awk -F '\\t' -v OFS='\\t' \\
+            '{{
+                # Count total number of lines
+                lines++;
+                # Count occurence value in 4-th column 
+                count[$4]++
+            }} 
+            END {{
+                # Create an array of strand-like values
+                n=split("+,-,.", strandinfo, ",");
+                # Get the frequency of strand-like values
+                total=0;
+                for (i=1; i<=n; i++) {{
+                    total+=count[strandinfo[i]]/lines;
+                }}
+                # Return frequency of strand-like values
+                # in the 4th columns of the BED file
+                printf "%.2f\\n", total
+            }}' {params.prot_bed}
+        )
+        # Update BED file as needed, this is to
+        # provide backward compatiability with
+        # the previous, geneinfo BED files
+        awk -v strandinfo="${{strandinfo}}" -v OFS='\\t' \\
+            '{{
+                if (strandinfo>=0.75) print $1,$2,$3,$5,"0.0",$4;
+                else  print $1,$2,$3,$4,"0.0",$6
+            }}' \\
+            {params.prot_bed} \\
+        > "${{tmp}}/geneinfo.bed" 
 
         # TSS
         computeMatrix reference-point \\
             -S {input} \\
-            -R {params.prot_bed} \\
+            -R "${{tmp}}/geneinfo.bed" \\
             -p {threads} \\
             --referencePoint TSS \\
             --upstream 3000 \\
@@ -337,7 +388,7 @@ rule deeptools_gene_all:
         # metagene
         computeMatrix scale-regions \\
             -S {input} \\
-            -R {params.prot_bed} \\
+            -R "${{tmp}}/geneinfo.bed" \\
             -p {threads} \\
             --upstream 1000 \\
             --regionBodyLength 2000 \\

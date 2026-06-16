@@ -215,7 +215,7 @@ rule HOMER_dba:
                     exit 1
                 fi
             else
-                echo -e "Not enough peaks\n" >> {params.up_error}
+                echo -e "Not enough peaks\n" > {params.up_error}
                 echo -e "{input.up_file} has less than 20 peaks; Not running homer!\n" >> {params.up_error}
                 touch {output.up_motifs_report[0]} {output.up_motifs_report[1]} {output.up_motifs_tar}
             fi
@@ -247,7 +247,7 @@ rule HOMER_dba:
                     exit 1
                 fi
             else
-                echo -e "Not enough peaks\n" >> {params.down_error}
+                echo -e "Not enough peaks\n" > {params.down_error}
                 echo -e "{input.down_file} has less than 20 peaks; Not running homer!\n" >> {params.down_error}
                 touch {output.down_motifs_report[0]} {output.down_motifs_report[1]} {output.down_motifs_tar}
             fi
