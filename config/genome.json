@@ -61,7 +61,7 @@
             "BWA": "/data/OpenOmics/references/chrom-seek/mm39_basic/GRCm39.primary_assembly.genome",
             "EFFECTIVEGENOMESIZE": "2467473511",
             "GENEINFO": "/data/OpenOmics/references/chrom-seek/mm39_basic/prot_gene_only.gtf",
-            "GENOME": "/data/OpenOmics/references/chrom-seek/mm39_basic/GRCm39.primary_assembly.genome.fa.gz",
+            "GENOME": "/data/OpenOmics/references/chrom-seek/mm39_basic/GRCm39.primary_assembly.genome.fa",
             "GTFFILE": "/data/OpenOmics/references/chrom-seek/mm39_basic/mm39.mM37.cleaned.gtf",
             "PROTEIN_CODING_BED": "/data/OpenOmics/references/chrom-seek/mm39_basic/mm39.mM37.prot.gene_only.bed",
             "REFLEN": "/data/OpenOmics/references/chrom-seek/mm39_basic/GRCm39.primary_assembly.genome.sizes",
