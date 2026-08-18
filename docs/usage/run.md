@@ -54,7 +54,7 @@ Each of the following arguments are required. Failure to provide a required argu
 > **Input FastQ.**  
 > *type: file(s)*  
 > 
-> One or more FastQ files can be provided. From the command-line, each input file should seperated by a space. Globbing is supported! This makes selecting FastQ files easy. FastQ files should always be gzipp-ed. Only list files you want processed as all files in the list will be run through the initial pipeline steps. All file merging must be done before running the pipeline.
+> One or more FastQ files can be provided. From the command-line, each input file should seperated by a space. Globbing is supported! This makes selecting FastQ files easy. Chrom-seek currently accepts FASTQ filenames ending in .fastq.gz that may use read indicators such as `.R1/.R2`, `_R1/_R2`, or `_1/_2`, with optional lane/chunk tokens like `.001` before the extension (e.g., sample.R1.fastq.gz, sample_R1.fastq.gz, sample_1.fastq.gz, sample_R1.001.fastq.gz). Snakemake workflow conditions are sensitive to `.` and `-` within sample names. FastQ files should always be gzipp-ed. Only list files you want processed as all files in the list will be run through the initial pipeline steps. All file merging must be done before running the pipeline.
 > 
 > ***Example:*** `--input .tests/*.R?.fastq.gz`
 
@@ -75,8 +75,8 @@ Each of the following arguments are required. Failure to provide a required argu
 > Path to a sample sheet in TSV format used to map each ChIP/ATAC sample to its group label(s) for downstream comparisons and, for *ChIP-seq only*, optionally pair a sample to an *input control*. The header must include `Sample` and `Group`, and may optionally include `InputControl` and/or `Block` (column names are case-insensitive).
 >
 > #### Required columns
-> * **Sample**: Basename of the sample (derived from the sample’s R1 FastQ by removing the read/extension suffix), e.g. `WT_S4.R1.fastq.gz` becomes `WT_S4` and `WT_S4_R1_001.fastq.gz` becomes `WT_S4`.
-> * **Group**: Group label(s) for the sample. Multiple groups may be provided as a comma-separated list. Each sample must be assigned to at least one group. Group names currently cannot include `.`, `-`, or `_`, and group names should **not** be substrings of other group names (e.g. avoid `WT` and `WT_Treated` together).
+> * **Sample**: Basename of the sample (derived from the sample’s R1 FastQ by removing the read/extension suffix), e.g. `WT_S4.R1.fastq.gz` becomes `WT_S4` and `WT_S4_R1_001.fastq.gz` becomes `WT_S4`. Snakemake workflow conditions are sensitive to `.` and `-` within sample names.
+> * **Group**: Group label(s) for the sample. Multiple groups may be provided as a comma-separated list. Each sample must be assigned to at least one group. Group names should ideally be alphanumeric only as all special characters may cause problems. Pattern matching within the snakemake workflow prevents the specific use of  `.`, `-`, and `_` in group names. Also, group names should **not** be substrings of other group names (e.g. avoid `WT` and `WT_Treated` together).
 >
 > #### Optional columns
 > * **InputControl**: Basename of the corresponding input control sample for the given `Sample` (derived the same way as above). This column is used to pair each ChIP sample to its matched input control for correction during peak calling. *ATAC-seq samples should never provide `InputControl`.*
