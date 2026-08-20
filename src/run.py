@@ -52,9 +52,7 @@ def init(
             """\n\tFatal: Failed to create provided pipeline output directory!
         User provided --output PATH already exists on the filesystem as a file.
         Please run {} again with a different --output PATH.
-        """.format(
-                sys.argv[0]
-            )
+        """.format(sys.argv[0])
         )
 
     # Copy over templates are other required resources
@@ -160,9 +158,7 @@ def rename(filename):
           sampleName_1.fastq.gz       sampleName_2.fastq.gz
         Please also check that your input files are gzipped?
         If they are not, please gzip them before proceeding again.
-        """.format(
-                filename, sys.argv[0]
-            )
+        """.format(filename, sys.argv[0])
         )
 
     return filename
@@ -232,9 +228,9 @@ def setup(sub_args, ifiles, repo_path, output_path):
         if opt == "func":
             # Pass over sub command's handler
             continue
-        elif opt == "genome" and os.path.exists(v):
+        elif opt == "genome" and os.path.exists(v) and v.endswith(".json"):
             # use custom genome alias if given
-            v = list(validate_custom_genome(v)["references"].values())[0]["ALIAS"]
+            v = next(iter(validate_custom_genome(v)["references"].values()))["ALIAS"]
         elif not isinstance(v, (list, dict)):
             # CLI value can be converted to a string
             v = str(v)
@@ -415,9 +411,7 @@ def mixed_inputs(ifiles):
             for your project, please run the set of FastQ and BAM files separately 
             (in two separate output directories). If you feel like this functionality
             should exist, feel free to open an issue on Github.
-            """.format(
-                " ".join(fq_files), " ".join(bam_files), sys.argv[0]
-            )
+            """.format(" ".join(fq_files), " ".join(bam_files), sys.argv[0])
         )
 
 
@@ -611,9 +605,7 @@ def get_nends(ifiles):
                 paired-end samples and single-end samples separately (in two separate output 
                 directories). If you feel like this functionality should exist, feel free to 
                 open an issue on Github.
-                """.format(
-                    missing_mates, sys.argv[0]
-                )
+                """.format(missing_mates, sys.argv[0])
             )
 
     return nends_status
