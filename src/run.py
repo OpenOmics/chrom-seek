@@ -228,7 +228,7 @@ def setup(sub_args, ifiles, repo_path, output_path):
         if opt == "func":
             # Pass over sub command's handler
             continue
-        elif opt == "genome" and os.path.exists(v) and v.endswith(".json"):
+        elif opt == "genome" and os.path.isfile(v) and v.endswith(".json"):
             # use custom genome alias if given
             v = next(iter(validate_custom_genome(v)["references"].values()))["ALIAS"]
         elif not isinstance(v, (list, dict)):
