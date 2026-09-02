@@ -3,6 +3,15 @@
   <h1 style="font-size: 250%">chrom-seek 🔬</h1>
 
   <b><i>An awesome set of epigenetic pipelines</i></b><br> 
+  <a href="https://doi.org/10.5281/zenodo.16921008">
+    <img src="https://img.shields.io/badge/DOI-10.5281%2Fzenodo.16921008-blue" alt="DOI">
+  </a>
+  <a href="https://github.com/OpenOmics/chrom-seek/releases">
+    <img alt="GitHub release" src="https://img.shields.io/github/v/release/OpenOmics/chrom-seek?color=blue&include_prereleases">
+  </a>
+  <a href="https://hub.docker.com/r/skchronicles/cfchip_toolkit">
+    <img alt="Docker Pulls" src="https://img.shields.io/docker/pulls/skchronicles/cfchip_toolkit">
+  </a><br>
   <a href="https://github.com/OpenOmics/chrom-seek/actions/workflows/main.yaml">
     <img alt="tests" src="https://github.com/OpenOmics/chrom-seek/workflows/tests/badge.svg">
   </a>
@@ -24,6 +33,7 @@
 
 
 ## Overview
+
 Welcome to chrom-seek's documentation! This guide is the main source of documentation for users who are getting started with our [bulk epigenetic pipelines](https://github.com/OpenOmics/chrom-seek/). 
 
 The **`./chrom-seek`** pipeline is composed of several interrelated sub-commands to set up and run the pipeline across different systems. Each of the available sub-commands performs different functions: 
@@ -72,33 +82,34 @@ This site is a living document, created for and by members like you. chrom-seek 
 
 ## Citation
 
-If you use this software, please cite it as below:  
+Please note that more citation styles and releases can be found on the chrom-seek [zenodo page](https://doi.org/10.5281/zenodo.16921008).
+
+If you use this pipeline, please cite it as below:
 
 === "BibTex"
 
     ```text
-    @article {Jange202302003,
-    	author = {Moon Kyoo Jang and Tovah E Markowitz and Temesgen E Andargie and Zainab Apalara and Skyler Kuhn and Sean Agbor-Enoh},
-    	title = {Cell-free chromatin immunoprecipitation to detect molecular pathways in heart transplantation},
-    	volume = {6},
-    	number = {12},
-    	elocation-id = {e202302003},
-    	year = {2023},
-    	doi = {10.26508/lsa.202302003},
-    	publisher = {Life Science Alliance},
-    	abstract = {Existing monitoring approaches in heart transplantation lack the sensitivity to provide deep molecular assessments to guide management, or require endomyocardial biopsy, an invasive and blind procedure that lacks the precision to reliably obtain biopsy samples from diseased sites. This study examined plasma cell-free DNA chromatin immunoprecipitation sequencing (cfChIP-seq) as a noninvasive proxy to define molecular gene sets and sources of tissue injury in heart transplant patients. In healthy controls and in heart transplant patients, cfChIP-seq reliably detected housekeeping genes. cfChIP-seq identified differential gene signals of relevant immune and nonimmune molecular pathways that were predominantly down-regulated in immunosuppressed heart transplant patients compared with healthy controls. cfChIP-seq also identified cell-free DNA tissue sources. Compared with healthy controls, heart transplant patients demonstrated greater cell-free DNA from tissue types associated with heart transplant complications, including the heart, hematopoietic cells, lungs, liver, and vascular endothelium. cfChIP-seq may therefore be a reliable approach to profile dynamic assessments of molecular pathways and sources of tissue injury in heart transplant patients.},
-    	URL = {https://www.life-science-alliance.org/content/6/12/e202302003},
-    	eprint = {https://www.life-science-alliance.org/content/6/12/e202302003.full.pdf},
-    	journal = {Life Science Alliance}
+    @software{routsong_2026_16921008,
+      author       = {Markowitz, Tovah and
+                      Routsong, Ryan and
+                      Khleborodova, Asya and
+                      Kuhn, Skyler},
+      title        = {OpenOmics/chrom-seek},
+      month        = aug,
+      year         = 2026,
+      publisher    = {Zenodo},
+      doi          = {10.5281/zenodo.16921008},
+      url          = {https://doi.org/10.5281/zenodo.16921008},
     }
     ```
 
 === "APA"
 
     ```text
-    Jang, M. K., Markowitz, T. E., Andargie, T. E., Apalara, Z., Kuhn, S., & Agbor-Enoh, S. (2023). Cell-free chromatin immunoprecipitation to detect molecular pathways in heart transplantation. Life Science Alliance, 6(12), e202302003. https://doi.org/10.26508/lsa.202302003 
+    Markowitz, T., Routsong, R., Khleborodova, A., & Kuhn, S. (2026). OpenOmics/chrom-seek [Computer software]. Zenodo. https://doi.org/10.5281/zenodo.16921008
     ```
 
 ## References
+
 <sup>**1.**  Kurtzer GM, Sochat V, Bauer MW (2017). Singularity: Scientific containers for mobility of compute. PLoS ONE 12(5): e0177459.</sup>  
 <sup>**2.**  Koster, J. and S. Rahmann (2018). "Snakemake-a scalable bioinformatics workflow engine." Bioinformatics 34(20): 3600.</sup>  

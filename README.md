@@ -4,7 +4,7 @@
   
   **_An awesome set of epigenetic pipelines_**
 
-  [![tests](https://github.com/OpenOmics/chrom-seek/workflows/tests/badge.svg)](https://github.com/OpenOmics/chrom-seek/actions/workflows/main.yaml) [![docs](https://github.com/OpenOmics/chrom-seek/workflows/docs/badge.svg)](https://github.com/OpenOmics/chrom-seek/actions/workflows/docs.yml) [![GitHub issues](https://img.shields.io/github/issues/OpenOmics/chrom-seek?color=brightgreen)](https://github.com/OpenOmics/chrom-seek/issues)  [![GitHub license](https://img.shields.io/github/license/OpenOmics/chrom-seek)](https://github.com/OpenOmics/chrom-seek/blob/main/LICENSE) 
+   [![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.16921008-blue)](https://doi.org/10.5281/zenodo.16921008) [![GitHub release (latest SemVer including pre-releases)](https://img.shields.io/github/v/release/OpenOmics/chrom-seek?color=blue&include_prereleases)](https://github.com/OpenOmics/chrom-seek/releases) [![Docker Pulls](https://img.shields.io/docker/pulls/skchronicles/cfchip_toolkit)](https://hub.docker.com/r/skchronicles/cfchip_toolkit) <br> [![tests](https://github.com/OpenOmics/chrom-seek/workflows/tests/badge.svg)](https://github.com/OpenOmics/chrom-seek/actions/workflows/main.yaml) [![docs](https://github.com/OpenOmics/chrom-seek/workflows/docs/badge.svg)](https://github.com/OpenOmics/chrom-seek/actions/workflows/docs.yml) [![GitHub issues](https://img.shields.io/github/issues/OpenOmics/chrom-seek?color=brightgreen)](https://github.com/OpenOmics/chrom-seek/issues)  [![GitHub license](https://img.shields.io/github/license/OpenOmics/chrom-seek)](https://github.com/OpenOmics/chrom-seek/blob/main/LICENSE) 
   
   <i>
     This is the home of the pipeline, chrom-seek. Its long-term goals: to accurately call and annotate peaks, to infer cell types in cell-free samples, and to boldly quantify diferential binding or accessibility like no pipeline before!
@@ -12,6 +12,7 @@
 </div>
 
 ## Overview
+
 Welcome to chrom-seek! Before getting started, we highly recommend reading through [chrom-seek's documentation](https://openomics.github.io/chrom-seek/).
 
 The **`./chrom-seek`** pipeline is composed of several interrelated sub-commands to set up and run the pipeline across different systems. Each of the available sub-commands performs different functions: 
@@ -30,11 +31,13 @@ Before getting started, we highly recommend reading through the [usage](https://
 For more information about issues or troubleshooting a problem, please check out our [FAQ](https://openomics.github.io/chrom-seek/faq/questions/) prior to [opening an issue on Github](https://github.com/OpenOmics/chrom-seek/issues).
 
 ## Dependencies
-**Requires:** `singularity>=3.5`  `snakemake>=6.0`
+
+**Requires:** `singularity>=3.5`  `snakemake<=7.32.4`
 
 At the current moment, the pipeline uses a mixture of environment modules and docker images; however, this will be changing soon! In the very near future, the pipeline will only use docker images. With that being said, [snakemake](https://snakemake.readthedocs.io/en/stable/getting_started/installation.html) and [singularity](https://singularity.lbl.gov/all-releases) must be installed on the target system. Snakemake orchestrates the execution of each step in the pipeline. To guarantee the highest level of reproducibility, each step of the pipeline will rely on versioned images from [DockerHub](https://hub.docker.com/orgs/nciccbr/repositories). Snakemake uses singularity to pull these images onto the local filesystem prior to job execution, and as so, snakemake and singularity will be the only two dependencies in the future.
 
 ## Installation
+
 Please clone this repository to your local filesystem using the following command:
 ```bash
 # Clone Repository from Github
@@ -49,30 +52,31 @@ module load snakemake singularity
 ```
 
 ## Contribute 
+
 This site is a living document, created for and by members like you. chrom-seek is maintained by the members of OpenOmics and is improved by continuous feedback! We encourage you to contribute new content and make improvements to existing content via pull requests to our [GitHub repository](https://github.com/OpenOmics/chrom-seek).
 
 
 ## Cite
 
-If you use this software, please cite our [methods paper](https://www.doi.org/10.26508/lsa.202302003):  
+Please note that more citation styles and releases can be found on the chrom-seek [zenodo page](https://doi.org/10.5281/zenodo.16921008).
+
+If you use this pipeline, please cite it as below:
 
 <details>
   <summary><b><i>@BibText</i></b></summary>
  
 ```text
-@article {Jange202302003,
-	author = {Moon Kyoo Jang and Tovah E Markowitz and Temesgen E Andargie and Zainab Apalara and Skyler Kuhn and Sean Agbor-Enoh},
-	title = {Cell-free chromatin immunoprecipitation to detect molecular pathways in heart transplantation},
-	volume = {6},
-	number = {12},
-	elocation-id = {e202302003},
-	year = {2023},
-	doi = {10.26508/lsa.202302003},
-	publisher = {Life Science Alliance},
-	abstract = {Existing monitoring approaches in heart transplantation lack the sensitivity to provide deep molecular assessments to guide management, or require endomyocardial biopsy, an invasive and blind procedure that lacks the precision to reliably obtain biopsy samples from diseased sites. This study examined plasma cell-free DNA chromatin immunoprecipitation sequencing (cfChIP-seq) as a noninvasive proxy to define molecular gene sets and sources of tissue injury in heart transplant patients. In healthy controls and in heart transplant patients, cfChIP-seq reliably detected housekeeping genes. cfChIP-seq identified differential gene signals of relevant immune and nonimmune molecular pathways that were predominantly down-regulated in immunosuppressed heart transplant patients compared with healthy controls. cfChIP-seq also identified cell-free DNA tissue sources. Compared with healthy controls, heart transplant patients demonstrated greater cell-free DNA from tissue types associated with heart transplant complications, including the heart, hematopoietic cells, lungs, liver, and vascular endothelium. cfChIP-seq may therefore be a reliable approach to profile dynamic assessments of molecular pathways and sources of tissue injury in heart transplant patients.},
-	URL = {https://www.life-science-alliance.org/content/6/12/e202302003},
-	eprint = {https://www.life-science-alliance.org/content/6/12/e202302003.full.pdf},
-	journal = {Life Science Alliance}
+@software{routsong_2026_16921008,
+  author       = {Markowitz, Tovah and
+                  Routsong, Ryan and
+                  Khleborodova, Asya and
+                  Kuhn, Skyler},
+  title        = {OpenOmics/chrom-seek},
+  month        = aug,
+  year         = 2026,
+  publisher    = {Zenodo},
+  doi          = {10.5281/zenodo.16921008},
+  url          = {https://doi.org/10.5281/zenodo.16921008},
 }
 ```
 
@@ -82,12 +86,13 @@ If you use this software, please cite our [methods paper](https://www.doi.org/10
   <summary><b><i>@APA</i></b></summary>
 
 ```text
-Jang, M. K., Markowitz, T. E., Andargie, T. E., Apalara, Z., Kuhn, S., & Agbor-Enoh, S. (2023). Cell-free chromatin immunoprecipitation to detect molecular pathways in heart transplantation. Life Science Alliance, 6(12), e202302003. https://doi.org/10.26508/lsa.202302003 
+Markowitz, T., Routsong, R., Khleborodova, A., & Kuhn, S. (2026). OpenOmics/chrom-seek [Computer software]. Zenodo. https://doi.org/10.5281/zenodo.16921008
 ```
 
 </details>
 
 
 ## References
+
 <sup>**1.**  Kurtzer GM, Sochat V, Bauer MW (2017). Singularity: Scientific containers for mobility of compute. PLoS ONE 12(5): e0177459.</sup>  
 <sup>**2.**  Koster, J. and S. Rahmann (2018). "Snakemake-a scalable bioinformatics workflow engine." Bioinformatics 34(20): 3600.</sup>  
