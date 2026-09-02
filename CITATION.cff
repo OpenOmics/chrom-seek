@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "If you use chrom-seek, please cite it as below."
+title: "OpenOmics/chrom-seek"
+repository-code: "https://github.com/OpenOmics/chrom-seek"
+type: software
+license: MIT
+doi: "10.5281/zenodo.16921008"
+
+authors:
+  - affiliation: "National Institute of Allergy and Infectious Diseases"
+    given-names: Tovah
+    family-names: Markowitz
+  - affiliation: "National Institute of Allergy and Infectious Diseases"
+    given-names: Ryan
+    family-names: Routsong
+    orcid: "https://orcid.org/0000-0002-1348-6172"
+  - affiliation: "National Institute of Allergy and Infectious Diseases"
+    given-names: Asya
+    family-names: Khleborodova
+  - affiliation: "National Institute of Allergy and Infectious Diseases"
+    given-names: Skyler
+    family-names: Kuhn
+    orcid: "https://orcid.org/0000-0003-0606-2125"
