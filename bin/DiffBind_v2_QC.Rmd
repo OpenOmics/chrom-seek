@@ -14,6 +14,7 @@ params:
     counts_bed: ""
     counts_csv: ""
     peakcaller: ""
+    threads: 1
 ---
 
 <style type="text/css">
@@ -29,6 +30,12 @@ peakcaller <- params$peakcaller
 csvfile <- params$csvfile
 counts_bed <- params$counts_bed
 counts_csv <- params$counts_csv
+threads <- as.integer(params$threads)
+
+# Ensure threads is at least 1
+if (is.na(threads) || threads < 1) {
+    threads <- 1
+}
 ```
 
 **Peak sources:**
@@ -155,8 +162,9 @@ if ( sum(samples$class["Condition",] != "") == ncol(samples$class) ) {
 if (minOv < 2) { minOv <- 2}
 
 print(paste0("The minimum number of overlaps is: ", minOv))
+print(paste0("Using ", threads, " thread(s) for dba.count()"))
 
-DBdataCounts <- dba.count(samples, summits=summits_arg, bParallel=T)
+DBdataCounts <- dba.count(samples, summits=summits_arg, bParallel=TRUE, bCores=threads)
 
 # remove negative coordinates when summits_arg is not FALSE
 if ( summits_arg != FALSE ) {
