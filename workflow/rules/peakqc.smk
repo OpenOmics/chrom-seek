@@ -196,6 +196,7 @@ rule jaccard_genrich:
         outroot                 = join(peakqc_dir, "jaccard"),
         script                  = join(bin_path, "jaccard_score.py"),
         genome                  = config['references'][genome]['REFLEN'],
+        this_config             = join(workpath, 'config.json'),
         tmpdir                  = tmpdir
     container: 
         config['images']['python']
@@ -208,6 +209,7 @@ rule jaccard_genrich:
         python {params.script} \\
             -i "{input}" \\
             --caller Genrich \\
+            --config {params.this_config} \\
             --pcatab {output.pcatab} \\
             --outtable {output.table} \\
             --pcaplot {output.pcaplot} \\
@@ -231,6 +233,7 @@ rule jaccard_macsbroad:
         outroot                 = join(peakqc_dir, "jaccard"),
         script                  = join(bin_path, "jaccard_score.py"),
         genome                  = config['references'][genome]['REFLEN'],
+        this_config             = join(workpath, 'config.json'),
         tmpdir                  = tmpdir
     container: 
         config['images']['python']
@@ -243,6 +246,7 @@ rule jaccard_macsbroad:
         python {params.script} \\
             -i "{input}" \\
             --caller macsBroad \\
+            --config {params.this_config} \\
             --pcatab {output.pcatab} \\
             --outtable {output.table} \\
             --pcaplot {output.pcaplot} \\
@@ -266,6 +270,7 @@ rule jaccard_macsnarrow:
         outroot                 = join(peakqc_dir, "jaccard"),
         script                  = join(bin_path, "jaccard_score.py"),
         genome                  = config['references'][genome]['REFLEN'],
+        this_config             = join(workpath, 'config.json'),
         tmpdir                  = tmpdir
     container: 
         config['images']['python']
@@ -278,6 +283,7 @@ rule jaccard_macsnarrow:
         python {params.script} \\
             -i "{input}" \\
             --caller macsNarrow \\
+            --config {params.this_config} \\
             --pcatab {output.pcatab} \\
             --outtable {output.table} \\
             --pcaplot {output.pcaplot} \\
@@ -301,6 +307,7 @@ rule jaccard_seacr:
         outroot                 = join(peakqc_dir, "jaccard"),
         script                  = join(bin_path, "jaccard_score.py"),
         genome                  = config['references'][genome]['REFLEN'],
+        this_config             = join(workpath, 'config.json'),
         tmpdir                  = tmpdir
     container: 
         config['images']['python']
@@ -313,6 +320,7 @@ rule jaccard_seacr:
         python {params.script} \\
             -i "{input}" \\
             --caller SEARC \\
+            --config {params.this_config} \\
             --pcatab {output.pcatab} \\
             --outtable {output.table} \\
             --pcaplot {output.pcaplot} \\
