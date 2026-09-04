@@ -2,9 +2,9 @@
 import argparse
 import json
 from csv import DictWriter
+from collections import defaultdict
 from os.path import basename, dirname, exists, isfile, abspath
 from os import makedirs
-from itertools import repeat
 
 ##
 ## Objective : gather all Q5DD bams, their respective controls (if they exist),
@@ -22,6 +22,40 @@ def valid_json(path):
         return data
 
 
+def nan_like(value):
+    if value is None:
+        return True
+    v = str(value).strip().lower()
+    return v in {"", "na", "nan", "none", "null"}
+
+
+def peak_has_intervals(path):
+    if nan_like(path) or (not isfile(path)):
+        return False
+    with open(path, "r") as peak_file:
+        for line in peak_file:
+            line = line.strip()
+            if line and not line.startswith("#") and not line.startswith("track") and not line.startswith("browser"):
+                return True
+    return False
+
+
+def extract_sid_from_peak(peak_path):
+    peak_name = basename(peak_path)
+    suffixes = (
+        "_peaks.narrowPeak",
+        "_peaks.broadPeak",
+        ".narrowPeak",
+        ".broadPeak",
+        ".stringent.bed",
+        ".bed",
+    )
+    for suffix in suffixes:
+        if peak_name.endswith(suffix):
+            return peak_name[: -len(suffix)]
+    return peak_name.split(".")[0]
+
+
 def main(args):
     extract_sid = lambda fn: basename(fn).replace(".Q5DD.bam", "")
     columns = [
@@ -34,34 +68,44 @@ def main(args):
         "Peaks",
         "PeakCaller",
     ]
-    tbl = {}
-
     control_map = args.cfg['project']['peaks']['inputs']
     samples = args.cfg['project']['peaks']['chips']
-    n = len(samples)
     grp2sample = args.cfg['project']['groups']
     sample2grp = dict.fromkeys(samples, "")
     bam_map = {extract_sid(b): b for b in args.bams}
-    peak_map = {extract_sid(p): p for p in args.peaks}
+    peak_map = {extract_sid_from_peak(p): p for p in args.peaks}
     for grp, grp_sample in grp2sample.items():
         for s in grp_sample:
             sample2grp[s] = grp
 
-    tbl["SampleID"] = samples
-    tbl["Condition"] = list(map(sample2grp.get, samples))
-    tbl["Replicate"] = list(repeat("1", n))
-    tbl["bamReads"] = list(map(bam_map.get, map(extract_sid, samples)))
-    tbl["ControlID"] = list(map(control_map.get, samples))
-    tbl["bamControl"] = list(map(bam_map.get, map(control_map.get, samples)))
-    tbl["Peaks"] = list(map(peak_map.get, map(extract_sid, args.peaks)))
-    tbl["PeakCaller"] = list(repeat(args.pktool, n))
-
+    dropped = []
+    condition_replicates = defaultdict(int)
     csv = []
-    for i in range(n):
-        this_row = {}
-        for col in columns:
-            this_row[col] = list(tbl[col])[i]
-        csv.append(this_row)
+    for sample in samples:
+        condition = sample2grp.get(sample, "")
+        bam_reads = bam_map.get(sample, "")
+        control_id = control_map.get(sample, "")
+        peaks = peak_map.get(sample, "")
+
+        # Drop NaN/missing/empty peaks rows and empty BAM rows.
+        if nan_like(sample) or nan_like(bam_reads) or nan_like(peaks) or (not peak_has_intervals(peaks)):
+            dropped.append(sample)
+            continue
+
+        condition_replicates[condition] += 1
+        csv.append({
+            "SampleID": sample,
+            "Condition": condition,
+            "Replicate": str(condition_replicates[condition]),
+            "bamReads": bam_reads,
+            "ControlID": "" if nan_like(control_id) else control_id,
+            "bamControl": "" if nan_like(control_id) else bam_map.get(control_id, ""),
+            "Peaks": peaks,
+            "PeakCaller": args.pktool,
+        })
+
+    if dropped:
+        print("\t> WARNING: Dropped samples with NaN/empty peak inputs: " + ", ".join(dropped))
 
     out_dir = dirname(args.output)
     if not exists(out_dir):
@@ -72,7 +116,7 @@ def main(args):
         wrtr.writeheader()
         for row in csv:
             wrtr.writerow(row)
-    print(f"\t> File {args.output} written.")
+    print(f"\t> File {args.output} written with {len(csv)} sample(s).")
 
 
 if __name__ == "__main__":

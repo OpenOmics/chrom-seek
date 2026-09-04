@@ -47,12 +47,50 @@ suppressMessages(library(ggplot2))
 suppressMessages(library(ggrepel))
 ```
 
+```{r preflight, echo=FALSE, warning=FALSE,message=FALSE}
+sample_sheet <- read.csv(csvfile, stringsAsFactors = FALSE)
+sample_sheet <- sample_sheet %>%
+  tidyr::drop_na(SampleID, bamReads, Peaks) %>%
+  dplyr::filter(SampleID != "", bamReads != "", Peaks != "")
+
+if (nrow(sample_sheet) > 0) {
+  write.csv(sample_sheet, csvfile, row.names = FALSE)
+}
+
+if (nrow(sample_sheet) < 2) {
+  cat(
+    "\n### DiffBind QC skipped\n",
+    "Fewer than 2 valid samples remain after dropping NaN/empty peak rows.",
+    "\n\nOutputs were written as empty placeholders.\n"
+  )
+
+  empty_counts <- data.frame(
+    seqnames = character(),
+    start = integer(),
+    end = integer(),
+    width = integer(),
+    Peaks = character()
+  )
+
+  write.csv(empty_counts, counts_csv, row.names = FALSE)
+  write.table(
+    empty_counts[, c("seqnames", "start", "end", "Peaks")],
+    counts_bed,
+    quote = FALSE,
+    sep = "\t",
+    row.names = FALSE,
+    col.names = FALSE
+  )
+  knitr::knit_exit()
+}
+```
+
 ```{r functions, echo=FALSE, warning=FALSE,message=FALSE}
 remove_negative_coordinates <- function(dbaOBJ) {
   negCoordIdx <- which(dbaOBJ$merged[,2] < 0)
   dbaOBJ$merged[negCoordIdx,2] <- 1
   dbaOBJ$binding[negCoordIdx,2] <- 1
-  for ( i in 1:length(dbaOBJ$peaks) ) {
+  for (i in seq_along(dbaOBJ$peaks)) {
       dbaOBJ$peaks[[i]]$Start[negCoordIdx] <- 1
   }
   return(dbaOBJ)
@@ -71,7 +109,7 @@ PCAbasic <- function(pv) {
   pc <- pv$pc
 
   vr <- rep(0,length(pc$sdev))
-  for (i in 1:length(vr)) {
+  for (i in seq_along(vr)) {
       vr[i] <- pc$sdev[i] ^ 2
   }
 
@@ -123,7 +161,7 @@ DT::datatable(pca1,
 Number of overlapping peaks, occupancy analysis. Only if number of samples is less than 5. 
 ```{r Venn, fig_height=4}
 if (nrow(samples$samples) < 5) {
-   dba.plotVenn(samples, 1:nrow(samples$samples)) 
+  dba.plotVenn(samples, seq_len(nrow(samples$samples))) 
 } 
 ```
 
@@ -167,7 +205,7 @@ print(DBdataCounts)
 
 DBreadNum <- data.frame( ID=DBdataCounts$class["ID",],
                          Reads=DBdataCounts$class["Reads",])
-rownames(DBreadNum) <- 1:nrow(DBreadNum)
+rownames(DBreadNum) <- seq_len(nrow(DBreadNum))
 print(DBreadNum)
 ```
 
@@ -202,7 +240,7 @@ consensus2 <- dba.peakset(DBdataCounts, bRetrieve=TRUE) %>% ##extracts TMM-norma
   as.data.frame() %>% 
   setNames(vec) %>% 
   arrange(start, end) %>% 
-  mutate(Peaks = paste0("Peak", 1:nrow(.))) %>% 
+  mutate(Peaks = paste0("Peak", seq_len(nrow(.)))) %>% 
   dplyr::select(1:4, Peaks, samples$samples$SampleID)
 
 write.csv(consensus2, counts_csv, row.names = F)
