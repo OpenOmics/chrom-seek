@@ -16,7 +16,7 @@ remove_negative_coordinates <- function(dbaOBJ) {
   negCoordIdx <- unique(which(dbaOBJ$merged[,2] <= 0))
   dbaOBJ$merged[negCoordIdx,2] <- 1
   dbaOBJ$binding[negCoordIdx,2] <- 1
-  for ( i in 1:length(dbaOBJ$peaks) ) {
+    for (i in seq_along(dbaOBJ$peaks)) {
       dbaOBJ$peaks[[i]]$Start[negCoordIdx] <- 1
   }
   return(dbaOBJ)
@@ -35,12 +35,17 @@ parser$add_argument('--csvfile', '-c', help='CSV input file from `diffbind_csv`'
 parser$add_argument('--counts', '-n', help='Peak count RDS output file', default=file.path(getwd(), "peak_counts.rds"))
 parser$add_argument('--list', '-l', help='Peak list TXT output file', default=file.path(getwd(), "peak_list.bed"))
 parser$add_argument('--peakcaller', '-p', help='String with peakcaller name')
+parser$add_argument('--threads', '-t', help='Number of threads to use for dba.count()', default='1')
 xargs <- parser$parse_args()
 
 csvfile <- cleanup_arg(xargs$csvfile)
 counts <- cleanup_arg(xargs$counts)
 list <- cleanup_arg(xargs$list)
 threads <- as.numeric(cleanup_arg(xargs$threads))
+if (is.na(threads) || threads < 1) {
+    threads <- 1
+}
+threads <- as.integer(threads)
 peakcaller <- cleanup_arg(xargs$peakcaller)
 samples <- dba(sampleSheet=csvfile)
 samples <- remove_negative_coordinates2(samples)
@@ -56,7 +61,14 @@ if ( peakcaller == "macsNarrow" ) {
 }
 
 # count
-DBdataCounts <- dba.count(samples, summits=summits_arg, bParallel=T)
+print(paste0("Using ", threads, " thread(s) for dba.count()"))
+options(mc.cores = threads)
+DBdataCounts <- dba.count(
+    samples,
+    summits=summits_arg,
+    bParallel=(threads > 1),
+    bCores=threads
+)
 
 # remove negative coordinates when summits_arg is not FALSE
 if ( summits_arg != FALSE ) {
@@ -68,5 +80,5 @@ saveRDS(DBdataCounts, counts)
 
 # save peaklist
 consensus <- dba.peakset(DBdataCounts, bRetrieve=T)
-consensus$name <- paste0("Peak", 1:length(consensus))
+consensus$name <- paste0("Peak", seq_along(consensus))
 rtracklayer::export(consensus, list)
