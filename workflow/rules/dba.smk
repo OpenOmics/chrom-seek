@@ -72,6 +72,7 @@ rule diffbind_count:
         this_contrast                   = "{group1}_vs_{group2}",
         this_peaktool                   = "{PeakTool}",
         this_script                     = join(bin_path, "DiffBind_v2_load.R"),
+    threads: int(allocated("threads", "diffbind_count", cluster))
     container: config["images"]["cfchip"]
     shell:
         dedent("""
@@ -79,6 +80,7 @@ rule diffbind_count:
             --csvfile {input.csvfile} \\
             --counts {output.peak_counts} \\
             --list {output.peak_list} \\
+            --threads {threads} \\
             --peakcaller {params.this_peaktool}
         """)
 
@@ -492,6 +494,7 @@ rule diffbindQC_macsN:
         outdir                      = join(diffbind_qc_dir, "AllSamples-macsNarrow"),
         configfile                  = config_path,    
         pythonscript                = join(bin_path, "prep_diffbindQC.py"),
+    threads: int(allocated("threads", "diffbindQC_macsN", cluster))
     container:
        config['images']['diffbind']
     shell:
@@ -510,7 +513,7 @@ rule diffbindQC_macsN:
         cd {params.outdir}
         Rscript -e 'rmarkdown::render("{params.rscript}", output_file="{output.html}",
             params=list(csvfile="{output.csvfile}", counts_bed="{output.countsbed}", 
-            counts_csv="{output.countscsv}", peakcaller="{params.peak_tool}"))'
+            counts_csv="{output.countscsv}", peakcaller="{params.peak_tool}", threads="{threads}"))'
         """)
 
 
@@ -533,6 +536,7 @@ rule diffbindQC_macsB:
         outdir                      = join(diffbind_qc_dir, "AllSamples-macsBroad"),
         configfile                  = config_path,
         pythonscript                = join(bin_path, "prep_diffbindQC.py"),
+    threads: int(allocated("threads", "diffbindQC_macsB", cluster))
     container:
        config['images']['diffbind']
     shell:
@@ -551,7 +555,7 @@ rule diffbindQC_macsB:
         cd {params.outdir}
         Rscript -e 'rmarkdown::render("{params.rscript}", output_file="{output.html}",
             params=list(csvfile="{output.csvfile}", counts_bed="{output.countsbed}", 
-            counts_csv="{output.countscsv}", peakcaller="{params.peak_tool}"))'
+            counts_csv="{output.countscsv}", peakcaller="{params.peak_tool}", threads="{threads}"))'
         """)
 
 
@@ -574,6 +578,7 @@ rule diffbindQC_genrich:
         outdir                      = join(diffbind_qc_dir, "AllSamples-Genrich"),
         configfile                  = config_path,
         pythonscript                = join(bin_path, "prep_diffbindQC.py")
+    threads: int(allocated("threads", "diffbindQC_genrich", cluster))
     container:
        config['images']['diffbind']
     shell:
@@ -592,7 +597,7 @@ rule diffbindQC_genrich:
         cd {params.outdir}
         Rscript -e 'rmarkdown::render("{params.rscript}", output_file="{output.html}",
             params=list(csvfile="{output.csvfile}", counts_bed="{output.countsbed}", 
-            counts_csv="{output.countscsv}", peakcaller="{params.peak_tool}"))'
+            counts_csv="{output.countscsv}", peakcaller="{params.peak_tool}", threads="{threads}"))'
         """)
 
 
@@ -616,6 +621,7 @@ rule diffbindQC_SEACR:
         pythonscript                = join(bin_path, "prep_diffbindQC.py"),
         configfile                  = config_path,
         groups                      = json.dumps(config['project']['groups']).replace('"', '\\"')
+    threads: int(allocated("threads", "diffbindQC_SEACR", cluster))
     container:
        config['images']['diffbind']
     shell:
@@ -634,7 +640,7 @@ rule diffbindQC_SEACR:
         cd {params.outdir}
         Rscript -e 'rmarkdown::render("{params.rscript}", output_file="{output.html}",
             params=list(csvfile="{output.csvfile}", counts_bed="{output.countsbed}", 
-            counts_csv="{output.countscsv}", peakcaller="{params.peak_tool}"))'
+            counts_csv="{output.countscsv}", peakcaller="{params.peak_tool}", threads="{threads}"))'
         """)
 
 
