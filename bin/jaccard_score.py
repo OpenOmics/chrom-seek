@@ -67,8 +67,16 @@ def nan_to_zero(score):
     """
     Converts a jaccard score from bedtools into a float. Undefined scores
     (NaN, produced when a pair of peak files has an empty union) are treated
-    as 0, that is, no overlap between the two files.
+    as 0, that is, no overlap between the two files. Missing values of any
+    flavor are caught here: the "nan" string bedtools prints, numpy.nan,
+    numpy float NaNs, pandas.NA and None.
     """
+    try:
+        if pd.isna(score):
+            return 0.0
+    except (TypeError, ValueError):
+        # non-scalar or otherwise untestable value, fall through to float()
+        pass
     try:
         score = float(score)
     except (TypeError, ValueError):
@@ -101,7 +109,9 @@ def loop_jaccard(infileList, genomefile):
             if len(outTable) == 0:
                 outTable.append( "\t".join(keylist) )
             outTable.append( "\t".join(data) )
-    out2 = pd.DataFrame(out, columns=colnames, index=colnames, dtype="float")
+    # fillna is a backstop: any numpy NaN that slipped past nan_to_zero would
+    # otherwise break the downstream PCA and clustermap
+    out2 = pd.DataFrame(out, columns=colnames, index=colnames, dtype="float").fillna(0.0)
     return (outTable, out2, snames)
 
 

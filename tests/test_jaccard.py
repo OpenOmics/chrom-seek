@@ -9,6 +9,9 @@ import types
 import unittest
 from unittest import mock
 
+import numpy as np
+import pandas as pd
+
 
 def load_jaccard_score_module():
     """
@@ -106,11 +109,33 @@ class TestNanToZero(unittest.TestCase):
         for score in ("nan", "NaN", float("nan"), "", ".", None):
             self.assertEqual(self.mod.nan_to_zero(score), 0.0)
 
+    def test_numpy_and_pandas_nans_are_zero(self):
+        for score in (
+            np.nan,
+            np.float64("nan"),
+            np.float32("nan"),
+            np.float64(np.nan),
+            pd.NA,
+            pd.NaT,
+            pd.Series([np.nan])[0],
+            pd.array([None], dtype="Float64")[0],
+        ):
+            self.assertEqual(self.mod.nan_to_zero(score), 0.0)
+
     def test_real_scores_are_preserved(self):
         self.assertEqual(self.mod.nan_to_zero("0.3333"), 0.3333)
         self.assertEqual(self.mod.nan_to_zero(0.5), 0.5)
         self.assertEqual(self.mod.nan_to_zero("0"), 0.0)
         self.assertEqual(self.mod.nan_to_zero("1"), 1.0)
+        # numpy/pandas scalars that are not missing values
+        self.assertEqual(self.mod.nan_to_zero(np.float64(0.25)), 0.25)
+        self.assertEqual(self.mod.nan_to_zero(np.float32(0.5)), 0.5)
+        self.assertEqual(self.mod.nan_to_zero(pd.Series([0.75])[0]), 0.75)
+
+    def test_non_scalar_scores_are_zero(self):
+        """pd.isna on a non-scalar is ambiguous, it must not raise"""
+        self.assertEqual(self.mod.nan_to_zero(np.array([np.nan, 1.0])), 0.0)
+        self.assertEqual(self.mod.nan_to_zero([np.nan]), 0.0)
 
 
 class TestRunJaccard(unittest.TestCase):
@@ -202,6 +227,25 @@ class TestLoopJaccard(unittest.TestCase):
         self.assertEqual(out.loc["A", "B"], 0.0)
         self.assertEqual(out.loc["B", "C"], 0.0)
         self.assertEqual(out.loc["B", "B"], 1.0)
+
+    def test_numpy_nan_score_never_reaches_the_matrix(self):
+        """A numpy NaN handed back by run_jaccard is still scored as 0"""
+        fileA = self.write_peaks("A_peaks.bed", [("chr1", 0, 100)])
+        fileB = self.write_peaks("B_peaks.bed", [("chr1", 50, 150)])
+
+        def numpy_nan_run_jaccard(fileA, fileB, genomefile):
+            # str(numpy.nan), which is what a numpy NaN looks like once
+            # run_jaccard has stringified the bedtools record
+            data, keylist = fake_run_jaccard(fileA, fileB, genomefile)
+            data[keylist.index("jaccard")] = np.str_(np.nan)
+            return (data, keylist)
+
+        with mock.patch.object(self.mod, "run_jaccard", numpy_nan_run_jaccard):
+            outTable, out, snames = self.mod.loop_jaccard([fileA, fileB], "genome.txt")
+        self.assertFalse(out.isna().any().any())
+        self.assertEqual(out.loc["A", "B"], 0.0)
+        # the raw bedtools record is still reported verbatim
+        self.assertEqual(outTable[1].split("\t")[3], "nan")
 
     def test_single_file_matrix(self):
         fileA = self.write_peaks("A_peaks.bed", [("chr1", 0, 100)])
