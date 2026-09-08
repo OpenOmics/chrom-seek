@@ -63,33 +63,45 @@ def write_placeholder_plot(outfile, title, message):
     plt.close("all")
 
 
+def nan_to_zero(score):
+    """
+    Converts a jaccard score from bedtools into a float. Undefined scores
+    (NaN, produced when a pair of peak files has an empty union) are treated
+    as 0, that is, no overlap between the two files.
+    """
+    try:
+        score = float(score)
+    except (TypeError, ValueError):
+        return 0.0
+    if math.isnan(score):
+        return 0.0
+    return score
+
+
 def loop_jaccard(infileList, genomefile):
     """
-    Uses two loops to do all possible pairwise comparisons of files 
+    Uses two loops to do all possible pairwise comparisons of files
     in a list. Returns a writeable output and a pandas object
     """
     nfiles = len(infileList)
     (colnames, snames) = get_colnames(infileList)
-    out = [[float("nan")] * nfiles for i in range(nfiles)]
+    out = [[0.0] * nfiles for i in range(nfiles)]
     for i in range(nfiles):
         out[i][i] = 1.0
-    out2 = pd.DataFrame(out, columns=colnames, index=colnames, dtype="float")
     outTable = []
     for z in range(nfiles):
         fileA = infileList[z]
-        print("fileA is: " + fileA) 
+        print("fileA is: " + fileA)
         for y in range(z+1,nfiles):
             fileB = infileList[y]
             (data, keylist) = run_jaccard(fileA, fileB, genomefile)
-            score = float(data[3])
-            if math.isnan(score):
-                continue
+            score = nan_to_zero(data[3])
             out[z][y] = score
             out[y][z] = score
             if len(outTable) == 0:
                 outTable.append( "\t".join(keylist) )
             outTable.append( "\t".join(data) )
-        out2 = pd.DataFrame(out, columns=colnames, index=colnames, dtype="float")
+    out2 = pd.DataFrame(out, columns=colnames, index=colnames, dtype="float")
     return (outTable, out2, snames)
 
 
