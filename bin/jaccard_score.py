@@ -29,6 +29,15 @@ from sklearn.decomposition import PCA as sklearnPCA
 mpl.use('Agg')
 
 
+# How an incalculable jaccard score is reported, and the columns of the
+# tabular output: the bedtools keys of a jaccard record, sorted, plus the
+# two file names.
+NA_VALUE = "NA"
+TABLE_COLUMNS = (
+    "fileA", "fileB", "intersection", "jaccard", "n_intersections", "union-intersection"
+)
+
+
 ##########################################
 # Functions
 def split_infiles(infiles):
@@ -63,55 +72,89 @@ def write_placeholder_plot(outfile, title, message):
     plt.close("all")
 
 
-def nan_to_zero(score):
+def parse_score(score):
     """
-    Converts a jaccard score from bedtools into a float. Undefined scores
-    (NaN, produced when a pair of peak files has an empty union) are treated
-    as 0, that is, no overlap between the two files. Missing values of any
-    flavor are caught here: the "nan" string bedtools prints, numpy.nan,
-    numpy float NaNs, pandas.NA and None.
+    Converts a jaccard score from bedtools into a float. Scores that are not a
+    number stay NaN, so that they are reported as NA rather than as a real
+    score: the "nan" string bedtools prints for an empty union, numpy.nan,
+    numpy float NaNs, pandas.NA and None are all caught here.
     """
     try:
         if pd.isna(score):
-            return 0.0
+            return float("nan")
     except (TypeError, ValueError):
         # non-scalar or otherwise untestable value, fall through to float()
         pass
     try:
-        score = float(score)
+        return float(score)
     except (TypeError, ValueError):
-        return 0.0
-    if math.isnan(score):
-        return 0.0
-    return score
+        return float("nan")
+
+
+def na_record(fileA, fileB):
+    """
+    Builds the tabular output row of a comparison that cannot be calculated,
+    that is, one where a peak file has no peaks. Every score is NA.
+    """
+    record = dict.fromkeys(TABLE_COLUMNS, NA_VALUE)
+    record["fileA"] = fileA.split("/")[-1]
+    record["fileB"] = fileB.split("/")[-1]
+    keylist = list(TABLE_COLUMNS)
+    return ([record[key] for key in keylist], keylist)
+
+
+def drop_na_samples(out, snames):
+    """
+    Keeps only the samples that have a jaccard score for every remaining
+    comparison. Samples with an NA score, that is, peak files with no peaks,
+    cannot be plotted or clustered. Note that an NA sample puts an NA in every
+    row of the matrix, so the samples themselves have to be dropped, not the
+    rows that mention them.
+    """
+    # a peak file with no peaks has no score against itself either
+    keep = [i for i in range(out.shape[0]) if not pd.isna(out.iloc[i, i])]
+    # any NA left in the block belongs to a single pair of samples, drop
+    # whichever of them accounts for the most NAs and look again
+    while keep:
+        na_counts = out.iloc[keep, keep].isna().sum(axis=1).tolist()
+        if max(na_counts) == 0:
+            break
+        keep.pop(na_counts.index(max(na_counts)))
+    return (out.iloc[keep, keep], [snames[i] for i in keep])
 
 
 def loop_jaccard(infileList, genomefile):
     """
     Uses two loops to do all possible pairwise comparisons of files
-    in a list. Returns a writeable output and a pandas object
+    in a list. Returns a writeable output and a pandas object. Any comparison
+    involving a peak file with no peaks is reported as NA instead of being
+    handed to bedtools, which cannot score it.
     """
     nfiles = len(infileList)
     (colnames, snames) = get_colnames(infileList)
-    out = [[0.0] * nfiles for i in range(nfiles)]
+    has_peaks = [peak_file_has_intervals(infile) for infile in infileList]
+    out = [[float("nan")] * nfiles for i in range(nfiles)]
     for i in range(nfiles):
-        out[i][i] = 1.0
-    outTable = []
+        if has_peaks[i]:
+            out[i][i] = 1.0
+    outTable = [ "\t".join(TABLE_COLUMNS) ]
     for z in range(nfiles):
         fileA = infileList[z]
         print("fileA is: " + fileA)
         for y in range(z+1,nfiles):
             fileB = infileList[y]
-            (data, keylist) = run_jaccard(fileA, fileB, genomefile)
-            score = nan_to_zero(data[3])
+            if has_peaks[z] and has_peaks[y]:
+                (data, keylist) = run_jaccard(fileA, fileB, genomefile)
+                score = parse_score(data[keylist.index("jaccard")])
+                if math.isnan(score):
+                    data[keylist.index("jaccard")] = NA_VALUE
+            else:
+                (data, keylist) = na_record(fileA, fileB)
+                score = float("nan")
             out[z][y] = score
             out[y][z] = score
-            if len(outTable) == 0:
-                outTable.append( "\t".join(keylist) )
             outTable.append( "\t".join(data) )
-    # fillna is a backstop: any numpy NaN that slipped past nan_to_zero would
-    # otherwise break the downstream PCA and clustermap
-    out2 = pd.DataFrame(out, columns=colnames, index=colnames, dtype="float").fillna(0.0)
+    out2 = pd.DataFrame(out, columns=colnames, index=colnames, dtype="float")
     return (outTable, out2, snames)
 
 
@@ -141,8 +184,12 @@ def get_colnames(infileList):
 
 def pca_plot(out, snames, peakcaller, pcatabout, outPCAFile):
     """
-    creates a 2D PCA plot comparing the files based upon jaccard scores
+    creates a 2D PCA plot comparing the files based upon jaccard scores.
+    Only samples with a score for every comparison are plotted, NA samples
+    are left out.
     """
+    (out, snames) = drop_na_samples(out, snames)
+
     if out.shape[0] < 2 or out.shape[1] < 2:
         PCAdata = pd.DataFrame({
             "PC1": [0.0] * len(snames),
@@ -154,7 +201,7 @@ def pca_plot(out, snames, peakcaller, pcatabout, outPCAFile):
         write_placeholder_plot(
             outPCAFile,
             f"{peakcaller} Jaccard PCA",
-            "Insufficient valid (non-NaN) samples for PCA."
+            "Insufficient valid (non-NA) samples for PCA."
         )
         return
 
@@ -182,14 +229,24 @@ def pca_plot(out, snames, peakcaller, pcatabout, outPCAFile):
 
 
 def plot_heatmap(out, outHeatmapFile, peakcaller, heatmap_tab, snames):
+    """
+    clusters and plots the jaccard score matrix. Every sample is written to
+    the tabular output, including the NA ones, but only samples with a score
+    for every comparison can be clustered.
+    """
+    # the full matrix, NA samples included, keeps the columns of this table
+    # aligned across peak callers for jaccard_summary.py
+    out_hm = out.copy()
+    out_hm['peakcaller'] = peakcaller
+    out_hm.to_csv(heatmap_tab, sep='\t', index=False, na_rep=NA_VALUE)
+
+    (out, snames) = drop_na_samples(out, snames)
+
     if out.shape[0] < 2 or out.shape[1] < 2:
-        out_hm = out.copy()
-        out_hm['peakcaller'] = peakcaller
-        out_hm.to_csv(heatmap_tab, sep='\t', index=False)
         write_placeholder_plot(
             outHeatmapFile,
             f"{peakcaller} Jaccard Heatmap",
-            "Insufficient valid (non-NaN) samples for heatmap clustering."
+            "Insufficient valid (non-NA) samples for heatmap clustering."
         )
         return
 
@@ -204,10 +261,6 @@ def plot_heatmap(out, outHeatmapFile, peakcaller, heatmap_tab, snames):
                             bbox_to_anchor=(0.5, 0.8))
     plt.savefig(outHeatmapFile, bbox_inches='tight')
     plt.close("all")
-    
-    hm_tsv = out
-    hm_tsv['peakcaller'] = peakcaller
-    hm_tsv.to_csv(heatmap_tab, sep='\t', index=False)
 
     return
 
@@ -225,8 +278,10 @@ def main():
     This function takes a space-delimited list of files (bed, bedgraph, gff, gtf, etc.)
     and calculates all possible pairwise jaccard scores. From bedtools: 'Jaccard is the 
     length of the intersection over the union. Values range from 0 (no intersection) to 
-    1 (self intersection)'. The columns of the output file are: fileA, fileB, 
-    intersection, jaccard, n_intersections, and union-intersection.
+    1 (self intersection)'. The columns of the output file are: fileA, fileB,
+    intersection, jaccard, n_intersections, and union-intersection. Peak files
+    with no peaks cannot be scored, their comparisons are reported as NA and
+    they are left out of the PCA and heatmap plots.
     """)
 
     parser = argparse.ArgumentParser(description=desc)
@@ -294,32 +349,17 @@ def main():
     # downstream processing
     infileList = split_infiles(infiles)
 
-    # Drop inputs that will produce undefined/NaN jaccard comparisons.
-    valid_files = [f for f in infileList if peak_file_has_intervals(f)]
-    dropped_files = [f for f in infileList if f not in valid_files]
+    # Inputs without any peaks cannot be scored, their comparisons are
+    # reported as NA and they are left out of the plots.
+    no_peak_files = [f for f in infileList if not peak_file_has_intervals(f)]
 
-    if dropped_files:
-        print("WARNING: Dropping empty/missing peak files from jaccard: " + ", ".join(dropped_files))
+    if no_peak_files:
+        print(
+            "WARNING: Peak files with no peaks, scored as " + NA_VALUE + ": "
+            + ", ".join(no_peak_files)
+        )
 
-    if len(valid_files) == 0:
-        write_out(["fileA\tfileB\tintersection\tjaccard\tn_intersections\tunion"], outTableFile)
-        pd.DataFrame(columns=["PC1", "PC2", "sample_name", "peak_caller"]).to_csv(outPCAtab, sep='\t', index=False)
-        pd.DataFrame(columns=["peakcaller"]).to_csv(hm_tsv, sep='\t', index=False)
-        write_placeholder_plot(outPCAplot, f"{pkcaller} Jaccard PCA", "No valid peak files available after dropping NaNs.")
-        write_placeholder_plot(outHeatmapFile, f"{pkcaller} Jaccard Heatmap", "No valid peak files available after dropping NaNs.")
-        return
-
-    outTable, out, snames = loop_jaccard(valid_files, genomefile)
-
-    # Drop samples that still contain undefined jaccard values.
-    out = out.apply(pd.to_numeric, errors='coerce')
-    keep = ~(out.isna().any(axis=1) | out.isna().any(axis=0))
-    keep_names = list(out.index[keep])
-    out = out.loc[keep_names, keep_names]
-    snames = [name for name in snames if name in keep_names]
-
-    if len(outTable) == 0:
-        outTable = ["fileA\tfileB\tintersection\tjaccard\tn_intersections\tunion"]
+    outTable, out, snames = loop_jaccard(infileList, genomefile)
 
     write_out(
         outTable, 

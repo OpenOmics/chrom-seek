@@ -91,7 +91,7 @@ def fake_run_jaccard(fileA, fileB, genomefile):
     intersection, union, jaccard, n_intersections = reference_jaccard(fileA, fileB)
     record = {
         "intersection": intersection,
-        "union": union,
+        "union-intersection": union,
         "jaccard": jaccard,
         "n_intersections": n_intersections,
         "fileA": os.path.basename(fileA),
@@ -101,15 +101,15 @@ def fake_run_jaccard(fileA, fileB, genomefile):
     return ([str(record[key]) for key in keylist], keylist)
 
 
-class TestNanToZero(unittest.TestCase):
+class TestParseScore(unittest.TestCase):
     def setUp(self):
         self.mod = load_jaccard_score_module()
 
-    def test_undefined_scores_are_zero(self):
+    def test_undefined_scores_stay_nan(self):
         for score in ("nan", "NaN", float("nan"), "", ".", None):
-            self.assertEqual(self.mod.nan_to_zero(score), 0.0)
+            self.assertTrue(math.isnan(self.mod.parse_score(score)))
 
-    def test_numpy_and_pandas_nans_are_zero(self):
+    def test_numpy_and_pandas_nans_stay_nan(self):
         for score in (
             np.nan,
             np.float64("nan"),
@@ -120,58 +120,55 @@ class TestNanToZero(unittest.TestCase):
             pd.Series([np.nan])[0],
             pd.array([None], dtype="Float64")[0],
         ):
-            self.assertEqual(self.mod.nan_to_zero(score), 0.0)
+            self.assertTrue(math.isnan(self.mod.parse_score(score)))
+
+    def test_non_scalar_scores_stay_nan(self):
+        """pd.isna on a non-scalar is ambiguous, it must not raise"""
+        self.assertTrue(math.isnan(self.mod.parse_score(np.array([np.nan, 1.0]))))
+        self.assertTrue(math.isnan(self.mod.parse_score([np.nan])))
 
     def test_real_scores_are_preserved(self):
-        self.assertEqual(self.mod.nan_to_zero("0.3333"), 0.3333)
-        self.assertEqual(self.mod.nan_to_zero(0.5), 0.5)
-        self.assertEqual(self.mod.nan_to_zero("0"), 0.0)
-        self.assertEqual(self.mod.nan_to_zero("1"), 1.0)
+        self.assertEqual(self.mod.parse_score("0.3333"), 0.3333)
+        self.assertEqual(self.mod.parse_score(0.5), 0.5)
+        self.assertEqual(self.mod.parse_score("0"), 0.0)
+        self.assertEqual(self.mod.parse_score("1"), 1.0)
         # numpy/pandas scalars that are not missing values
-        self.assertEqual(self.mod.nan_to_zero(np.float64(0.25)), 0.25)
-        self.assertEqual(self.mod.nan_to_zero(np.float32(0.5)), 0.5)
-        self.assertEqual(self.mod.nan_to_zero(pd.Series([0.75])[0]), 0.75)
-
-    def test_non_scalar_scores_are_zero(self):
-        """pd.isna on a non-scalar is ambiguous, it must not raise"""
-        self.assertEqual(self.mod.nan_to_zero(np.array([np.nan, 1.0])), 0.0)
-        self.assertEqual(self.mod.nan_to_zero([np.nan]), 0.0)
+        self.assertEqual(self.mod.parse_score(np.float64(0.25)), 0.25)
+        self.assertEqual(self.mod.parse_score(np.float32(0.5)), 0.5)
+        self.assertEqual(self.mod.parse_score(pd.Series([0.75])[0]), 0.75)
 
 
 class TestRunJaccard(unittest.TestCase):
     def setUp(self):
         self.mod = load_jaccard_score_module()
 
-    def test_jaccard_is_the_fourth_column(self):
+    def test_bedtools_keys_match_the_table_columns(self):
         """
-        loop_jaccard pulls the score out of data[3], which only holds the
-        jaccard value because the bedtools keys are sorted alphabetically.
+        The tabular output is written with the module's own column order, so
+        the sorted bedtools keys have to line up with it.
         """
         bedtool = mock.MagicMock()
         bedtool.sort.return_value = bedtool
         bedtool.jaccard.return_value = {
             "intersection": 50,
-            "union": 150,
+            "union-intersection": 150,
             "jaccard": 0.333333,
             "n_intersections": 1,
         }
         with mock.patch.object(self.mod, "BedTool", return_value=bedtool):
             data, keylist = self.mod.run_jaccard("/tmp/a.bed", "/tmp/b.bed", "genome.txt")
-        self.assertEqual(keylist[3], "jaccard")
-        self.assertEqual(float(data[3]), 0.333333)
+        self.assertEqual(keylist, list(self.mod.TABLE_COLUMNS))
+        self.assertEqual(float(data[keylist.index("jaccard")]), 0.333333)
         self.assertEqual(data[keylist.index("fileA")], "a.bed")
         self.assertEqual(data[keylist.index("fileB")], "b.bed")
 
 
-class TestLoopJaccard(unittest.TestCase):
+class PeakFileTestCase(unittest.TestCase):
     def setUp(self):
         self.test_dir = tempfile.mkdtemp()
         self.mod = load_jaccard_score_module()
-        self.patcher = mock.patch.object(self.mod, "run_jaccard", fake_run_jaccard)
-        self.patcher.start()
 
     def tearDown(self):
-        self.patcher.stop()
         shutil.rmtree(self.test_dir)
 
     def write_peaks(self, name, intervals):
@@ -180,6 +177,22 @@ class TestLoopJaccard(unittest.TestCase):
             for chrom, start, end in intervals:
                 peaks.write("\t".join([chrom, str(start), str(end)]) + "\n")
         return path
+
+    def table_rows(self, outTable):
+        """Parses the tabular output into a list of {column: value} rows"""
+        header = outTable[0].split("\t")
+        return [dict(zip(header, row.split("\t"))) for row in outTable[1:]]
+
+
+class TestLoopJaccard(PeakFileTestCase):
+    def setUp(self):
+        super().setUp()
+        self.patcher = mock.patch.object(self.mod, "run_jaccard", fake_run_jaccard)
+        self.patcher.start()
+
+    def tearDown(self):
+        self.patcher.stop()
+        super().tearDown()
 
     def test_accurate_jaccard_scores(self):
         # A: 100bp, B: 100bp overlapping A by 50bp, C: 100bp disjoint from both
@@ -199,9 +212,13 @@ class TestLoopJaccard(unittest.TestCase):
         for left in snames:
             for right in snames:
                 self.assertEqual(out.loc[left, right], out.loc[right, left])
-        # one header line plus one line per pairwise comparison
-        self.assertEqual(len(outTable), 1 + 3)
-        self.assertEqual(outTable[0].split("\t")[3], "jaccard")
+        # header line plus one line per pairwise comparison
+        self.assertEqual(outTable[0].split("\t"), list(self.mod.TABLE_COLUMNS))
+        rows = self.table_rows(outTable)
+        self.assertEqual(len(rows), 3)
+        self.assertAlmostEqual(float(rows[0]["jaccard"]), 50 / 150)
+        self.assertEqual(rows[0]["intersection"], "50")
+        self.assertEqual(rows[0]["union-intersection"], "150")
 
     def test_multi_interval_jaccard_scores(self):
         fileA = self.write_peaks(
@@ -213,54 +230,120 @@ class TestLoopJaccard(unittest.TestCase):
         # union: 300bp + 275bp - 75bp = 500bp
         self.assertAlmostEqual(out.loc["A", "B"], 75 / 500)
 
-    def test_empty_peak_file_scores_as_zero(self):
-        """An empty peak file gives an undefined (NaN) jaccard, recorded as 0"""
+    def test_samples_with_no_peaks_are_na(self):
+        fileA = self.write_peaks("A_peaks.bed", [("chr1", 0, 100)])
+        fileB = self.write_peaks("B_peaks.bed", [("chr1", 50, 150)])
+        empty = self.write_peaks("C_peaks.bed", [])
+        outTable, out, snames = self.mod.loop_jaccard(
+            [fileA, fileB, empty], "genome.txt"
+        )
+        # the sample with no peaks is NA everywhere, itself included
+        self.assertTrue(out.loc["A", "C"] != out.loc["A", "C"])  # NaN
+        self.assertTrue(math.isnan(out.loc["C", "A"]))
+        self.assertTrue(math.isnan(out.loc["C", "C"]))
+        # the samples with peaks are untouched
+        self.assertAlmostEqual(out.loc["A", "B"], 50 / 150)
+        self.assertEqual(out.loc["A", "A"], 1.0)
+        # every comparison is still reported, with NA scores
+        rows = self.table_rows(outTable)
+        self.assertEqual(len(rows), 3)
+        na_rows = [row for row in rows if "C_peaks.bed" in (row["fileA"], row["fileB"])]
+        self.assertEqual(len(na_rows), 2)
+        for row in na_rows:
+            for column in ("intersection", "jaccard", "n_intersections", "union-intersection"):
+                self.assertEqual(row[column], "NA")
+
+    def test_bedtools_is_not_run_on_files_without_peaks(self):
+        """bedtools cannot score an empty peak file, so it is never asked to"""
         fileA = self.write_peaks("A_peaks.bed", [("chr1", 0, 100)])
         empty = self.write_peaks("B_peaks.bed", [])
-        both_empty = self.write_peaks("C_peaks.bed", [])
-        # bedtools itself reports NaN for these comparisons
-        self.assertTrue(math.isnan(reference_jaccard(empty, both_empty)[2]))
-        outTable, out, snames = self.mod.loop_jaccard(
-            [fileA, empty, both_empty], "genome.txt"
-        )
-        self.assertFalse(out.isna().any().any())
-        self.assertEqual(out.loc["A", "B"], 0.0)
-        self.assertEqual(out.loc["B", "C"], 0.0)
-        self.assertEqual(out.loc["B", "B"], 1.0)
+        calls = []
 
-    def test_numpy_nan_score_never_reaches_the_matrix(self):
-        """A numpy NaN handed back by run_jaccard is still scored as 0"""
+        def recording_run_jaccard(fileA, fileB, genomefile):
+            calls.append((fileA, fileB))
+            return fake_run_jaccard(fileA, fileB, genomefile)
+
+        with mock.patch.object(self.mod, "run_jaccard", recording_run_jaccard):
+            self.mod.loop_jaccard([fileA, empty], "genome.txt")
+        self.assertEqual(calls, [])
+
+    def test_missing_peak_file_is_na(self):
+        fileA = self.write_peaks("A_peaks.bed", [("chr1", 0, 100)])
+        missing = os.path.join(self.test_dir, "B_peaks.bed")
+        outTable, out, snames = self.mod.loop_jaccard([fileA, missing], "genome.txt")
+        self.assertTrue(math.isnan(out.loc["A", "B"]))
+        self.assertEqual(self.table_rows(outTable)[0]["jaccard"], "NA")
+
+    def test_undefined_bedtools_score_is_na(self):
+        """
+        A NaN handed back by bedtools for two non-empty files is reported as
+        NA too, whether it arrives as a string or as a numpy float
+        """
         fileA = self.write_peaks("A_peaks.bed", [("chr1", 0, 100)])
         fileB = self.write_peaks("B_peaks.bed", [("chr1", 50, 150)])
 
-        def numpy_nan_run_jaccard(fileA, fileB, genomefile):
-            # str(numpy.nan), which is what a numpy NaN looks like once
-            # run_jaccard has stringified the bedtools record
-            data, keylist = fake_run_jaccard(fileA, fileB, genomefile)
-            data[keylist.index("jaccard")] = np.str_(np.nan)
-            return (data, keylist)
+        for nan_score in ("nan", np.str_(np.nan)):
+            def nan_run_jaccard(fileA, fileB, genomefile, nan_score=nan_score):
+                data, keylist = fake_run_jaccard(fileA, fileB, genomefile)
+                data[keylist.index("jaccard")] = nan_score
+                return (data, keylist)
 
-        with mock.patch.object(self.mod, "run_jaccard", numpy_nan_run_jaccard):
-            outTable, out, snames = self.mod.loop_jaccard([fileA, fileB], "genome.txt")
-        self.assertFalse(out.isna().any().any())
-        self.assertEqual(out.loc["A", "B"], 0.0)
-        # the raw bedtools record is still reported verbatim
-        self.assertEqual(outTable[1].split("\t")[3], "nan")
+            with mock.patch.object(self.mod, "run_jaccard", nan_run_jaccard):
+                outTable, out, snames = self.mod.loop_jaccard(
+                    [fileA, fileB], "genome.txt"
+                )
+            self.assertTrue(math.isnan(out.loc["A", "B"]))
+            self.assertEqual(self.table_rows(outTable)[0]["jaccard"], "NA")
 
     def test_single_file_matrix(self):
         fileA = self.write_peaks("A_peaks.bed", [("chr1", 0, 100)])
         outTable, out, snames = self.mod.loop_jaccard([fileA], "genome.txt")
         self.assertEqual(out.shape, (1, 1))
         self.assertEqual(out.loc["A", "A"], 1.0)
-        self.assertEqual(outTable, [])
+        # header only, there is nothing to compare
+        self.assertEqual(outTable, ["\t".join(self.mod.TABLE_COLUMNS)])
 
 
-class TestPeakFileHasIntervals(unittest.TestCase):
-    """
-    main() drops empty/missing peak files before any comparison is run, so
-    these files never reach the NaN handling in loop_jaccard.
-    """
+class TestDropNaSamples(unittest.TestCase):
+    def setUp(self):
+        self.mod = load_jaccard_score_module()
 
+    def matrix(self):
+        nan = float("nan")
+        return pd.DataFrame(
+            [
+                [1.0, 0.5, nan],
+                [0.5, 1.0, nan],
+                [nan, nan, nan],
+            ],
+            columns=["A", "B", "C"],
+            index=["A", "B", "C"],
+        )
+
+    def test_na_samples_are_dropped(self):
+        out, snames = self.mod.drop_na_samples(self.matrix(), ["A", "B", "C"])
+        self.assertEqual(list(out.columns), ["A", "B"])
+        self.assertEqual(list(out.index), ["A", "B"])
+        self.assertEqual(snames, ["A", "B"])
+        self.assertFalse(out.isna().any().any())
+
+    def test_complete_matrix_is_untouched(self):
+        full = self.matrix().loc[["A", "B"], ["A", "B"]]
+        out, snames = self.mod.drop_na_samples(full, ["A", "B"])
+        self.assertEqual(list(out.columns), ["A", "B"])
+        self.assertEqual(snames, ["A", "B"])
+
+    def test_all_na_matrix(self):
+        nan = float("nan")
+        all_na = pd.DataFrame(
+            [[nan, nan], [nan, nan]], columns=["A", "B"], index=["A", "B"]
+        )
+        out, snames = self.mod.drop_na_samples(all_na, ["A", "B"])
+        self.assertEqual(out.shape, (0, 0))
+        self.assertEqual(snames, [])
+
+
+class TestPlotsExcludeNaSamples(unittest.TestCase):
     def setUp(self):
         self.test_dir = tempfile.mkdtemp()
         self.mod = load_jaccard_score_module()
@@ -268,6 +351,60 @@ class TestPeakFileHasIntervals(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.test_dir)
 
+    def path(self, name):
+        return os.path.join(self.test_dir, name)
+
+    def matrix(self, nvalid=2):
+        """Square matrix of nvalid scored samples plus one NA sample"""
+        snames = ["S%d" % i for i in range(1, nvalid + 1)] + ["NAsample"]
+        out = pd.DataFrame(
+            float("nan"), columns=snames, index=snames, dtype="float"
+        )
+        for left in snames[:nvalid]:
+            for right in snames[:nvalid]:
+                out.loc[left, right] = 1.0 if left == right else 0.4
+        return (out, snames)
+
+    def test_pca_tab_holds_only_scored_samples(self):
+        out, snames = self.matrix()
+        pcatab, pcaplot = self.path("pca.tsv"), self.path("pca.pdf")
+        self.mod.pca_plot(out, snames, "macsNarrow", pcatab, pcaplot)
+        PCAdata = pd.read_csv(pcatab, sep="\t")
+        self.assertEqual(sorted(PCAdata["sample_name"]), ["S1", "S2"])
+        self.assertNotIn("NAsample", list(PCAdata["sample_name"]))
+        self.assertFalse(PCAdata[["PC1", "PC2"]].isna().any().any())
+        self.assertTrue(os.path.getsize(pcaplot) > 0)
+
+    def test_heatmap_tab_reports_na_samples(self):
+        out, snames = self.matrix()
+        heatmap_tab, heatmap = self.path("hm.tsv"), self.path("hm.pdf")
+        self.mod.plot_heatmap(out, heatmap, "macsNarrow", heatmap_tab, snames)
+        # the table keeps every sample, so its columns stay aligned across
+        # peak callers, with NA for the samples that have no peaks
+        with open(heatmap_tab, "r") as tab:
+            lines = tab.read().strip().split("\n")
+        self.assertEqual(lines[0].split("\t"), ["S1", "S2", "NAsample", "peakcaller"])
+        self.assertEqual(lines[-1].split("\t"), ["NA", "NA", "NA", "macsNarrow"])
+        hm = pd.read_csv(heatmap_tab, sep="\t")
+        self.assertTrue(hm["NAsample"].isna().all())
+        # but the plot itself is clustered on the scored samples only
+        self.assertTrue(os.path.getsize(heatmap) > 0)
+
+    def test_placeholder_plots_when_too_few_scored_samples(self):
+        out, snames = self.matrix(nvalid=1)
+        pcatab, pcaplot = self.path("pca.tsv"), self.path("pca.pdf")
+        heatmap_tab, heatmap = self.path("hm.tsv"), self.path("hm.pdf")
+        self.mod.pca_plot(out, snames, "macsNarrow", pcatab, pcaplot)
+        self.mod.plot_heatmap(out, heatmap, "macsNarrow", heatmap_tab, snames)
+        PCAdata = pd.read_csv(pcatab, sep="\t")
+        self.assertEqual(list(PCAdata["sample_name"]), ["S1"])
+        self.assertTrue(os.path.getsize(pcaplot) > 0)
+        self.assertTrue(os.path.getsize(heatmap) > 0)
+        hm = pd.read_csv(heatmap_tab, sep="\t")
+        self.assertEqual(list(hm.columns), ["S1", "NAsample", "peakcaller"])
+
+
+class TestPeakFileHasIntervals(PeakFileTestCase):
     def write_file(self, name, contents):
         path = os.path.join(self.test_dir, name)
         with open(path, "w") as fh:
