@@ -100,11 +100,7 @@ class TestParsePeakCall(unittest.TestCase):
         self.assertIn("treat_rep_1", groups)
 
     def test_group_labels_reject_reserved_vs_token(self):
-        str2file = (
-            "Sample\tGroup\n"
-            + "one\tctrl_vs_treated\n"
-            + "two\tgroup_ok\n"
-        )
+        str2file = "Sample\tGroup\n" + "one\tctrl_vs_treated\n" + "two\tgroup_ok\n"
         path = os.path.join(self.test_dir, "test.txt")
         with open(path, "w") as f:
             f.write(str2file)
