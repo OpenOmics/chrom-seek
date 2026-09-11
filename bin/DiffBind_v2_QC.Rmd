@@ -53,10 +53,6 @@ sample_sheet <- sample_sheet %>%
   tidyr::drop_na(SampleID, bamReads, Peaks) %>%
   dplyr::filter(SampleID != "", bamReads != "", Peaks != "")
 
-if (nrow(sample_sheet) > 0) {
-  write.csv(sample_sheet, csvfile, row.names = FALSE)
-}
-
 if (nrow(sample_sheet) < 2) {
   cat(
     "\n### DiffBind QC skipped\n",
