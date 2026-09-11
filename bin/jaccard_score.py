@@ -84,14 +84,31 @@ def run_jaccard(fileA, fileB, genomefile):
     return (data, keylist)
 
 
+def strip_suffix(text, *suffixes):
+    """Remove trailing suffixes from a string, one full suffix at a time.
+
+    Unlike str.strip(), which removes any leading/trailing characters found in
+    its argument, this only removes the exact suffix(es) given.
+    """
+    for suffix in suffixes:
+        if suffix and text.endswith(suffix):
+            text = text[: -len(suffix)]
+    return text
+
+
 def get_colnames(infileList):
-    snames = [ i.split("/")[-1].split(".")[0].strip("_peaks").strip("_broadpeaks") for i in infileList ]
+    snames = [ strip_suffix(i.split("/")[-1].split(".")[0], "_peaks", "_broadpeaks") for i in infileList ]
     colnames = snames
     return (colnames, snames)
 
 
 def load_sample_groups(config_file):
-    """Load sample-to-group mapping from pipeline config, if available."""
+    """Load sample-to-group(s) mapping from pipeline config, if available.
+
+    Returns a dict mapping each sample to the list of groups it belongs to.
+    Samples can appear in more than one group, so memberships are accumulated
+    rather than overwritten.
+    """
     if not config_file:
         return {}
 
@@ -102,14 +119,31 @@ def load_sample_groups(config_file):
         return {}
 
     groups = cfg.get("project", {}).get("groups", {})
-    sample2group = {}
+    sample2groups = {}
     for grp, sample_list in groups.items():
         for sample in sample_list:
-            sample2group[sample] = grp
-    return sample2group
+            sample2groups.setdefault(sample, []).append(grp)
+    return sample2groups
 
 
-def pca_plot(out, snames, peakcaller, pcatabout, outPCAFile, sample2group=None):
+def resolve_group_coloring(snames, sample2groups):
+    """Decide how to colorize plots based on group membership.
+
+    If every sample belongs to exactly one group, colorize by group label and
+    return that per-sample group list. Otherwise (any sample has zero or
+    multiple group memberships), fall back to colorizing by sample name.
+
+    Returns (use_group_coloring, labels), where labels is the per-sample list of
+    labels to color by.
+    """
+    if sample2groups:
+        memberships = [sample2groups.get(s, []) for s in snames]
+        if all(len(m) == 1 for m in memberships):
+            return True, [m[0] for m in memberships]
+    return False, list(snames)
+
+
+def pca_plot(out, snames, peakcaller, pcatabout, outPCAFile, sample2groups=None):
     """
     creates a 2D PCA plot comparing the files based upon jaccard scores
     """
@@ -118,10 +152,10 @@ def pca_plot(out, snames, peakcaller, pcatabout, outPCAFile, sample2group=None):
     PCAdata = pd.DataFrame(Y_sklearn, columns=["PC1", "PC2"])
     PCAdata["sample_name"] = snames
     PCAdata["peak_caller"] = peakcaller
-    if sample2group is None:
-        sample2group = {}
-    PCAdata["group"] = [sample2group.get(s, "") for s in snames]
-    use_group_coloring = any([g != "" for g in PCAdata["group"].tolist()])
+    if sample2groups is None:
+        sample2groups = {}
+    PCAdata["group"] = [";".join(sample2groups.get(s, [])) for s in snames]
+    use_group_coloring, _ = resolve_group_coloring(snames, sample2groups)
     PCAdata.to_csv(pcatabout, sep='\t', index=False)
 
     fig, ax = plt.subplots()
@@ -145,17 +179,16 @@ def pca_plot(out, snames, peakcaller, pcatabout, outPCAFile, sample2group=None):
     return
 
 
-def plot_heatmap(out, outHeatmapFile, peakcaller, heatmap_tab, snames, sample2group=None):
-    if sample2group is None:
-        sample2group = {}
+def plot_heatmap(out, outHeatmapFile, peakcaller, heatmap_tab, snames, sample2groups=None):
+    if sample2groups is None:
+        sample2groups = {}
 
-    groups = [sample2group.get(s, "") for s in snames]
-    use_group_coloring = any([g != "" for g in groups])
+    use_group_coloring, labels = resolve_group_coloring(snames, sample2groups)
 
     if use_group_coloring:
-        group_pal = sns.hls_palette(len(set(groups)), s=.8)
-        group_lut = dict(zip(set(groups), group_pal))
-        row_labels = groups
+        group_pal = sns.hls_palette(len(set(labels)), s=.8)
+        group_lut = dict(zip(set(labels), group_pal))
+        row_labels = labels
         row_lut = group_lut
         legend_title = "group"
     else:
@@ -272,7 +305,7 @@ def main():
 
     # downstream processing
     infileList = split_infiles(infiles)
-    sample2group = load_sample_groups(config_file)
+    sample2groups = load_sample_groups(config_file)
 
     outTable, out, snames = loop_jaccard(infileList, genomefile)
     write_out(
@@ -283,9 +316,9 @@ def main():
         out,
         snames,
         pkcaller,
-        outPCAtab, 
+        outPCAtab,
         outPCAplot,
-        sample2group=sample2group
+        sample2groups=sample2groups
     )
     plot_heatmap(
         out, 
@@ -293,7 +326,7 @@ def main():
         pkcaller,
         hm_tsv,
         snames,
-        sample2group=sample2group
+        sample2groups=sample2groups
     )
 
 if __name__ == '__main__':
