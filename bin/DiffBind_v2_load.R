@@ -63,11 +63,11 @@ if ( peakcaller == "macsNarrow" ) {
 # count
 print(paste0("Using ", threads, " thread(s) for dba.count()"))
 options(mc.cores = threads)
+samples$config$cores <- threads
 DBdataCounts <- dba.count(
     samples,
     summits=summits_arg,
-    bParallel=(threads > 1),
-    bCores=threads
+    bParallel=(threads > 1)
 )
 
 # remove negative coordinates when summits_arg is not FALSE

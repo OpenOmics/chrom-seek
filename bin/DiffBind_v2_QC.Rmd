@@ -166,7 +166,8 @@ if (minOv < 2) { minOv <- 2}
 print(paste0("The minimum number of overlaps is: ", minOv))
 print(paste0("Using ", threads, " thread(s) for dba.count()"))
 
-DBdataCounts <- dba.count(samples, summits=summits_arg, bParallel=TRUE, bCores=threads)
+samples$config$cores <- threads
+DBdataCounts <- dba.count(samples, summits=summits_arg, bParallel=(threads > 1))
 
 # remove negative coordinates when summits_arg is not FALSE
 if ( summits_arg != FALSE ) {
