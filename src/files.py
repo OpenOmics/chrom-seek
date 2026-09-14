@@ -20,15 +20,20 @@ def print_tsv_highlighted(tsv_path):
         for line in tsv_data.splitlines():
             highlighted_line = ""
             for char in line:
-                if char == ' ':
-                    highlighted_line += Colors.cyan + '•' + Colors.end # Highlight spaces with a middle dot
-                elif char == '\t':
-                    highlighted_line += Colors.green + '→' + Colors.end # Highlight tabs with an arrow
+                if char == " ":
+                    highlighted_line += (
+                        Colors.cyan + "•" + Colors.end
+                    )  # Highlight spaces with a middle dot
+                elif char == "\t":
+                    highlighted_line += (
+                        Colors.green + "→" + Colors.end
+                    )  # Highlight tabs with an arrow
                 else:
                     highlighted_line += char
             print(highlighted_line)
         tsv_file.close()
     return
+
 
 def check_for_spaces_in_tsv(filepath):
     """
@@ -42,11 +47,11 @@ def check_for_spaces_in_tsv(filepath):
     """
     spaces = []
     spaces_exist = False
-    with open(filepath, 'r', newline='', encoding='utf-8') as tsvfile:
-        tsv_reader = csv.reader(tsvfile, delimiter='\t')
+    with open(filepath, "r", newline="", encoding="utf-8") as tsvfile:
+        tsv_reader = csv.reader(tsvfile, delimiter="\t")
         for row_num, row in enumerate(tsv_reader, 1):
             for col_num, field in enumerate(row, 1):
-                if ' ' in field:
+                if " " in field:
                     spaces.append((row_num, col_num, field))
                     spaces_exist = True
     return spaces_exist, spaces
@@ -71,20 +76,20 @@ def peakcalls(file, delim="\t", assay="chip"):
     Reads and parses a sample sheet, peakcall.tsv, into a dictionary.
     This file acts as a sample sheet to gather sample metadata and define
     relationship between groups of samples. This file is used to pair a
-    ATAC/CHIP/cfCHIP/cutnrun sample with its input sample. This tab 
-    delimited file contains two required columns and two optional, all 
+    ATAC/CHIP/cfCHIP/cutnrun sample with its input sample. This tab
+    delimited file contains two required columns and two optional, all
     columns are case __in__sensitive.
 
-        - Required: 
+        - Required:
             - Sample
             - Group
         - Optionial
             - Blocks
             - InputControl
 
-    It is worth noting that a sample can belong to more than one group. 
-    A 1:M sample to group relationship can be denoted by seperating muliptle 
-    groups with commas (i.e. ','). This group information is used downstream 
+    It is worth noting that a sample can belong to more than one group.
+    A 1:M sample to group relationship can be denoted by seperating muliptle
+    groups with commas (i.e. ','). This group information is used downstream
     in the pipeline for DBA.
 
     Comparisons between groups can be made with a constrast.tsv file.
@@ -152,22 +157,23 @@ def peakcalls(file, delim="\t", assay="chip"):
         key is a sample and each value is blocking information for building
         a linear model
     """
-    SAMPLE_COL = 'Sample'.lower()
-    INPUT_COL = 'InputControl'.lower()
-    GROUP_COL = 'Group'.lower()
-    BLOCK_COL = 'Block'.lower()
+    SAMPLE_COL = "Sample".lower()
+    INPUT_COL = "InputControl".lower()
+    GROUP_COL = "Group".lower()
+    BLOCK_COL = "Block".lower()
+
     def tolowerlist(_list):
         return [str(elem).lower() for elem in _list]
-    
+
     spaces_check = check_for_spaces_in_tsv(file)
     if spaces_check[0]:
         print("Spaces detected within peakcall TSV file:\n")
         for row, col, field in spaces_check[1]:
-            print(f'\tSpace at row: {row}, column: {col}, field: {field}')
-        print('')
+            print(f"\tSpace at row: {row}, column: {col}, field: {field}")
+        print("")
         print_tsv_highlighted(file)
-        print('')
-        raise ValueError('Spaces exist in peakcall file')
+        print("")
+        raise ValueError("Spaces exist in peakcall file")
 
     with open(file) as fo:
         rdr = csv.DictReader(fo, delimiter=delim)
@@ -177,12 +183,20 @@ def peakcalls(file, delim="\t", assay="chip"):
             raise ValueError("Peakcall file is missing a header row or is empty.")
         unrecognized_column_names = set(rdr.fieldnames) - supported_column_names
         if unrecognized_column_names:
-            print('')
+            print("")
             print_tsv_highlighted(file)
-            print('')
-            print("Error: The provided peakcall file contains contains the following unsupported column names: {0}".format(unrecognized_column_names))
-            print("Please update the header of your peakcall file. Here is a list of valid column name: {0}".format(supported_column_names))
-            raise ValueError('Peakcall file has unsupported headers!')
+            print("")
+            print(
+                "Error: The provided peakcall file contains contains the following unsupported column names: {0}".format(
+                    unrecognized_column_names
+                )
+            )
+            print(
+                "Please update the header of your peakcall file. Here is a list of valid column name: {0}".format(
+                    supported_column_names
+                )
+            )
+            raise ValueError("Peakcall file has unsupported headers!")
 
         rdr.fieldnames = tolowerlist(rdr.fieldnames)
         inputs_exist = INPUT_COL in rdr.fieldnames
@@ -193,69 +207,88 @@ def peakcalls(file, delim="\t", assay="chip"):
                 dont_exist.append(col)
 
         if dont_exist:
-            _c = ', '.join(dont_exist)
-            print('')
+            _c = ", ".join(dont_exist)
+            print("")
             print_tsv_highlighted(file)
-            print('')
-            raise ValueError(f'Peakcall file missing columns {_c}!')
-        
+            print("")
+            raise ValueError(f"Peakcall file missing columns {_c}!")
+
         all_groups = []
         for row in rdr:
-            if ',' in row[GROUP_COL]:
-                all_groups.extend(row[GROUP_COL].split(','))
+            if "," in row[GROUP_COL]:
+                all_groups.extend(row[GROUP_COL].split(","))
             else:
                 all_groups.append(row[GROUP_COL])
         groups = {k: [] for k in all_groups}
 
-        fo.seek(0); next(rdr) # skip header
+        fo.seek(0)
+        next(rdr)  # skip header
         pairs = {}
         block = {}
         for row in rdr:
             if not inputs_exist:
-                pairs[row[SAMPLE_COL]] = ''
+                pairs[row[SAMPLE_COL]] = ""
             else:
                 pairs[row[SAMPLE_COL]] = row[INPUT_COL]
-            if ',' in row[GROUP_COL]:
-                row[GROUP_COL] = row[GROUP_COL].split(',')
+            if "," in row[GROUP_COL]:
+                row[GROUP_COL] = row[GROUP_COL].split(",")
             else:
                 row[GROUP_COL] = [row[GROUP_COL]]
             for grp in row[GROUP_COL]:
                 groups[grp].append(row[SAMPLE_COL])
             if blocks_exist:
-                if row[BLOCK_COL] == '':
-                    block[row[SAMPLE_COL]] = ''
-                else :
+                if row[BLOCK_COL] == "":
+                    block[row[SAMPLE_COL]] = ""
+                else:
                     block[row[SAMPLE_COL]] = row[BLOCK_COL]
             else:
-                block[row[SAMPLE_COL]] = ''
+                block[row[SAMPLE_COL]] = ""
 
     # group name requirements validation
     bad_labels = []
     ## character black list
-    bad_chars = ('*', '_', '-')
+    # NOTE: underscores are allowed so group labels can be safely used
+    # in Snakemake wildcard-backed filenames (e.g. group_a_vs_group_b).
+    bad_chars = ("*", "-")
     for grp_label in groups.keys():
         for _char in bad_chars:
             if _char in grp_label:
                 bad_labels.append(grp_label)
+                break
 
     if bad_labels:
         if len(bad_labels) > 1:
-            bad_labels = ', '.join(bad_labels)
+            bad_labels = ", ".join(bad_labels)
         else:
             bad_labels = bad_labels[0]
-        raise ValueError('Group(s): ' + bad_labels + '; contain the invalid characters *, -, and/or _ replace and resubmit pipeline')
-    
-    known_assays = (
-        'chip',
-        'atac',
-        'cfchip',
-        'cutnrun'
-    )
+        raise ValueError(
+            "Group(s): "
+            + bad_labels
+            + "; contain the invalid characters * and/or - replace and resubmit pipeline"
+        )
+
+    # group labels are used to build contrast strings like
+    # "{group1}_vs_{group2}-{PeakTool}", so reserve "_vs_" token.
+    bad_reserved_labels = [grp_label for grp_label in groups if "_vs_" in grp_label]
+    if bad_reserved_labels:
+        if len(bad_reserved_labels) > 1:
+            bad_reserved_labels = ", ".join(bad_reserved_labels)
+        else:
+            bad_reserved_labels = bad_reserved_labels[0]
+        raise ValueError(
+            "Group(s): "
+            + bad_reserved_labels
+            + "; contain the reserved token _vs_ which is used by contrast wildcards, please rename and resubmit pipeline"
+        )
+
+    known_assays = ("chip", "atac", "cfchip", "cutnrun")
 
     # Assay in known_assays
     if assay not in known_assays:
-        raise ValueError(f"Unknown assay: {assay}. Supported assays are: {known_assays}")
-    
+        raise ValueError(
+            f"Unknown assay: {assay}. Supported assays are: {known_assays}"
+        )
+
     # Look at peak sample sheet for checks
     with open(file) as fo:
         rdr = csv.DictReader(fo, delimiter=delim)
@@ -265,35 +298,46 @@ def peakcalls(file, delim="\t", assay="chip"):
         same_group = False
         fail_samples = []
         for row in rdr:
-            if 'InputControl' in row and len(row['InputControl']) > 0:
+            if "InputControl" in row and len(row["InputControl"]) > 0:
                 check_input.append(True)
             else:
                 check_input.append(False)
-            
-            if 'InputControl' in row and row['InputControl'] == row['Sample']:
+
+            if "InputControl" in row and row["InputControl"] == row["Sample"]:
                 same_input = True
-                fail_samples.append(row['Sample'])
-            if 'Block' in row and row['Block'] == row['Sample']:
+                fail_samples.append(row["Sample"])
+            if "Block" in row and row["Block"] == row["Sample"]:
                 same_block = True
-                fail_samples.append(row['Sample'])
-            if row['Group'] == row['Sample']:
+                fail_samples.append(row["Sample"])
+            if row["Group"] == row["Sample"]:
                 same_group = True
-                fail_samples.append(row['Sample'])
+                fail_samples.append(row["Sample"])
         fail_samples = tuple(set(fail_samples))
 
     # Checks happening here, that will throw errors:
     #  - 1. Ensure this assay == "atac" AND __**ANY**__ InputControl row has text
     if assay == "atac" and any(check_input):
-        raise ValueError("ATAC-seq assay does not support InputControls, please leave InputColumn empty")
+        raise ValueError(
+            "ATAC-seq assay does not support InputControls, please leave InputColumn empty"
+        )
 
     if same_group:
-        raise ValueError("Group cannot be the same as Sample. All these samples have an error: " + ' ,'.join(fail_samples))
-    
+        raise ValueError(
+            "Group cannot be the same as Sample. All these samples have an error: "
+            + " ,".join(fail_samples)
+        )
+
     if same_input:
-        raise ValueError("InputControl cannot be the same as Sample. All these samples have an error: " + ' ,'.join(fail_samples))
-    
+        raise ValueError(
+            "InputControl cannot be the same as Sample. All these samples have an error: "
+            + " ,".join(fail_samples)
+        )
+
     if same_block:
-        raise ValueError("Block cannot be the same as Sample. All these samples have an error: " + ' ,'.join(fail_samples))
+        raise ValueError(
+            "Block cannot be the same as Sample. All these samples have an error: "
+            + " ,".join(fail_samples)
+        )
 
     return pairs, groups, block
 
@@ -391,20 +435,20 @@ def validate_custom_genome(genome_json):
                 f"JSON syntax is broken in custom genome definition {genome_json}"
             )
     required_keys = [
-        'ALIAS', 
-        'SUPPORTED_PIPELINES', 
-        'BLACKLISTBWAINDEX', 
-        'BWA', 
-        'EFFECTIVEGENOMESIZE', 
-        'GENEINFO', 
-        'GENOME', 
-        'GTFFILE', 
-        'REFLEN', 
-        'FRAC', 
-        'MEME_VERTEBRATES_DB', 
-        'MEME_EUKARYOTE_DB', 
-        'MEME_GENOME_DB', 
-        'HOMER_REF'
+        "ALIAS",
+        "SUPPORTED_PIPELINES",
+        "BLACKLISTBWAINDEX",
+        "BWA",
+        "EFFECTIVEGENOMESIZE",
+        "GENEINFO",
+        "GENOME",
+        "GTFFILE",
+        "REFLEN",
+        "FRAC",
+        "MEME_VERTEBRATES_DB",
+        "MEME_EUKARYOTE_DB",
+        "MEME_GENOME_DB",
+        "HOMER_REF",
     ]
     bad_columns = []
     genome_alias = list(this_genome["references"].values())[0]["ALIAS"]
