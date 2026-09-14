@@ -135,6 +135,16 @@ if (nrow(samples$samples) < 5) {
 } 
 ```
 
+## Consensus peak calls per group
+The consensus peaks here are the peaks identified in at least 2 samples for a given condition/group.
+```{r consensus_peaks}
+try(consensus <- dba.peakset(samples,consensus=DBA_CONDITION),silent=TRUE)
+if (exists("consensus")) {
+consensus2 <- dba(consensus, mask = consensus$masks$Consensus)
+consensus2
+}
+```
+
 # Consensus peaks and counts
 Consensus peaks are unions of peaks across samples. To be defined as a consensus peak that
 union must overlap a minumum number of peaks across all samples. The minimum
