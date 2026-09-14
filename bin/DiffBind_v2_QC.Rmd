@@ -29,6 +29,14 @@ peakcaller <- params$peakcaller
 csvfile <- params$csvfile
 counts_bed <- params$counts_bed
 counts_csv <- params$counts_csv
+threads <- as.integer(params$threads)
+
+# Ensure threads is at least 1
+if (is.na(threads) || threads < 1) {
+    threads <- 1
+}
+threads <- as.integer(threads)
+options(mc.cores = threads)
 ```
 
 **Peak sources:**
@@ -52,7 +60,7 @@ remove_negative_coordinates <- function(dbaOBJ) {
   negCoordIdx <- which(dbaOBJ$merged[,2] < 0)
   dbaOBJ$merged[negCoordIdx,2] <- 1
   dbaOBJ$binding[negCoordIdx,2] <- 1
-  for ( i in 1:length(dbaOBJ$peaks) ) {
+  for (i in seq_along(dbaOBJ$peaks)) {
       dbaOBJ$peaks[[i]]$Start[negCoordIdx] <- 1
   }
   return(dbaOBJ)
@@ -71,7 +79,7 @@ PCAbasic <- function(pv) {
   pc <- pv$pc
 
   vr <- rep(0,length(pc$sdev))
-  for (i in 1:length(vr)) {
+  for (i in seq_along(vr)) {
       vr[i] <- pc$sdev[i] ^ 2
   }
 
@@ -123,7 +131,7 @@ DT::datatable(pca1,
 Number of overlapping peaks, occupancy analysis. Only if number of samples is less than 5. 
 ```{r Venn, fig_height=4}
 if (nrow(samples$samples) < 5) {
-   dba.plotVenn(samples, 1:nrow(samples$samples)) 
+  dba.plotVenn(samples, seq_len(nrow(samples$samples))) 
 } 
 ```
 
@@ -156,7 +164,8 @@ if (minOv < 2) { minOv <- 2}
 
 print(paste0("The minimum number of overlaps is: ", minOv))
 
-DBdataCounts <- dba.count(samples, summits=summits_arg, bParallel=T)
+samples$config$cores <- threads
+DBdataCounts <- dba.count(samples, summits=summits_arg, bParallel=(threads > 1))
 
 # remove negative coordinates when summits_arg is not FALSE
 if ( summits_arg != FALSE ) {
@@ -167,7 +176,7 @@ print(DBdataCounts)
 
 DBreadNum <- data.frame( ID=DBdataCounts$class["ID",],
                          Reads=DBdataCounts$class["Reads",])
-rownames(DBreadNum) <- 1:nrow(DBreadNum)
+rownames(DBreadNum) <- seq_len(nrow(DBreadNum))
 print(DBreadNum)
 ```
 
@@ -202,7 +211,7 @@ consensus2 <- dba.peakset(DBdataCounts, bRetrieve=TRUE) %>% ##extracts TMM-norma
   as.data.frame() %>% 
   setNames(vec) %>% 
   arrange(start, end) %>% 
-  mutate(Peaks = paste0("Peak", 1:nrow(.))) %>% 
+  mutate(Peaks = paste0("Peak", seq_len(nrow(.)))) %>% 
   dplyr::select(1:4, Peaks, samples$samples$SampleID)
 
 write.csv(consensus2, counts_csv, row.names = F)
