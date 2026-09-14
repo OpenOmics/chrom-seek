@@ -29,6 +29,14 @@ peakcaller <- params$peakcaller
 csvfile <- params$csvfile
 counts_bed <- params$counts_bed
 counts_csv <- params$counts_csv
+threads <- as.integer(params$threads)
+
+# Ensure threads is at least 1
+if (is.na(threads) || threads < 1) {
+    threads <- 1
+}
+threads <- as.integer(threads)
+options(mc.cores = threads)
 ```
 
 **Peak sources:**
@@ -161,6 +169,16 @@ if (nrow(samples$samples) < 5) {
 } 
 ```
 
+## Consensus peak calls per group
+The consensus peaks here are the peaks identified in at least 2 samples for a given condition/group.
+```{r consensus_peaks}
+try(consensus <- dba.peakset(samples,consensus=DBA_CONDITION),silent=TRUE)
+if (exists("consensus")) {
+consensus2 <- dba(consensus, mask = consensus$masks$Consensus)
+consensus2
+}
+```
+
 # Consensus peaks and counts
 Consensus peaks are unions of peaks across samples. To be defined as a consensus peak that
 union must overlap a minumum number of peaks across all samples. The minimum
@@ -190,7 +208,8 @@ if (minOv < 2) { minOv <- 2}
 
 print(paste0("The minimum number of overlaps is: ", minOv))
 
-DBdataCounts <- dba.count(samples, summits=summits_arg, bParallel=T)
+samples$config$cores <- threads
+DBdataCounts <- dba.count(samples, summits=summits_arg, bParallel=(threads > 1))
 
 # remove negative coordinates when summits_arg is not FALSE
 if ( summits_arg != FALSE ) {

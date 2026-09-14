@@ -16,6 +16,7 @@ single tab-delimited file.
 import argparse
 import math
 import os
+import json
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -176,13 +177,66 @@ def run_jaccard(fileA, fileB, genomefile):
     return (data, keylist)
 
 
+def strip_suffix(text, *suffixes):
+    """Remove trailing suffixes from a string, one full suffix at a time.
+
+    Unlike str.strip(), which removes any leading/trailing characters found in
+    its argument, this only removes the exact suffix(es) given.
+    """
+    for suffix in suffixes:
+        if suffix and text.endswith(suffix):
+            text = text[: -len(suffix)]
+    return text
+
+
 def get_colnames(infileList):
-    snames = [ i.split("/")[-1].split(".")[0].strip("_peaks").strip("_broadpeaks") for i in infileList ]
+    snames = [ strip_suffix(i.split("/")[-1].split(".")[0], "_peaks", "_broadpeaks") for i in infileList ]
     colnames = snames
     return (colnames, snames)
 
 
-def pca_plot(out, snames, peakcaller, pcatabout, outPCAFile):
+def load_sample_groups(config_file):
+    """Load sample-to-group(s) mapping from pipeline config, if available.
+
+    Returns a dict mapping each sample to the list of groups it belongs to.
+    Samples can appear in more than one group, so memberships are accumulated
+    rather than overwritten.
+    """
+    if not config_file:
+        return {}
+
+    try:
+        with open(config_file, "r") as handle:
+            cfg = json.load(handle)
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+    groups = cfg.get("project", {}).get("groups", {})
+    sample2groups = {}
+    for grp, sample_list in groups.items():
+        for sample in sample_list:
+            sample2groups.setdefault(sample, []).append(grp)
+    return sample2groups
+
+
+def resolve_group_coloring(snames, sample2groups):
+    """Decide how to colorize plots based on group membership.
+
+    If every sample belongs to exactly one group, colorize by group label and
+    return that per-sample group list. Otherwise (any sample has zero or
+    multiple group memberships), fall back to colorizing by sample name.
+
+    Returns (use_group_coloring, labels), where labels is the per-sample list of
+    labels to color by.
+    """
+    if sample2groups:
+        memberships = [sample2groups.get(s, []) for s in snames]
+        if all(len(m) == 1 for m in memberships):
+            return True, [m[0] for m in memberships]
+    return False, list(snames)
+
+
+def pca_plot(out, snames, peakcaller, pcatabout, outPCAFile, sample2groups=None):
     """
     creates a 2D PCA plot comparing the files based upon jaccard scores.
     Only samples with a score for every comparison are plotted, NA samples
@@ -210,12 +264,21 @@ def pca_plot(out, snames, peakcaller, pcatabout, outPCAFile):
     PCAdata = pd.DataFrame(Y_sklearn, columns=["PC1", "PC2"])
     PCAdata["sample_name"] = snames
     PCAdata["peak_caller"] = peakcaller
+    if sample2groups is None:
+        sample2groups = {}
+    PCAdata["group"] = [";".join(sample2groups.get(s, [])) for s in snames]
+    use_group_coloring, _ = resolve_group_coloring(snames, sample2groups)
     PCAdata.to_csv(pcatabout, sep='\t', index=False)
 
     fig, ax = plt.subplots()
-    snames_pal = sns.hls_palette(len(set(snames)),s=.8)
-    sns.set_palette(snames_pal)
-    ax = sns.scatterplot(x="PC1", y="PC2", hue="sample_name", data=PCAdata, s=100)
+    if use_group_coloring:
+        group_pal = sns.hls_palette(len(set(PCAdata["group"])), s=.8)
+        sns.set_palette(group_pal)
+        ax = sns.scatterplot(x="PC1", y="PC2", hue="group", style="sample_name", data=PCAdata, s=100)
+    else:
+        snames_pal = sns.hls_palette(len(set(snames)),s=.8)
+        sns.set_palette(snames_pal)
+        ax = sns.scatterplot(x="PC1", y="PC2", hue="sample_name", data=PCAdata, s=100)
     ax.axhline(y=0, color='grey', linewidth=1,linestyle="--")
     ax.axvline(x=0, color='grey', linewidth=1,linestyle="--")
     ax.set(
@@ -254,10 +317,10 @@ def plot_heatmap(out, outHeatmapFile, peakcaller, heatmap_tab, snames):
     snames_lut = dict(zip(set(snames), snames_pal))
     snames_cols = pd.Series(snames, index=out.index).map(snames_lut)
     g = sns.clustermap(out, cmap="YlGnBu", col_cluster=False, row_colors=snames_cols)
-    for label in set(snames):
-        g.ax_col_dendrogram.bar(0, 0, color=snames_lut[label],
+    for label in set(row_labels):
+        g.ax_col_dendrogram.bar(0, 0, color=row_lut[label],
                         label=label, linewidth=0)
-    g.ax_col_dendrogram.legend(loc="center", ncol=3, 
+    g.ax_col_dendrogram.legend(title=legend_title, loc="center", ncol=3, 
                             bbox_to_anchor=(0.5, 0.8))
     plt.savefig(outHeatmapFile, bbox_inches='tight')
     plt.close("all")
@@ -333,6 +396,14 @@ def main():
         required=True,
         help='The genome contig sizes reference file'
     )
+    parser.add_argument(
+        '-c',
+        '--config',
+        dest='config_file',
+        required=False,
+        default=None,
+        help='Pipeline config.json file for group annotations'
+    )
 
     args = parser.parse_args()
 
@@ -345,9 +416,11 @@ def main():
     outHeatmapFile = args.heatmap
     pkcaller = args.peakcaller
     hm_tsv = args.heatmap_tab
+    config_file = args.config_file
 
     # downstream processing
     infileList = split_infiles(infiles)
+    sample2groups = load_sample_groups(config_file)
 
     # Inputs without any peaks cannot be scored, their comparisons are
     # reported as NA and they are left out of the plots.
@@ -369,15 +442,17 @@ def main():
         out,
         snames,
         pkcaller,
-        outPCAtab, 
-        outPCAplot
+        outPCAtab,
+        outPCAplot,
+        sample2groups=sample2groups
     )
     plot_heatmap(
         out, 
         outHeatmapFile,
         pkcaller,
         hm_tsv,
-        snames
+        snames,
+        sample2groups=sample2groups
     )
 
 if __name__ == '__main__':
