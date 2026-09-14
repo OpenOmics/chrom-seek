@@ -231,5 +231,9 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Display Python version
         run: python -c "import sys; print(sys.version)"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r .github/test_reqs.txt
       - name: Run unit tests
         run: python -m unittest discover tests

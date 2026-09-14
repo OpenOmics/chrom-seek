@@ -55,6 +55,40 @@ suppressMessages(library(ggplot2))
 suppressMessages(library(ggrepel))
 ```
 
+```{r preflight, echo=FALSE, warning=FALSE,message=FALSE}
+sample_sheet <- read.csv(csvfile, stringsAsFactors = FALSE)
+sample_sheet <- sample_sheet %>%
+  tidyr::drop_na(SampleID, bamReads, Peaks) %>%
+  dplyr::filter(SampleID != "", bamReads != "", Peaks != "")
+
+if (nrow(sample_sheet) < 2) {
+  cat(
+    "\n### DiffBind QC skipped\n",
+    "Fewer than 2 valid samples remain after dropping NaN/empty peak rows.",
+    "\n\nOutputs were written as empty placeholders.\n"
+  )
+
+  empty_counts <- data.frame(
+    seqnames = character(),
+    start = integer(),
+    end = integer(),
+    width = integer(),
+    Peaks = character()
+  )
+
+  write.csv(empty_counts, counts_csv, row.names = FALSE)
+  write.table(
+    empty_counts[, c("seqnames", "start", "end", "Peaks")],
+    counts_bed,
+    quote = FALSE,
+    sep = "\t",
+    row.names = FALSE,
+    col.names = FALSE
+  )
+  knitr::knit_exit()
+}
+```
+
 ```{r functions, echo=FALSE, warning=FALSE,message=FALSE}
 remove_negative_coordinates <- function(dbaOBJ) {
   negCoordIdx <- which(dbaOBJ$merged[,2] < 0)

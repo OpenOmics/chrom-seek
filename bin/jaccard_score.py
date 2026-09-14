@@ -14,6 +14,8 @@ single tab-delimited file.
 ##########################################
 # Modules
 import argparse
+import math
+import os
 import json
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -26,6 +28,15 @@ from sklearn.decomposition import PCA as sklearnPCA
 
 # matplotlib
 mpl.use('Agg')
+
+
+# How an incalculable jaccard score is reported, and the columns of the
+# tabular output: the bedtools keys of a jaccard record, sorted, plus the
+# two file names.
+NA_VALUE = "NA"
+TABLE_COLUMNS = (
+    "fileA", "fileB", "intersection", "jaccard", "n_intersections", "union-intersection"
+)
 
 
 ##########################################
@@ -41,28 +52,110 @@ def split_infiles(infiles):
     return(infileList)
 
 
+def peak_file_has_intervals(path):
+    """True when a peak file has at least one non-comment interval line."""
+    if not path or (not os.path.isfile(path)):
+        return False
+    with open(path, "r") as peak_file:
+        for line in peak_file:
+            line = line.strip()
+            if line and not line.startswith("#") and not line.startswith("track") and not line.startswith("browser"):
+                return True
+    return False
+
+
+def write_placeholder_plot(outfile, title, message):
+    fig, ax = plt.subplots(figsize=(7, 5))
+    ax.axis("off")
+    ax.set_title(title)
+    ax.text(0.5, 0.5, message, ha="center", va="center", wrap=True)
+    plt.savefig(outfile, bbox_inches='tight')
+    plt.close("all")
+
+
+def parse_score(score):
+    """
+    Converts a jaccard score from bedtools into a float. Scores that are not a
+    number stay NaN, so that they are reported as NA rather than as a real
+    score: the "nan" string bedtools prints for an empty union, numpy.nan,
+    numpy float NaNs, pandas.NA and None are all caught here.
+    """
+    try:
+        if pd.isna(score):
+            return float("nan")
+    except (TypeError, ValueError):
+        # non-scalar or otherwise untestable value, fall through to float()
+        pass
+    try:
+        return float(score)
+    except (TypeError, ValueError):
+        return float("nan")
+
+
+def na_record(fileA, fileB):
+    """
+    Builds the tabular output row of a comparison that cannot be calculated,
+    that is, one where a peak file has no peaks. Every score is NA.
+    """
+    record = dict.fromkeys(TABLE_COLUMNS, NA_VALUE)
+    record["fileA"] = fileA.split("/")[-1]
+    record["fileB"] = fileB.split("/")[-1]
+    keylist = list(TABLE_COLUMNS)
+    return ([record[key] for key in keylist], keylist)
+
+
+def drop_na_samples(out, snames):
+    """
+    Keeps only the samples that have a jaccard score for every remaining
+    comparison. Samples with an NA score, that is, peak files with no peaks,
+    cannot be plotted or clustered. Note that an NA sample puts an NA in every
+    row of the matrix, so the samples themselves have to be dropped, not the
+    rows that mention them.
+    """
+    # a peak file with no peaks has no score against itself either
+    keep = [i for i in range(out.shape[0]) if not pd.isna(out.iloc[i, i])]
+    # any NA left in the block belongs to a single pair of samples, drop
+    # whichever of them accounts for the most NAs and look again
+    while keep:
+        na_counts = out.iloc[keep, keep].isna().sum(axis=1).tolist()
+        if max(na_counts) == 0:
+            break
+        keep.pop(na_counts.index(max(na_counts)))
+    return (out.iloc[keep, keep], [snames[i] for i in keep])
+
+
 def loop_jaccard(infileList, genomefile):
     """
-    Uses two loops to do all possible pairwise comparisons of files 
-    in a list. Returns a writeable output and a pandas object
+    Uses two loops to do all possible pairwise comparisons of files
+    in a list. Returns a writeable output and a pandas object. Any comparison
+    involving a peak file with no peaks is reported as NA instead of being
+    handed to bedtools, which cannot score it.
     """
     nfiles = len(infileList)
     (colnames, snames) = get_colnames(infileList)
-    out = [[1.000] * nfiles for i in range(nfiles)]
-    out2 = pd.DataFrame(out, columns=colnames, index=colnames,dtype="float")
-    outTable = []
+    has_peaks = [peak_file_has_intervals(infile) for infile in infileList]
+    out = [[float("nan")] * nfiles for i in range(nfiles)]
+    for i in range(nfiles):
+        if has_peaks[i]:
+            out[i][i] = 1.0
+    outTable = [ "\t".join(TABLE_COLUMNS) ]
     for z in range(nfiles):
         fileA = infileList[z]
-        print("fileA is: " + fileA) 
+        print("fileA is: " + fileA)
         for y in range(z+1,nfiles):
             fileB = infileList[y]
-            (data, keylist) = run_jaccard(fileA, fileB, genomefile)
-            out[z][y] = float(data[3])
-            out[y][z] = float(data[3])
-            if len(outTable) == 0:
-                outTable.append( "\t".join(keylist) )
+            if has_peaks[z] and has_peaks[y]:
+                (data, keylist) = run_jaccard(fileA, fileB, genomefile)
+                score = parse_score(data[keylist.index("jaccard")])
+                if math.isnan(score):
+                    data[keylist.index("jaccard")] = NA_VALUE
+            else:
+                (data, keylist) = na_record(fileA, fileB)
+                score = float("nan")
+            out[z][y] = score
+            out[y][z] = score
             outTable.append( "\t".join(data) )
-        out2 = pd.DataFrame(out, columns=colnames, index=colnames,dtype="float")
+    out2 = pd.DataFrame(out, columns=colnames, index=colnames, dtype="float")
     return (outTable, out2, snames)
 
 
@@ -145,8 +238,27 @@ def resolve_group_coloring(snames, sample2groups):
 
 def pca_plot(out, snames, peakcaller, pcatabout, outPCAFile, sample2groups=None):
     """
-    creates a 2D PCA plot comparing the files based upon jaccard scores
+    creates a 2D PCA plot comparing the files based upon jaccard scores.
+    Only samples with a score for every comparison are plotted, NA samples
+    are left out.
     """
+    (out, snames) = drop_na_samples(out, snames)
+
+    if out.shape[0] < 2 or out.shape[1] < 2:
+        PCAdata = pd.DataFrame({
+            "PC1": [0.0] * len(snames),
+            "PC2": [0.0] * len(snames),
+            "sample_name": snames,
+            "peak_caller": [peakcaller] * len(snames),
+        })
+        PCAdata.to_csv(pcatabout, sep='\t', index=False)
+        write_placeholder_plot(
+            outPCAFile,
+            f"{peakcaller} Jaccard PCA",
+            "Insufficient valid (non-NA) samples for PCA."
+        )
+        return
+
     sklearn_pca = sklearnPCA(n_components=2)
     Y_sklearn = sklearn_pca.fit_transform(out)
     PCAdata = pd.DataFrame(Y_sklearn, columns=["PC1", "PC2"])
@@ -180,26 +292,44 @@ def pca_plot(out, snames, peakcaller, pcatabout, outPCAFile, sample2groups=None)
 
 
 def plot_heatmap(out, outHeatmapFile, peakcaller, heatmap_tab, snames, sample2groups=None):
+    """
+    clusters and plots the jaccard score matrix. Every sample is written to
+    the tabular output, including the NA ones, but only samples with a score
+    for every comparison can be clustered.
+    """
     if sample2groups is None:
         sample2groups = {}
+    # the full matrix, NA samples included, keeps the columns of this table
+    # aligned across peak callers for jaccard_summary.py
+    out_hm = out.copy()
+    out_hm['peakcaller'] = peakcaller
+    out_hm.to_csv(heatmap_tab, sep='\t', index=False, na_rep=NA_VALUE)
 
+    (out, snames) = drop_na_samples(out, snames)
+
+    if out.shape[0] < 2 or out.shape[1] < 2:
+        write_placeholder_plot(
+            outHeatmapFile,
+            f"{peakcaller} Jaccard Heatmap",
+            "Insufficient valid (non-NA) samples for heatmap clustering."
+        )
+        return
+
+    # coloring is resolved on the samples that survived the NA drop, so that
+    # the row colors line up with the rows actually being clustered
     use_group_coloring, labels = resolve_group_coloring(snames, sample2groups)
 
     if use_group_coloring:
-        group_pal = sns.hls_palette(len(set(labels)), s=.8)
-        group_lut = dict(zip(set(labels), group_pal))
         row_labels = labels
-        row_lut = group_lut
         legend_title = "group"
     else:
-        snames_pal = sns.hls_palette(len(set(snames)),s=.8)
-        snames_lut = dict(zip(set(snames), snames_pal))
         row_labels = snames
-        row_lut = snames_lut
         legend_title = "sample"
+    row_pal = sns.hls_palette(len(set(row_labels)), s=.8)
+    row_lut = dict(zip(set(row_labels), row_pal))
 
-    snames_cols = pd.Series(row_labels, index=out.index).map(row_lut)
-    g = sns.clustermap(out, cmap="YlGnBu", col_cluster=False, row_colors=snames_cols)
+    row_cols = pd.Series(row_labels, index=out.index).map(row_lut)
+    g = sns.clustermap(out, cmap="YlGnBu", col_cluster=False, row_colors=row_cols)
     for label in set(row_labels):
         g.ax_col_dendrogram.bar(0, 0, color=row_lut[label],
                         label=label, linewidth=0)
@@ -207,10 +337,6 @@ def plot_heatmap(out, outHeatmapFile, peakcaller, heatmap_tab, snames, sample2gr
                             bbox_to_anchor=(0.5, 0.8))
     plt.savefig(outHeatmapFile, bbox_inches='tight')
     plt.close("all")
-    
-    hm_tsv = out
-    hm_tsv['peakcaller'] = peakcaller
-    hm_tsv.to_csv(heatmap_tab, sep='\t', index=False)
 
     return
 
@@ -228,8 +354,10 @@ def main():
     This function takes a space-delimited list of files (bed, bedgraph, gff, gtf, etc.)
     and calculates all possible pairwise jaccard scores. From bedtools: 'Jaccard is the 
     length of the intersection over the union. Values range from 0 (no intersection) to 
-    1 (self intersection)'. The columns of the output file are: fileA, fileB, 
-    intersection, jaccard, n_intersections, and union-intersection.
+    1 (self intersection)'. The columns of the output file are: fileA, fileB,
+    intersection, jaccard, n_intersections, and union-intersection. Peak files
+    with no peaks cannot be scored, their comparisons are reported as NA and
+    they are left out of the PCA and heatmap plots.
     """)
 
     parser = argparse.ArgumentParser(description=desc)
@@ -307,7 +435,18 @@ def main():
     infileList = split_infiles(infiles)
     sample2groups = load_sample_groups(config_file)
 
+    # Inputs without any peaks cannot be scored, their comparisons are
+    # reported as NA and they are left out of the plots.
+    no_peak_files = [f for f in infileList if not peak_file_has_intervals(f)]
+
+    if no_peak_files:
+        print(
+            "WARNING: Peak files with no peaks, scored as " + NA_VALUE + ": "
+            + ", ".join(no_peak_files)
+        )
+
     outTable, out, snames = loop_jaccard(infileList, genomefile)
+
     write_out(
         outTable, 
         outTableFile
