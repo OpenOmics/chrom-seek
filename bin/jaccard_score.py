@@ -291,12 +291,14 @@ def pca_plot(out, snames, peakcaller, pcatabout, outPCAFile, sample2groups=None)
     return
 
 
-def plot_heatmap(out, outHeatmapFile, peakcaller, heatmap_tab, snames):
+def plot_heatmap(out, outHeatmapFile, peakcaller, heatmap_tab, snames, sample2groups=None):
     """
     clusters and plots the jaccard score matrix. Every sample is written to
     the tabular output, including the NA ones, but only samples with a score
     for every comparison can be clustered.
     """
+    if sample2groups is None:
+        sample2groups = {}
     # the full matrix, NA samples included, keeps the columns of this table
     # aligned across peak callers for jaccard_summary.py
     out_hm = out.copy()
@@ -313,10 +315,21 @@ def plot_heatmap(out, outHeatmapFile, peakcaller, heatmap_tab, snames):
         )
         return
 
-    snames_pal = sns.hls_palette(len(set(snames)),s=.8)
-    snames_lut = dict(zip(set(snames), snames_pal))
-    snames_cols = pd.Series(snames, index=out.index).map(snames_lut)
-    g = sns.clustermap(out, cmap="YlGnBu", col_cluster=False, row_colors=snames_cols)
+    # coloring is resolved on the samples that survived the NA drop, so that
+    # the row colors line up with the rows actually being clustered
+    use_group_coloring, labels = resolve_group_coloring(snames, sample2groups)
+
+    if use_group_coloring:
+        row_labels = labels
+        legend_title = "group"
+    else:
+        row_labels = snames
+        legend_title = "sample"
+    row_pal = sns.hls_palette(len(set(row_labels)), s=.8)
+    row_lut = dict(zip(set(row_labels), row_pal))
+
+    row_cols = pd.Series(row_labels, index=out.index).map(row_lut)
+    g = sns.clustermap(out, cmap="YlGnBu", col_cluster=False, row_colors=row_cols)
     for label in set(row_labels):
         g.ax_col_dendrogram.bar(0, 0, color=row_lut[label],
                         label=label, linewidth=0)
