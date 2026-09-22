@@ -14,6 +14,7 @@ params:
     counts_bed: ""
     counts_csv: ""
     peakcaller: ""
+    threads: 1
 ---
 
 <style type="text/css">
@@ -61,10 +62,13 @@ sample_sheet <- sample_sheet %>%
   tidyr::drop_na(SampleID, bamReads, Peaks) %>%
   dplyr::filter(SampleID != "", bamReads != "", Peaks != "")
 
-if (nrow(sample_sheet) < 2) {
+# Write empty placeholder outputs and explain why the report was cut short.
+# Used whenever the data cannot support a meaningful QC report, so that the
+# Snakemake rule still produces every declared output file.
+skip_report <- function(reason) {
   cat(
     "\n### DiffBind QC skipped\n",
-    "Fewer than 2 valid samples remain after dropping NaN/empty peak rows.",
+    reason,
     "\n\nOutputs were written as empty placeholders.\n"
   )
 
@@ -87,6 +91,10 @@ if (nrow(sample_sheet) < 2) {
   )
   knitr::knit_exit()
 }
+
+if (nrow(sample_sheet) < 2) {
+  skip_report("Fewer than 2 valid samples remain after dropping NaN/empty peak rows.")
+}
 ```
 
 ```{r functions, echo=FALSE, warning=FALSE,message=FALSE}
@@ -107,38 +115,79 @@ remove_negative_coordinates2 <- function(dbaOBJ) {
   return(dbaOBJ)
 }
 
-PCAbasic <- function(pv) {
+PCAbasic <- function(pv, max_comps = 3) {
   # Note: PCA is on a log2 scale when counts are available.
-  pv <- DiffBind:::pv.pcmask(pv)
-  pc <- pv$pc
-
-  vr <- rep(0,length(pc$sdev))
-  for (i in seq_along(vr)) {
-      vr[i] <- pc$sdev[i] ^ 2
+  # Returns a data.frame with PC1..PC<max_comps> per sample, or NULL when a PCA
+  # cannot be computed (e.g. no consensus sites). With n samples there are at
+  # most n components, so missing components are filled with NA rather than
+  # indexing past the end of the PCA result.
+  if (is.null(pv$binding) || nrow(pv$binding) == 0) {
+    print("PCA skipped: no consensus sites in the binding matrix.")
+    return(NULL)
   }
 
-  comps=1:3
-  c1 <- comps[1]
-  c2 <- comps[2]
-  c3 <- comps[3]
+  pv <- tryCatch(DiffBind:::pv.pcmask(pv), error = function(e) {
+    print(paste0("PCA skipped: ", conditionMessage(e)))
+    NULL
+  })
+  if (is.null(pv) || is.null(pv$pc)) {
+    return(NULL)
+  }
+  pc <- pv$pc
 
-  c1p <- vr[c1] / sum(vr) * 100
-  c2p <- vr[c2] / sum(vr) * 100
-  c3p <- vr[c3] / sum(vr) * 100
+  vr <- pc$sdev ^ 2
+  n_avail <- min(max_comps, length(vr), ncol(pc$x))
+  if (n_avail < 1) {
+    print("PCA skipped: no principal components available.")
+    return(NULL)
+  }
+  pct <- vr[seq_len(n_avail)] / sum(vr) * 100
 
-  plotData <- as.data.frame(pc$x[,c(c1,c2,c3)])
-  colnames(plotData) <- c("PC1","PC2","PC3")
-  print(paste0("PC1 %: ", c1p))
-  print(paste0("PC2 %: ", c2p))
-  print(paste0("PC3 %: ", c3p))  
+  plotData <- as.data.frame(matrix(NA_real_, nrow = nrow(pc$x), ncol = max_comps))
+  colnames(plotData) <- paste0("PC", seq_len(max_comps))
+  rownames(plotData) <- rownames(pc$x)
+  plotData[, seq_len(n_avail)] <- pc$x[, seq_len(n_avail), drop = FALSE]
+
+  for (i in seq_len(n_avail)) {
+    print(paste0("PC", i, " %: ", pct[i]))
+  }
+  if (n_avail < max_comps) {
+    print(paste0("Only ", n_avail, " principal component(s) available for ",
+                 nrow(pc$x), " sample(s); remaining columns are NA."))
+  }
   return(plotData)
+}
+
+pca_table <- function(pca_df) {
+  if (is.null(pca_df)) {
+    return(invisible(NULL))
+  }
+  DT::datatable(pca_df,
+    extensions = 'Buttons', options = list(dom = 'Bfrtip', buttons = c('csv')))
 }
 ```
 
 # Peak Data
 Read in sample sheet information and peak information
-```{r samples} 
+```{r samples}
 samples <- dba(sampleSheet=csvfile)
+
+# dba() keeps only sites present in at least 2 samples (default minOverlap).
+# If a sample contributes essentially no peaks, the consensus binding matrix
+# is empty and every downstream step (PCA, dba.count, TMM export) fails.
+if (is.null(samples$binding) || nrow(samples$binding) == 0) {
+  peaks_per_sample <- vapply(samples$peaks, nrow, integer(1))
+  names(peaks_per_sample) <- samples$samples$SampleID
+  print("Peaks per sample:")
+  print(peaks_per_sample)
+  skip_report(paste0(
+    "No consensus sites: no peak was shared by at least 2 samples. ",
+    "Peaks per sample: ",
+    paste(names(peaks_per_sample), peaks_per_sample, sep = "=", collapse = ", "),
+    "."
+  ))
+}
+
 samples <- remove_negative_coordinates2(samples)
 print(samples)
 ```
@@ -155,10 +204,7 @@ Variance of peak positions
 try(dba.plotPCA(samples),silent=TRUE)
 
 pca1 <- PCAbasic(samples)
-
-DT::datatable(pca1,
-  extensions = 'Buttons', options = list(dom = 'Bfrtip', buttons = c('csv')))
-
+pca_table(pca1)
 ```
 
 ## Overlapping peak counts
@@ -172,10 +218,24 @@ if (nrow(samples$samples) < 5) {
 ## Consensus peak calls per group
 The consensus peaks here are the peaks identified in at least 2 samples for a given condition/group.
 ```{r consensus_peaks}
-try(consensus <- dba.peakset(samples,consensus=DBA_CONDITION),silent=TRUE)
-if (exists("consensus")) {
-consensus2 <- dba(consensus, mask = consensus$masks$Consensus)
-consensus2
+consensus <- tryCatch(
+  dba.peakset(samples, consensus = DBA_CONDITION),
+  error = function(e) {
+    print(paste0("Per-group consensus skipped: ", conditionMessage(e)))
+    NULL
+  }
+)
+
+# dba.peakset() only adds a consensus peakset for conditions with >= 2 samples.
+# When every condition has a single sample it adds nothing and the Consensus
+# mask is NULL; subsetting on that yields an empty object and dba() errors.
+consensus_mask <- if (is.null(consensus)) NULL else consensus$masks$Consensus
+if (!is.null(consensus_mask) && any(consensus_mask)) {
+  consensus2 <- dba(consensus, mask = consensus_mask)
+  consensus2
+} else if (!is.null(consensus)) {
+  print("No per-group consensus peaksets: every condition/group has fewer than 2 samples.")
+  print(table(samples$samples$Condition))
 }
 ```
 
@@ -244,9 +304,7 @@ Variation of library-size normalized counts of consensus peaks
 try(dba.plotPCA(DBdataCounts),silent=TRUE)
 
 PCA2 <- PCAbasic(DBdataCounts)
-
-DT::datatable(PCA2,
-  extensions = 'Buttons', options = list(dom = 'Bfrtip', buttons = c('csv')))
+pca_table(PCA2)
 ```
 
 ```{r TMM}
