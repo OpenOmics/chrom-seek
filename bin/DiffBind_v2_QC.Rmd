@@ -116,7 +116,9 @@ remove_negative_coordinates2 <- function(dbaOBJ) {
 }
 
 PCAbasic <- function(pv, max_comps = 3) {
-  # Note: PCA is on a log2 scale when counts are available.
+  # Note 1: The functions calculating PCA come directly from the code within
+  # DiffBind 2.15.2. 
+  # Note 2: PCA is on a log2 scale when counts are available.
   # Returns a data.frame with PC1..PC<max_comps> per sample, or NULL when a PCA
   # cannot be computed (e.g. no consensus sites). With n samples there are at
   # most n components, so missing components are filled with NA rather than
