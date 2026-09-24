@@ -170,7 +170,9 @@ pca_table <- function(pca_df) {
 # Peak Data
 Read in sample sheet information and peak information
 ```{r samples}
-samples <- dba(sampleSheet=csvfile)
+# Build from the preflight-filtered sheet (not the raw CSV path) so rows dropped
+# for NaN/empty peaks or BAMs never reach DiffBind.
+samples <- dba(sampleSheet=sample_sheet)
 
 # dba() keeps only sites present in at least 2 samples (default minOverlap).
 # If a sample contributes essentially no peaks, the consensus binding matrix
