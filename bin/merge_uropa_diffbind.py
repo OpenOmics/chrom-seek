@@ -7,6 +7,8 @@ import os
 """
 Script for joining diffbind peak set to uropa gene annotations
 
+Exits with a message on stderr if no differential peaks pass the filters.
+
 Caveat: this won't work with the uropa allhits file because of the 1:Many
         relationship between peaks and genes.
 
@@ -139,7 +141,14 @@ def main(args):
     print(str(fold_filter) + "\n\n")
     print(f"-- {str(n_filter_fold)} peaks filtered for being < abs({str(args.fold)}) fold-change --\n")
     print(str(fdr_filter) + "\n\n")
-    print(f"-- {str(n_after_filter)} total peaks removed by FDR and fold-change filters")
+    print(f"-- {str(n_after_filter)} total peaks remaining after FDR and fold-change filters")
+    if diffbind.empty:
+        raise SystemExit(
+            f"No differential peaks identified in '{args.diffbind}' with "
+            f"FDR <= {args.fdr} and absolute fold-change >= {args.fold}. "
+            "There are no peaks to annotate; this is an empty analysis result, "
+            "not a software error."
+        )
     # format
     diffbind = diffbind.drop(columns=["strand", "Conc"])
     diffbind = diffbind.reset_index(drop=True)
